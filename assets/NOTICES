@@ -3443,6 +3443,7 @@ file_selector_platform_interface
 file_selector_windows
 flutter_lints
 flutter_plugin_android_lifecycle
+go_router
 google_fonts
 google_identity_services_web
 google_sign_in
