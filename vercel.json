@@ -27,10 +27,6 @@
     {
       "source": "/api/backend/:path*",
       "destination": "https://api-5sqqk2n6ra-uc.a.run.app/:path*"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/"
     }
   ]
 }
