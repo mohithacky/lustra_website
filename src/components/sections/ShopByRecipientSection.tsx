@@ -71,7 +71,7 @@ function RecipientCard({ title, imageUrl, isDark, shopDomain }: {
 
   return (
     <Link
-      href={`/${shopDomain}/gender/${title.toLowerCase()}`}
+      href={`/gender/${title.toLowerCase()}`}
       className="block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
