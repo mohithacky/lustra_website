@@ -10,14 +10,17 @@ import {
   getTrendingCollections,
   getBestCollections,
   getFooterData,
-  getTestimonials 
+  getTestimonials,
+  getTrendingProducts
 } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import HeroCarousel from '@/components/sections/HeroCarousel'
-import TrendingSection from '@/components/sections/TrendingSection'
 import CategoriesSection from '@/components/sections/CategoriesSection'
-import BestCollectionsSection from '@/components/sections/BestCollectionsSection'
 import ProductsSection from '@/components/sections/ProductsSection'
+import ShopByRecipientSection from '@/components/sections/ShopByRecipientSection'
+import TrendingSection from '@/components/sections/TrendingSection'
+import TrendingProductsSection from '@/components/sections/TrendingProductsSection'
+import BestCollectionsSection from '@/components/sections/BestCollectionsSection'
 import TestimonialsSection from '@/components/sections/TestimonialsSection'
 import Footer from '@/components/sections/Footer'
 
@@ -52,7 +55,7 @@ export default async function StorePage({ params }: PageProps) {
     notFound()
   }
 
-  const [template, heroCollections, products, collectionsMap, categoriesMap, trendingCollections, bestCollections, footerData, testimonials] = await Promise.all([
+  const [template, heroCollections, products, collectionsMap, categoriesMap, trendingCollections, bestCollections, footerData, testimonials, trendingProducts] = await Promise.all([
     getWebsiteTemplate(user.id),
     getHeroCollections(user.id),
     getProducts(user.id, { limit: 12 }),
@@ -62,6 +65,7 @@ export default async function StorePage({ params }: PageProps) {
     getBestCollections(user.id),
     getFooterData(user.id),
     getTestimonials(user.id),
+    getTrendingProducts(user.id, 10),
   ])
 
   // Transform categories map to array format for components
@@ -115,6 +119,8 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
+      <div className="h-10" /> {/* Spacing */}
+
       {/* 3. Products Section (New Arrivals) - matches Flutter ProductShowcase */}
       {products.length > 0 && (
         <ProductsSection 
@@ -125,7 +131,17 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
-      {/* 4. Trending Collections - matches Flutter FourBoxStaggeredSection */}
+      <div className="h-16" /> {/* Spacing */}
+
+      {/* 4. Shop By Recipient (Him/Her) - matches Flutter ShopByRecipientSection */}
+      <ShopByRecipientSection 
+        isDark={isDark}
+        shopDomain={params.domain}
+      />
+
+      <div className="h-16" /> {/* Spacing */}
+
+      {/* 5. Trending Collections - matches Flutter FourBoxStaggeredSection */}
       {trendingCollections.length > 0 && (
         <TrendingSection 
           collections={trendingCollections} 
@@ -133,7 +149,20 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
-      {/* 5. Best Collections - matches Flutter FeaturedCollectionsShowcase */}
+      <div className="h-16" /> {/* Spacing */}
+
+      {/* 6. Trending Products - matches Flutter TrendingProductsShowcase */}
+      {trendingProducts.length > 0 && (
+        <TrendingProductsSection 
+          products={trendingProducts} 
+          isDark={isDark}
+          shopDomain={params.domain}
+        />
+      )}
+
+      <div className="h-10" /> {/* Spacing */}
+
+      {/* 7. Best Collections - matches Flutter FeaturedCollectionsShowcase */}
       {bestCollections.length > 0 && (
         <BestCollectionsSection 
           collections={bestCollections} 
@@ -141,12 +170,14 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
-      {/* 6. Testimonials - matches Flutter JewelleryTestimonialSection */}
+      {/* 8. Testimonials - matches Flutter JewelleryTestimonialSection */}
       {testimonials.length > 0 && (
-        <TestimonialsSection 
-          testimonials={testimonials} 
-          isDark={isDark} 
-        />
+        <div className="mt-10">
+          <TestimonialsSection 
+            testimonials={testimonials} 
+            isDark={isDark} 
+          />
+        </div>
       )}
 
       {/* Footer */}

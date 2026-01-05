@@ -20,6 +20,27 @@ export interface UserData {
   shop_domain: string | null
 }
 
+// Product type definition
+export interface ProductData {
+  id: string
+  user_id: string
+  name: string
+  price: string | number | null
+  description: string | null
+  image_url: string | null
+  images: string[] | null
+  category: string | null
+  collection: string | null
+  weight: string | null
+  purity: string | null
+  gender: string | null
+  is_bestseller: boolean | null
+  is_trending: boolean | null
+  show_on_website: boolean | null
+  created_at: string
+  updated_at: string
+}
+
 export async function getWebsiteByDomain(domain: string): Promise<UserData | null> {
   const { data, error } = await supabase
     .from('users')
@@ -117,7 +138,7 @@ export async function getProducts(userId: string, options?: {
   limit?: number
   offset?: number
   showOnWebsite?: boolean
-}) {
+}): Promise<ProductData[]> {
   let query = supabase
     .from('website_products')
     .select('*')
@@ -156,7 +177,7 @@ export async function getProducts(userId: string, options?: {
     return []
   }
 
-  return data || []
+  return (data as ProductData[]) || []
 }
 
 export async function getProductsByIds(productIds: string[]) {
@@ -323,4 +344,63 @@ export async function trackVisitor(userId: string, visitorData: {
   if (error) {
     console.error('Error tracking visitor:', error)
   }
+}
+
+// Get trending products (products marked as trending or bestseller)
+export async function getTrendingProducts(userId: string, limit: number = 10) {
+  const { data, error } = await supabase
+    .from('website_products')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('show_on_website', true)
+    .or('is_trending.eq.true,is_bestseller.eq.true')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    console.error('Error fetching trending products:', error)
+    return []
+  }
+
+  return data || []
+}
+
+// Get a single product by ID
+export async function getProductById(productId: string): Promise<ProductData | null> {
+  const { data, error } = await supabase
+    .from('website_products')
+    .select('*')
+    .eq('id', productId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching product:', error)
+    return null
+  }
+
+  return data as ProductData
+}
+
+// Get products for gender (Him/Her)
+export async function getProductsByGender(userId: string, gender: string, limit?: number): Promise<ProductData[]> {
+  let query = supabase
+    .from('website_products')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('show_on_website', true)
+    .ilike('gender', gender)
+    .order('created_at', { ascending: false })
+
+  if (limit) {
+    query = query.limit(limit)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('Error fetching products by gender:', error)
+    return []
+  }
+
+  return (data as ProductData[]) || []
 }

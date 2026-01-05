@@ -10,11 +10,11 @@ interface Product {
   name: string
   price: string | number | null
   image_url: string | null
-  images?: string[]
-  category?: string
-  weight?: string
-  is_bestseller?: boolean
-  is_trending?: boolean
+  images?: string[] | null
+  category?: string | null
+  weight?: string | null
+  is_bestseller?: boolean | null
+  is_trending?: boolean | null
 }
 
 interface ProductsSectionProps {

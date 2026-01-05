@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { cn, getImageUrl } from '@/lib/utils'
@@ -21,63 +22,78 @@ export default function CategoriesSection({ categories, isDark, shopDomain }: Ca
 
   return (
     <section className={cn(
-      'py-10',
-      isDark ? 'bg-[#080808]' : 'bg-offwhite'
+      'py-4',
+      isDark ? 'bg-black' : 'bg-transparent'
     )}>
-      <div className="max-w-[1100px] mx-auto px-6">
+      <div className="mx-auto">
         {/* Section Header - matches Flutter */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <span className={cn(
             'text-xs font-bold tracking-[0.15em] uppercase',
             isDark ? 'text-white/70' : 'text-gray-500'
           )}>
             SHOP BY CATEGORY
           </span>
-          <h2 className={cn(
-            'font-display text-2xl font-semibold mt-2',
-            isDark ? 'text-white' : 'text-black'
-          )}>
-            Categories
-          </h2>
         </div>
 
-        {/* Categories - horizontal scroll like Flutter */}
-        <div className="overflow-x-auto pb-4 -mx-6 px-6">
-          <div className="flex gap-6 md:gap-8 min-w-max md:justify-center">
+        {/* Categories - horizontal scroll matching Flutter CategoryCarousel */}
+        {/* Flutter heights: mobile 130px, tablet 230px, desktop 260px */}
+        <div className="h-[130px] md:h-[230px] lg:h-[260px] overflow-x-auto">
+          <div className="flex gap-2.5 h-full px-6 min-w-max">
             {categories.map((category) => (
-              <Link
+              <CategoryItem
                 key={category.id}
-                href={`/${shopDomain}/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
-                className="group flex flex-col items-center"
-              >
-                {/* Circular image - matches Flutter CategoryCarousel */}
-                <div className={cn(
-                  'relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden mb-3',
-                  'transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg',
-                  isDark ? 'ring-2 ring-zinc-700' : 'ring-2 ring-gray-200'
-                )}>
-                  <Image
-                    src={getImageUrl(category.image_url)}
-                    alt={category.name}
-                    fill
-                    className="object-cover"
-                    sizes="96px"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-gold-500/20 transition-colors duration-300" />
-                </div>
-                <h3 className={cn(
-                  'text-xs md:text-sm font-medium text-center transition-colors',
-                  isDark 
-                    ? 'text-white group-hover:text-gold-400' 
-                    : 'text-black group-hover:text-gold-600'
-                )}>
-                  {category.name}
-                </h3>
-              </Link>
+                category={category}
+                isDark={isDark}
+                shopDomain={shopDomain}
+              />
             ))}
           </div>
         </div>
       </div>
     </section>
+  )
+}
+
+function CategoryItem({ category, isDark, shopDomain }: {
+  category: Category
+  isDark: boolean
+  shopDomain: string
+}) {
+  const [isHovered, setIsHovered] = useState(false)
+
+  return (
+    <Link
+      href={`/${shopDomain}/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+      className="flex flex-col items-center justify-center mx-1.5"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Circular image - Flutter sizes: mobile 90px, tablet 110px, desktop 220px */}
+      <div 
+        className={cn(
+          'relative rounded-full overflow-hidden transition-transform duration-200',
+          'w-[90px] h-[90px] md:w-[110px] md:h-[110px] lg:w-[220px] lg:h-[220px]',
+          isHovered && 'scale-105'
+        )}
+      >
+        <Image
+          src={getImageUrl(category.image_url)}
+          alt={category.name}
+          fill
+          className="object-cover"
+          sizes="(max-width: 600px) 90px, (max-width: 1024px) 110px, 220px"
+        />
+      </div>
+      
+      {/* Category name */}
+      <h3 className={cn(
+        'mt-1.5 text-[13px] text-center max-w-[90px] md:max-w-[110px] lg:max-w-[220px] truncate transition-all',
+        isDark ? 'text-white' : 'text-gray-800',
+        isHovered ? 'font-bold' : 'font-medium'
+      )}>
+        {category.name}
+      </h3>
+    </Link>
   )
 }
