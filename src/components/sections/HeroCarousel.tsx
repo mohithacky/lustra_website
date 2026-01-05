@@ -3,17 +3,23 @@
 import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
 import { cn, getImageUrl } from '@/lib/utils'
 import { HeroCollection } from '@/types/database'
+import { Pencil } from 'lucide-react'
+import { useEditor } from '@/contexts/EditorContext'
 
 interface HeroCarouselProps {
   collections: HeroCollection[]
   isDark: boolean
+  shopDomain?: string
 }
 
-export default function HeroCarousel({ collections, isDark }: HeroCarouselProps) {
+export default function HeroCarousel({ collections, isDark, shopDomain }: HeroCarouselProps) {
+  const router = useRouter()
+  const { canEditCollections } = useEditor()
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true },
     [Autoplay({ delay: 5000, stopOnInteraction: false })]
@@ -38,6 +44,16 @@ export default function HeroCarousel({ collections, isDark }: HeroCarouselProps)
 
   return (
     <section className="relative w-full px-4 md:px-[120px] pt-4 pb-10">
+      {/* Edit button for editor mode */}
+      {canEditCollections && (
+        <button
+          onClick={() => router.push(`/${shopDomain}/editor/collections`)}
+          className="absolute top-6 right-6 md:right-[130px] z-20 p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-all hover:scale-110"
+          title="Edit Hero Collections"
+        >
+          <Pencil className="w-4 h-4 text-gray-700" />
+        </button>
+      )}
       <div className="embla overflow-hidden rounded-xl md:rounded-2xl" ref={emblaRef}>
         <div className="embla__container">
           {collections.map((collection, index) => (

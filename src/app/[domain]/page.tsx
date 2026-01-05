@@ -14,6 +14,7 @@ import {
   getTrendingProducts
 } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
+import EditorWrapper from '@/components/editor/EditorWrapper'
 import HeroCarousel from '@/components/sections/HeroCarousel'
 import CategoriesSection from '@/components/sections/CategoriesSection'
 import ProductsSection from '@/components/sections/ProductsSection'
@@ -96,96 +97,101 @@ export default async function StorePage({ params }: PageProps) {
   const isDark = theme === 'dark'
 
   return (
-    <WebsiteLayout 
-      user={user} 
-      theme={theme}
-      categories={categoriesArray}
-      collections={collectionsArray}
-    >
-      {/* 1. Hero Carousel - matches Flutter order */}
-      {heroCollections.length > 0 && (
-        <HeroCarousel 
-          collections={heroCollections} 
-          isDark={isDark} 
-        />
-      )}
-
-      {/* 2. Categories - matches Flutter CategoryCarousel */}
-      {categoriesArray.length > 0 && (
-        <CategoriesSection 
-          categories={categoriesArray} 
-          isDark={isDark}
-          shopDomain={params.domain}
-        />
-      )}
-
-      <div className="h-10" /> {/* Spacing */}
-
-      {/* 3. Products Section (New Arrivals) - matches Flutter ProductShowcase */}
-      {products.length > 0 && (
-        <ProductsSection 
-          products={products} 
-          isDark={isDark}
-          title="New Arrivals"
-          shopDomain={params.domain}
-        />
-      )}
-
-      <div className="h-16" /> {/* Spacing */}
-
-      {/* 4. Shop By Recipient (Him/Her) - matches Flutter ShopByRecipientSection */}
-      <ShopByRecipientSection 
-        isDark={isDark}
-        shopDomain={params.domain}
-      />
-
-      <div className="h-16" /> {/* Spacing */}
-
-      {/* 5. Trending Collections - matches Flutter FourBoxStaggeredSection */}
-      {trendingCollections.length > 0 && (
-        <TrendingSection 
-          collections={trendingCollections} 
-          isDark={isDark}
-        />
-      )}
-
-      <div className="h-16" /> {/* Spacing */}
-
-      {/* 6. Trending Products - matches Flutter TrendingProductsShowcase */}
-      {trendingProducts.length > 0 && (
-        <TrendingProductsSection 
-          products={trendingProducts} 
-          isDark={isDark}
-          shopDomain={params.domain}
-        />
-      )}
-
-      <div className="h-10" /> {/* Spacing */}
-
-      {/* 7. Best Collections - matches Flutter FeaturedCollectionsShowcase */}
-      {bestCollections.length > 0 && (
-        <BestCollectionsSection 
-          collections={bestCollections} 
-          isDark={isDark}
-        />
-      )}
-
-      {/* 8. Testimonials - matches Flutter JewelleryTestimonialSection */}
-      {testimonials.length > 0 && (
-        <div className="mt-10">
-          <TestimonialsSection 
-            testimonials={testimonials} 
-            isDark={isDark} 
+    <EditorWrapper shopId={user.id}>
+      <WebsiteLayout 
+        user={user} 
+        theme={theme}
+        categories={categoriesArray}
+        collections={collectionsArray}
+      >
+        {/* 1. Hero Carousel - matches Flutter order */}
+        {heroCollections.length > 0 && (
+          <HeroCarousel 
+            collections={heroCollections} 
+            isDark={isDark}
+            shopDomain={params.domain}
           />
-        </div>
-      )}
+        )}
 
-      {/* Footer */}
-      <Footer 
-        user={user}
-        template={template ? { ...template, footer: footerData } : null}
-        isDark={isDark}
-      />
-    </WebsiteLayout>
+        {/* 2. Categories - matches Flutter CategoryCarousel */}
+        {categoriesArray.length > 0 && (
+          <CategoriesSection 
+            categories={categoriesArray} 
+            isDark={isDark}
+            shopDomain={params.domain}
+          />
+        )}
+
+        <div className="h-10" /> {/* Spacing */}
+
+        {/* 3. Products Section (New Arrivals) - matches Flutter ProductShowcase */}
+        {products.length > 0 && (
+          <ProductsSection 
+            products={products} 
+            isDark={isDark}
+            title="New Arrivals"
+            shopDomain={params.domain}
+          />
+        )}
+
+        <div className="h-16" /> {/* Spacing */}
+
+        {/* 4. Shop By Recipient (Him/Her) - matches Flutter ShopByRecipientSection */}
+        <ShopByRecipientSection 
+          isDark={isDark}
+          shopDomain={params.domain}
+        />
+
+        <div className="h-16" /> {/* Spacing */}
+
+        {/* 5. Trending Collections - matches Flutter FourBoxStaggeredSection */}
+        {trendingCollections.length > 0 && (
+          <TrendingSection 
+            collections={trendingCollections} 
+            isDark={isDark}
+            shopDomain={params.domain}
+          />
+        )}
+
+        <div className="h-16" /> {/* Spacing */}
+
+        {/* 6. Trending Products - matches Flutter TrendingProductsShowcase */}
+        {trendingProducts.length > 0 && (
+          <TrendingProductsSection 
+            products={trendingProducts} 
+            isDark={isDark}
+            shopDomain={params.domain}
+          />
+        )}
+
+        <div className="h-10" /> {/* Spacing */}
+
+        {/* 7. Best Collections - matches Flutter FeaturedCollectionsShowcase */}
+        {bestCollections.length > 0 && (
+          <BestCollectionsSection 
+            collections={bestCollections} 
+            isDark={isDark}
+            shopDomain={params.domain}
+          />
+        )}
+
+        {/* 8. Testimonials - matches Flutter JewelleryTestimonialSection */}
+        {testimonials.length > 0 && (
+          <div className="mt-10">
+            <TestimonialsSection 
+              testimonials={testimonials} 
+              isDark={isDark} 
+            />
+          </div>
+        )}
+
+        {/* Footer */}
+        <Footer 
+          user={user}
+          template={template ? { ...template, footer: footerData } : null}
+          isDark={isDark}
+        />
+      </WebsiteLayout>
+    </EditorWrapper>
   )
 }

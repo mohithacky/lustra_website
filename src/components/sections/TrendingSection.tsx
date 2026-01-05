@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { cn, getImageUrl } from '@/lib/utils'
+import { Pencil } from 'lucide-react'
+import { useEditor } from '@/contexts/EditorContext'
 
 interface TrendingCollection {
   label: string
@@ -13,9 +16,12 @@ interface TrendingCollection {
 interface TrendingSectionProps {
   collections: TrendingCollection[]
   isDark: boolean
+  shopDomain?: string
 }
 
-export default function TrendingSection({ collections, isDark }: TrendingSectionProps) {
+export default function TrendingSection({ collections, isDark, shopDomain }: TrendingSectionProps) {
+  const router = useRouter()
+  const { canEditCollections } = useEditor()
   if (!collections.length) return null
 
   // Ensure we have exactly 4 items for the staggered grid like Flutter
@@ -30,7 +36,7 @@ export default function TrendingSection({ collections, isDark }: TrendingSection
       <div className="mx-auto" style={{ maxWidth: '1400px' }}>
         <div className="px-4 md:px-8 lg:px-[150px]">
           {/* Section Header - matches Flutter sectionHeadingStyle */}
-          <div className="text-center mb-5">
+          <div className="text-center mb-5 relative">
             <span className={cn(
               'text-xs font-bold tracking-[0.15em] uppercase',
               isDark ? 'text-white/70' : 'text-gray-500'
@@ -43,6 +49,16 @@ export default function TrendingSection({ collections, isDark }: TrendingSection
             )}>
               Discover what shoppers are loving right now
             </p>
+            {/* Edit button for editor mode */}
+            {canEditCollections && (
+              <button
+                onClick={() => router.push(`/${shopDomain}/editor/trending`)}
+                className="absolute top-0 right-0 p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-all hover:scale-110"
+                title="Edit Trending Collections"
+              >
+                <Pencil className="w-4 h-4 text-gray-700" />
+              </button>
+            )}
           </div>
 
           {/* StaggeredGrid.count with crossAxisCount: 2

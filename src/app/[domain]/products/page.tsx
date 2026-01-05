@@ -80,6 +80,7 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
         products={products}
         isDark={isDark}
         shopDomain={params.domain}
+        shopId={user.id}
         title={pageTitle}
         categories={Object.keys(categoriesMap)}
         collections={Object.keys(collectionsMap)}
