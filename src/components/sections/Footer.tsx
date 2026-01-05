@@ -20,6 +20,23 @@ interface FooterProps {
   isDark: boolean
 }
 
+// Helper function to get the correct href for footer links
+function getFooterLinkHref(linkText: string): string {
+  const lowerLink = linkText.toLowerCase()
+  
+  // Map common footer link texts to their routes
+  if (lowerLink.includes('privacy')) return '/privacy'
+  if (lowerLink.includes('terms') || lowerLink.includes('service')) return '/terms'
+  if (lowerLink.includes('about')) return '/about'
+  if (lowerLink.includes('refund') || lowerLink.includes('return')) return '/refund'
+  if (lowerLink.includes('contact')) return '#contact'
+  if (lowerLink.includes('faq')) return '/faq'
+  if (lowerLink.includes('shipping')) return '/shipping'
+  
+  // For collection/category links, convert to route
+  return `/${lowerLink.replace(/\s+/g, '-')}`
+}
+
 export default function Footer({ user, template, isDark }: FooterProps) {
   const footerData = template?.footer as Record<string, string[]> | undefined
 
@@ -97,7 +114,7 @@ export default function Footer({ user, template, isDark }: FooterProps) {
                   {links.map((link, index) => (
                     <li key={index}>
                       <Link 
-                        href="#"
+                        href={getFooterLinkHref(link)}
                         className="text-gray-400 hover:text-gold-400 text-sm transition-colors"
                       >
                         {link}

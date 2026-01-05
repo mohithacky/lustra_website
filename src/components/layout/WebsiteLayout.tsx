@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu, X, Search, Heart, ShoppingCart, ChevronDown, LogIn } from 'lucide-react'
+import { Menu, X, Search, Heart, ShoppingCart, ChevronDown, LogIn, LogOut, User } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 import { Category, Collection } from '@/types/database'
+import PhoneLoginDialog from '@/components/auth/PhoneLoginDialog'
 
 interface WebsiteLayoutProps {
   children: React.ReactNode
@@ -20,6 +21,13 @@ interface WebsiteLayoutProps {
   collections: Collection[]
 }
 
+interface CustomerSession {
+  id: string
+  name?: string
+  phone: string
+  shopId: string
+}
+
 export default function WebsiteLayout({ 
   children, 
   user, 
@@ -29,13 +37,45 @@ export default function WebsiteLayout({
 }: WebsiteLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+  const [showLoginDialog, setShowLoginDialog] = useState(false)
+  const [customer, setCustomer] = useState<CustomerSession | null>(null)
 
   const isDark = theme === 'dark'
   const shopDomain = user.shop_domain || ''
 
+  // Load customer from localStorage on mount
+  useEffect(() => {
+    const savedCustomer = localStorage.getItem('websiteCustomer')
+    if (savedCustomer) {
+      try {
+        const parsed = JSON.parse(savedCustomer)
+        // Only use if it's for the same shop
+        if (parsed.shopId === user.id) {
+          setCustomer(parsed)
+        }
+      } catch (e) {
+        console.error('Error parsing customer session:', e)
+      }
+    }
+  }, [user.id])
+
   useEffect(() => {
     document.body.className = theme
   }, [theme])
+
+  const handleLoginSuccess = (customerId: string, customerName: string) => {
+    setCustomer({
+      id: customerId,
+      name: customerName,
+      phone: '',
+      shopId: user.id,
+    })
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('websiteCustomer')
+    setCustomer(null)
+  }
 
   // Navigation items matching Flutter AppBar
   const navItems = [
@@ -124,14 +164,39 @@ export default function WebsiteLayout({
                 </div>
               ))}
 
-              {/* Login Button - matches Flutter canShowCustomerLogin */}
-              <button className={cn(
-                'flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors',
-                isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
-              )}>
-                <LogIn className="w-5 h-5" />
-                <span>Login</span>
-              </button>
+              {/* Login/Logout Button - matches Flutter canShowCustomerLogin */}
+              {customer ? (
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    'text-sm font-medium',
+                    isDark ? 'text-gray-300' : 'text-gray-600'
+                  )}>
+                    <User className="w-4 h-4 inline mr-1" />
+                    {customer.name || 'Customer'}
+                  </span>
+                  <button 
+                    onClick={handleLogout}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors',
+                      isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
+                    )}
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setShowLoginDialog(true)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors',
+                    isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
+                  )}
+                >
+                  <LogIn className="w-5 h-5" />
+                  <span>Login</span>
+                </button>
+              )}
             </div>
 
             {/* Right Actions - matches Flutter actions */}
@@ -285,6 +350,16 @@ export default function WebsiteLayout({
       <main>
         {children}
       </main>
+
+      {/* Phone Login Dialog */}
+      <PhoneLoginDialog
+        isOpen={showLoginDialog}
+        onClose={() => setShowLoginDialog(false)}
+        onSuccess={handleLoginSuccess}
+        shopName={user.shop_name}
+        shopId={user.id}
+        isDark={isDark}
+      />
     </div>
   )
 }

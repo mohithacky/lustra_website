@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { sendOtp, verifyOtp, checkPhoneExists, CustomerData } from '@/lib/api'
 
 interface PhoneLoginDialogProps {
   isOpen: boolean
@@ -50,27 +51,27 @@ export default function PhoneLoginDialog({
     setError(null)
 
     try {
-      // Call API to send OTP
-      const response = await fetch('/api/auth/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: phoneNumber,
-          shopId,
-          isSignup: isSignupMode,
-        }),
-      })
+      // For login mode, check if phone exists first
+      if (!isSignupMode) {
+        const exists = await checkPhoneExists(phoneNumber, shopId)
+        if (!exists) {
+          setError('Phone number not registered. Please sign up first.')
+          setIsSendingOtp(false)
+          return
+        }
+      }
 
-      const data = await response.json()
-
-      if (response.ok) {
+      // Use Twilio backend to send OTP
+      const success = await sendOtp(phoneNumber, shopId)
+      if (success) {
         setCodeSent(true)
         setNormalizedPhone(phoneNumber)
       } else {
-        setError(data.error || 'Failed to send OTP. Please try again.')
+        setError('Failed to send OTP. Please try again.')
       }
     } catch (e) {
-      setError('Failed to send OTP. Please try again.')
+      const errorMessage = e instanceof Error ? e.message : 'Failed to send OTP. Please try again.'
+      setError(errorMessage)
     } finally {
       setIsSendingOtp(false)
     }
@@ -86,35 +87,29 @@ export default function PhoneLoginDialog({
     setError(null)
 
     try {
-      // Call API to verify OTP
-      const response = await fetch('/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: normalizedPhone,
-          otp,
-          shopId,
-          name: isSignupMode ? name.trim() : undefined,
-        }),
-      })
+      // Use Twilio backend to verify OTP and get customer data
+      const customer: CustomerData = await verifyOtp(
+        normalizedPhone,
+        otp,
+        shopId,
+        isSignupMode ? name.trim() : undefined
+      )
 
-      const data = await response.json()
-
-      if (response.ok) {
-        // Store customer in localStorage
-        localStorage.setItem('websiteCustomer', JSON.stringify({
-          id: data.customerId,
-          name: data.customerName,
-          phone: normalizedPhone,
-          shopId,
-        }))
-        onSuccess(data.customerId, data.customerName)
-        onClose()
-      } else {
-        setError(data.error || 'Invalid OTP. Please try again.')
-      }
+      // Store customer in localStorage (matching Flutter's approach)
+      localStorage.setItem('websiteCustomer', JSON.stringify({
+        id: customer.id,
+        twilio_uid: customer.twilio_uid,
+        name: customer.name,
+        phone: customer.phone_number,
+        email: customer.email,
+        shopId,
+      }))
+      
+      onSuccess(customer.id, customer.name || '')
+      onClose()
     } catch (e) {
-      setError('Failed to verify OTP. Please try again.')
+      const errorMessage = e instanceof Error ? e.message : 'Failed to verify OTP. Please try again.'
+      setError(errorMessage)
     } finally {
       setIsVerifyingOtp(false)
     }
