@@ -17,14 +17,18 @@ export function middleware(request: NextRequest) {
   
   console.log(`[Middleware] hostname: ${hostname}, shopDomain: ${shopDomain}, path: ${url.pathname}`)
   
-  // If we have a subdomain and we're at the root, rewrite to the dynamic store page
+  // If we have a subdomain, rewrite to include it in the path
   if (shopDomain) {
-    // Rewrite to /[domain] page with the subdomain
-    url.pathname = `/${shopDomain}${url.pathname === '/' ? '' : url.pathname}`
+    // For subdomain-based routing (production)
+    // mohitjewellers.lustrai.in/products -> /mohitjewellers/products
+    const newPath = url.pathname === '/' ? `/${shopDomain}` : `/${shopDomain}${url.pathname}`
+    url.pathname = newPath
+    console.log(`[Middleware] Rewriting to: ${newPath}`)
     return NextResponse.rewrite(url)
   }
   
-  // No subdomain - continue with normal routing (path-based)
+  // No subdomain - path-based routing works as-is
+  // localhost:3001/mohitjewellers/products -> /[domain]/products (Next.js handles this)
   return NextResponse.next()
 }
 
