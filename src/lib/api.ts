@@ -146,19 +146,35 @@ export async function addToCart(
   selectedVariant?: Record<string, unknown>
 ): Promise<boolean> {
   try {
-    const response = await fetch(`${BACKEND_URL}/cart/${shopId}/${customerId}`, {
+    const url = `${BACKEND_URL}/cart/${shopId}/${customerId}`
+    const body = {
+      productId,
+      quantity,
+      ...(selectedVariant && { selectedVariant }),
+    }
+    
+    console.log('[API addToCart] Request:', { url, body })
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productId,
-        quantity,
-        ...(selectedVariant && { selectedVariant }),
-      }),
+      body: JSON.stringify(body),
     })
+
+    console.log('[API addToCart] Response:', { 
+      status: response.status, 
+      ok: response.ok,
+      statusText: response.statusText 
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[API addToCart] Error response:', errorText)
+    }
 
     return response.ok
   } catch (e) {
-    console.error('Error adding to cart:', e)
+    console.error('[API addToCart] Exception:', e)
     return false
   }
 }

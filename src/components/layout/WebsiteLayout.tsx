@@ -213,20 +213,26 @@ export default function WebsiteLayout({
               </Link>
               
               {/* Wishlist - matches Flutter favorite_border icon */}
-              <button className={cn(
-                'p-2 transition-colors',
-                isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
-              )}>
+              <Link
+                href={`/${shopDomain}/wishlist`}
+                className={cn(
+                  'p-2 transition-colors',
+                  isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
+                )}
+              >
                 <Heart className="w-5 h-5" />
-              </button>
+              </Link>
               
               {/* Cart - matches Flutter shopping_cart_outlined icon */}
-              <button className={cn(
-                'p-2 transition-colors',
-                isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
-              )}>
+              <Link
+                href={`/${shopDomain}/cart`}
+                className={cn(
+                  'p-2 transition-colors',
+                  isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
+                )}
+              >
                 <ShoppingCart className="w-5 h-5" />
-              </button>
+              </Link>
             </div>
           </div>
         </nav>
