@@ -14,9 +14,10 @@ interface BestCollection {
 interface BestCollectionsSectionProps {
   collections: BestCollection[]
   isDark: boolean
+  shopDomain?: string
 }
 
-export default function BestCollectionsSection({ collections, isDark }: BestCollectionsSectionProps) {
+export default function BestCollectionsSection({ collections, isDark, shopDomain = '' }: BestCollectionsSectionProps) {
   if (!collections.length) return null
 
   return (
@@ -49,6 +50,7 @@ export default function BestCollectionsSection({ collections, isDark }: BestColl
               collection={collection}
               reverse={index % 2 === 1}
               isDark={isDark}
+              shopDomain={shopDomain}
             />
           ))}
         </div>
@@ -57,10 +59,11 @@ export default function BestCollectionsSection({ collections, isDark }: BestColl
   )
 }
 
-function FeaturedCollectionRow({ collection, reverse, isDark }: {
+function FeaturedCollectionRow({ collection, reverse, isDark, shopDomain }: {
   collection: BestCollection
   reverse: boolean
   isDark: boolean
+  shopDomain: string
 }) {
   const [isHovered, setIsHovered] = useState(false)
 
@@ -71,7 +74,7 @@ function FeaturedCollectionRow({ collection, reverse, isDark }: {
     )}>
       {/* Image Card - matches Flutter _ImageCard */}
       <Link
-        href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+        href={`/${shopDomain}/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
         className="flex-1"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -113,7 +116,7 @@ function FeaturedCollectionRow({ collection, reverse, isDark }: {
           </p>
         )}
         <Link
-          href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+          href={`/${shopDomain}/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
           className="inline-flex items-center text-gold-500 font-bold text-sm hover:text-gold-600 transition-colors"
         >
           Explore Collection

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu, X, Search, ShoppingBag, User, ChevronDown } from 'lucide-react'
+import { Menu, X, Search, Heart, ShoppingCart, ChevronDown, LogIn } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 import { Category, Collection } from '@/types/database'
 
@@ -28,28 +28,19 @@ export default function WebsiteLayout({
   collections 
 }: WebsiteLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
   const isDark = theme === 'dark'
+  const shopDomain = user.shop_domain || ''
 
   useEffect(() => {
     document.body.className = theme
   }, [theme])
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
+  // Navigation items matching Flutter AppBar
   const navItems = [
-    { label: 'Collections', href: '/collections', items: collections },
-    { label: 'Categories', href: '/categories', items: categories },
-    { label: 'New Arrivals', href: '/products?sort=newest' },
-    { label: 'Contact', href: '/contact' },
+    { label: 'Collections', key: 'collections', items: collections.map(c => ({ name: c.name, href: `/${shopDomain}/collections/${c.name.toLowerCase().replace(/\s+/g, '-')}` })) },
+    { label: 'Categories', key: 'categories', items: categories.map(c => ({ name: c.name, href: `/${shopDomain}/categories/${c.name.toLowerCase().replace(/\s+/g, '-')}` })) },
   ]
 
   return (
@@ -57,73 +48,72 @@ export default function WebsiteLayout({
       'min-h-screen',
       isDark ? 'bg-[#080808] text-white' : 'bg-offwhite text-black'
     )}>
-      {/* Navigation */}
+      {/* Navigation - matches Flutter SliverAppBar */}
       <header className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        isScrolled 
-          ? isDark 
-            ? 'bg-black/90 backdrop-blur-md shadow-lg' 
-            : 'bg-white/90 backdrop-blur-md shadow-lg'
-          : 'bg-transparent'
+        'sticky top-0 z-50',
+        isDark ? 'bg-[#121212]' : 'bg-white'
       )}>
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Logo */}
-            <Link href={`/${user.shop_domain}`} className="flex items-center gap-3">
-              {user.logo_url ? (
+        <nav className="px-4">
+          <div className="flex items-center justify-between h-14 md:h-16">
+            {/* Left: Menu Button (Mobile) */}
+            <button
+              className="p-2 md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+
+            {/* Center: Logo + Shop Name - matches Flutter centerTitle */}
+            <Link href={`/${shopDomain}`} className="flex items-center gap-2 mx-auto md:mx-0">
+              {user.logo_url && (
                 <Image
                   src={getImageUrl(user.logo_url)}
                   alt={user.shop_name || 'Store'}
-                  width={40}
-                  height={40}
+                  width={32}
+                  height={32}
                   className="rounded-full object-cover"
                 />
-              ) : (
-                <div className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center font-display text-lg',
-                  isDark ? 'bg-gold-500 text-black' : 'bg-gold-500 text-white'
-                )}>
-                  {user.shop_name?.charAt(0) || 'S'}
-                </div>
               )}
-              <span className="font-display text-xl font-semibold hidden sm:block">
-                {user.shop_name || 'Store'}
+              <span className={cn(
+                'font-display text-lg md:text-xl font-bold tracking-wide',
+                isDark ? 'text-white' : 'text-black'
+              )}>
+                {user.shop_name || 'YOUR BRAND'}
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-8">
+            {/* Desktop Navigation Items - matches Flutter topNavItems */}
+            <div className="hidden md:flex items-center gap-1">
               {navItems.map((item) => (
                 <div
-                  key={item.label}
+                  key={item.key}
                   className="relative"
-                  onMouseEnter={() => item.items && setActiveDropdown(item.label)}
+                  onMouseEnter={() => item.items.length > 0 && setActiveDropdown(item.key)}
                   onMouseLeave={() => setActiveDropdown(null)}
                 >
-                  <Link
-                    href={`/${user.shop_domain}${item.href}`}
+                  <button
                     className={cn(
-                      'flex items-center gap-1 text-sm font-medium tracking-wide transition-colors',
-                      isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
+                      'flex items-center gap-1 px-3 py-2 text-sm font-semibold transition-colors',
+                      isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
                     )}
                   >
                     {item.label}
-                    {item.items && <ChevronDown className="w-4 h-4" />}
-                  </Link>
+                    <ChevronDown className="w-4 h-4 opacity-60" />
+                  </button>
 
-                  {/* Dropdown Menu */}
-                  {item.items && activeDropdown === item.label && (
+                  {/* Dropdown Menu - matches Flutter mega menu */}
+                  {item.items.length > 0 && activeDropdown === item.key && (
                     <div className={cn(
-                      'absolute top-full left-0 mt-2 w-64 rounded-lg shadow-xl py-2 animate-slide-down',
-                      isDark ? 'bg-zinc-900' : 'bg-white'
+                      'absolute top-full left-0 mt-0 min-w-[200px] rounded-lg shadow-xl py-2 z-50',
+                      isDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-white border border-gray-100'
                     )}>
                       {item.items.map((subItem) => (
                         <Link
-                          key={subItem.id}
-                          href={`/${user.shop_domain}${item.href}/${subItem.name.toLowerCase().replace(/\s+/g, '-')}`}
+                          key={subItem.name}
+                          href={subItem.href}
                           className={cn(
-                            'block px-4 py-2 text-sm transition-colors',
-                            isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-50'
+                            'block px-4 py-2.5 text-sm font-medium transition-colors',
+                            isDark ? 'text-gray-300 hover:bg-zinc-800 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-black'
                           )}
                         >
                           {subItem.name}
@@ -133,85 +123,166 @@ export default function WebsiteLayout({
                   )}
                 </div>
               ))}
+
+              {/* Login Button - matches Flutter canShowCustomerLogin */}
+              <button className={cn(
+                'flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors',
+                isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
+              )}>
+                <LogIn className="w-5 h-5" />
+                <span>Login</span>
+              </button>
             </div>
 
-            {/* Right Actions */}
-            <div className="flex items-center gap-4">
-              <button className={cn(
-                'p-2 transition-colors',
-                isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
-              )}>
-                <Search className="w-5 h-5" />
-              </button>
-              <button className={cn(
-                'p-2 transition-colors',
-                isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
-              )}>
-                <User className="w-5 h-5" />
-              </button>
-              <button className={cn(
-                'p-2 transition-colors relative',
-                isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
-              )}>
-                <ShoppingBag className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-gold-500 text-white text-xs rounded-full flex items-center justify-center">
-                  0
-                </span>
-              </button>
-
-              {/* Mobile Menu Button */}
-              <button
-                className="md:hidden p-2"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+            {/* Right Actions - matches Flutter actions */}
+            <div className="flex items-center gap-1">
+              {/* Search */}
+              <Link
+                href={`/${shopDomain}/products`}
+                className={cn(
+                  'p-2 transition-colors',
+                  isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
+                )}
               >
-                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                <Search className="w-5 h-5" />
+              </Link>
+              
+              {/* Wishlist - matches Flutter favorite_border icon */}
+              <button className={cn(
+                'p-2 transition-colors',
+                isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
+              )}>
+                <Heart className="w-5 h-5" />
+              </button>
+              
+              {/* Cart - matches Flutter shopping_cart_outlined icon */}
+              <button className={cn(
+                'p-2 transition-colors',
+                isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
+              )}>
+                <ShoppingCart className="w-5 h-5" />
               </button>
             </div>
           </div>
         </nav>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu - matches Flutter drawer */}
         {isMenuOpen && (
           <div className={cn(
-            'md:hidden absolute top-full left-0 right-0 shadow-xl animate-slide-down',
-            isDark ? 'bg-zinc-900' : 'bg-white'
+            'md:hidden fixed inset-0 z-50',
           )}>
-            <div className="px-4 py-4 space-y-4">
-              {navItems.map((item) => (
-                <div key={item.label}>
-                  <Link
-                    href={`/${user.shop_domain}${item.href}`}
-                    className="block py-2 font-medium"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                  {item.items && (
-                    <div className="pl-4 space-y-2">
-                      {item.items.slice(0, 5).map((subItem) => (
-                        <Link
-                          key={subItem.id}
-                          href={`/${user.shop_domain}${item.href}/${subItem.name.toLowerCase().replace(/\s+/g, '-')}`}
-                          className={cn(
-                            'block py-1 text-sm',
-                            isDark ? 'text-gray-400' : 'text-gray-600'
-                          )}
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          {subItem.name}
-                        </Link>
-                      ))}
-                    </div>
+            {/* Backdrop */}
+            <div 
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setIsMenuOpen(false)}
+            />
+            
+            {/* Drawer */}
+            <div className={cn(
+              'absolute top-0 left-0 bottom-0 w-72 shadow-xl overflow-y-auto',
+              isDark ? 'bg-zinc-900' : 'bg-white'
+            )}>
+              {/* Drawer Header */}
+              <div className={cn(
+                'flex items-center justify-between p-4 border-b',
+                isDark ? 'border-zinc-800' : 'border-gray-100'
+              )}>
+                <div className="flex items-center gap-2">
+                  {user.logo_url && (
+                    <Image
+                      src={getImageUrl(user.logo_url)}
+                      alt={user.shop_name || 'Store'}
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
+                    />
                   )}
+                  <span className="font-display text-lg font-bold">
+                    {user.shop_name || 'Store'}
+                  </span>
                 </div>
-              ))}
+                <button onClick={() => setIsMenuOpen(false)} className="p-2">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Drawer Content */}
+              <div className="p-4 space-y-4">
+                {/* Home Link */}
+                <Link
+                  href={`/${shopDomain}`}
+                  className="block py-2 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Home
+                </Link>
+
+                {/* Collections */}
+                <div>
+                  <div className={cn(
+                    'py-2 font-semibold text-sm uppercase tracking-wide',
+                    isDark ? 'text-gray-400' : 'text-gray-500'
+                  )}>
+                    Collections
+                  </div>
+                  <div className="space-y-1">
+                    {collections.slice(0, 8).map((collection) => (
+                      <Link
+                        key={collection.id}
+                        href={`/${shopDomain}/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        className={cn(
+                          'block py-2 text-sm',
+                          isDark ? 'text-gray-300' : 'text-gray-600'
+                        )}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {collection.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Categories */}
+                <div>
+                  <div className={cn(
+                    'py-2 font-semibold text-sm uppercase tracking-wide',
+                    isDark ? 'text-gray-400' : 'text-gray-500'
+                  )}>
+                    Categories
+                  </div>
+                  <div className="space-y-1">
+                    {categories.slice(0, 8).map((category) => (
+                      <Link
+                        key={category.id}
+                        href={`/${shopDomain}/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        className={cn(
+                          'block py-2 text-sm',
+                          isDark ? 'text-gray-300' : 'text-gray-600'
+                        )}
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {category.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* All Products */}
+                <Link
+                  href={`/${shopDomain}/products`}
+                  className="block py-2 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  All Products
+                </Link>
+              </div>
             </div>
           </div>
         )}
       </header>
 
       {/* Main Content */}
-      <main className="pt-16 md:pt-20">
+      <main>
         {children}
       </main>
     </div>

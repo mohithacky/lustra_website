@@ -145,7 +145,8 @@ export default async function StorePage({ params }: PageProps) {
       {trendingCollections.length > 0 && (
         <TrendingSection 
           collections={trendingCollections} 
-          isDark={isDark} 
+          isDark={isDark}
+          shopDomain={params.domain}
         />
       )}
 
@@ -166,7 +167,8 @@ export default async function StorePage({ params }: PageProps) {
       {bestCollections.length > 0 && (
         <BestCollectionsSection 
           collections={bestCollections} 
-          isDark={isDark} 
+          isDark={isDark}
+          shopDomain={params.domain}
         />
       )}
 
