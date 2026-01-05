@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
 import { cn, getImageUrl } from '@/lib/utils'
@@ -64,9 +65,12 @@ export default function HeroCarousel({ collections, isDark }: HeroCarouselProps)
                   <p className="text-white/90 text-sm md:text-base mb-4 md:mb-6">
                     Handcrafted pieces for every moment.
                   </p>
-                  <button className="bg-gold-500 hover:bg-gold-600 text-white px-5 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold transition-colors">
+                  <Link 
+                    href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+                    className="inline-block bg-gold-500 hover:bg-gold-600 text-white px-5 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold transition-colors"
+                  >
                     Explore Collection
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

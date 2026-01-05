@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { cn, getImageUrl, formatPrice } from '@/lib/utils'
-import { Heart, Share2, ShoppingCart, ShoppingBag, PhoneCall, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Heart, Share2, ShoppingCart, ShoppingBag, PhoneCall, ChevronLeft, ChevronRight, MessageSquare, Loader2 } from 'lucide-react'
+import { addToCart, addToWishlist, removeFromWishlist, isInWishlist, isInCart } from '@/lib/api'
+import { createClient } from '@supabase/supabase-js'
 
 interface Product {
   id: string
@@ -33,6 +35,12 @@ interface ProductDetailProps {
   onLoginRequired?: () => void
 }
 
+// Supabase client for direct operations (matching Flutter)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export default function ProductDetail({
   product,
   relatedProducts,
@@ -46,7 +54,48 @@ export default function ProductDetail({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [showCallbackModal, setShowCallbackModal] = useState(false)
   const [callbackPhone, setCallbackPhone] = useState('')
+  const [callbackMessage, setCallbackMessage] = useState('')
+  const [callbackSubmitting, setCallbackSubmitting] = useState(false)
   const [callbackSubmitted, setCallbackSubmitted] = useState(false)
+  const [isWishlisted, setIsWishlisted] = useState(false)
+  const [isCarted, setIsCarted] = useState(false)
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false)
+
+  // Get customer from localStorage
+  const getCustomer = () => {
+    if (typeof window === 'undefined') return null
+    const saved = localStorage.getItem('websiteCustomer')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch {
+        return null
+      }
+    }
+    return null
+  }
+
+  // Check wishlist and cart status on mount
+  useEffect(() => {
+    const checkStatus = async () => {
+      const customer = getCustomer()
+      if (!customer || !shopId) return
+
+      const [wishlisted, carted] = await Promise.all([
+        isInWishlist(shopId, customer.id, product.id),
+        isInCart(shopId, customer.id, product.id)
+      ])
+      setIsWishlisted(wishlisted)
+      setIsCarted(carted)
+
+      // Pre-fill phone from customer data
+      if (customer.phone) {
+        setCallbackPhone(customer.phone.replace('+91', ''))
+      }
+    }
+    checkStatus()
+  }, [shopId, product.id])
   
   // Combine main image with additional images
   const allImages: string[] = []
@@ -66,26 +115,58 @@ export default function ProductDetail({
     setSelectedImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1))
   }
 
-  const handleBuyNow = () => {
-    // Check if user is logged in
-    const customer = localStorage.getItem('websiteCustomer')
+  const handleBuyNow = async () => {
+    const customer = getCustomer()
     if (!customer && onLoginRequired) {
       onLoginRequired()
       return
     }
-    // TODO: Implement buy now flow - add to cart and go to checkout
-    alert('Buy Now functionality - Coming soon!')
+    if (!shopId || !customer) return
+
+    // Add to cart and redirect to cart
+    setIsAddingToCart(true)
+    const success = await addToCart(shopId, customer.id, product.id)
+    setIsAddingToCart(false)
+    
+    if (success) {
+      window.location.href = '/cart'
+    }
   }
 
-  const handleAddToCart = () => {
-    // Check if user is logged in
-    const customer = localStorage.getItem('websiteCustomer')
+  const handleAddToCart = async () => {
+    const customer = getCustomer()
     if (!customer && onLoginRequired) {
       onLoginRequired()
       return
     }
-    // TODO: Implement add to cart
-    alert('Added to cart!')
+    if (!shopId || !customer) return
+
+    setIsAddingToCart(true)
+    const success = await addToCart(shopId, customer.id, product.id)
+    setIsAddingToCart(false)
+    
+    if (success) {
+      setIsCarted(true)
+    }
+  }
+
+  const handleToggleWishlist = async () => {
+    const customer = getCustomer()
+    if (!customer && onLoginRequired) {
+      onLoginRequired()
+      return
+    }
+    if (!shopId || !customer) return
+
+    setIsTogglingWishlist(true)
+    if (isWishlisted) {
+      const success = await removeFromWishlist(shopId, customer.id, product.id)
+      if (success) setIsWishlisted(false)
+    } else {
+      const success = await addToWishlist(shopId, customer.id, product.id)
+      if (success) setIsWishlisted(true)
+    }
+    setIsTogglingWishlist(false)
   }
 
   const handleRequestCallback = async () => {
@@ -93,13 +174,41 @@ export default function ProductDetail({
       alert('Please enter a valid phone number')
       return
     }
-    // TODO: Save callback request to database
-    setCallbackSubmitted(true)
-    setTimeout(() => {
-      setShowCallbackModal(false)
-      setCallbackSubmitted(false)
-      setCallbackPhone('')
-    }, 2000)
+    if (!shopId) return
+
+    setCallbackSubmitting(true)
+    
+    try {
+      const customer = getCustomer()
+      const productImage = product.image_url || (product.images && product.images[0]) || null
+
+      // Insert callback request to Supabase (matching Flutter)
+      const { error } = await supabase.from('customer_callback_requests').insert({
+        product_id: product.id,
+        product_name: product.name,
+        product_image_url: productImage,
+        shop_id: shopId,
+        customer_id: customer?.id || null,
+        customer_phone: '+91' + callbackPhone,
+        message: callbackMessage.trim() || null,
+        status: 'pending',
+      })
+
+      if (error) throw error
+
+      setCallbackSubmitted(true)
+      setTimeout(() => {
+        setShowCallbackModal(false)
+        setCallbackSubmitted(false)
+        setCallbackPhone('')
+        setCallbackMessage('')
+      }, 2000)
+    } catch (e) {
+      console.error('Error submitting callback request:', e)
+      alert('Failed to submit request. Please try again.')
+    } finally {
+      setCallbackSubmitting(false)
+    }
   }
 
   return (
@@ -333,14 +442,24 @@ export default function ProductDetail({
 
               {/* Wishlist and Share */}
               <div className="flex gap-3 pt-2">
-                <button className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors border',
-                  isDark 
-                    ? 'border-zinc-700 text-white hover:bg-zinc-800' 
-                    : 'border-gray-300 text-black hover:bg-gray-50'
-                )}>
-                  <Heart className="w-5 h-5" />
-                  Wishlist
+                <button 
+                  onClick={handleToggleWishlist}
+                  disabled={isTogglingWishlist}
+                  className={cn(
+                    'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors border',
+                    isWishlisted
+                      ? 'border-red-500 text-red-500 bg-red-50 dark:bg-red-500/10'
+                      : isDark 
+                        ? 'border-zinc-700 text-white hover:bg-zinc-800' 
+                        : 'border-gray-300 text-black hover:bg-gray-50'
+                  )}
+                >
+                  {isTogglingWishlist ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Heart className={cn('w-5 h-5', isWishlisted && 'fill-current')} />
+                  )}
+                  {isWishlisted ? 'Wishlisted' : 'Wishlist'}
                 </button>
                 <button className={cn(
                   'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors border',
@@ -421,27 +540,52 @@ export default function ProductDetail({
                   <PhoneCall className="w-6 h-6 text-green-600" />
                 </div>
                 <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
-                  We&apos;ll call you back soon!
+                  Callback request submitted! We&apos;ll contact you soon.
                 </p>
               </div>
             ) : (
               <>
                 <p className={cn('text-sm mb-4', isDark ? 'text-gray-400' : 'text-gray-500')}>
-                  Enter your phone number and we&apos;ll call you back regarding {product.name}
+                  We&apos;ll call you back about this product.
                 </p>
-                <input
-                  type="tel"
-                  value={callbackPhone}
-                  onChange={(e) => setCallbackPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  placeholder="Enter your phone number"
-                  className={cn(
-                    'w-full px-4 py-3 rounded-xl border mb-4 outline-none focus:border-gold-500',
-                    isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-gray-50 border-gray-300 text-black'
-                  )}
-                />
-                <div className="flex gap-3">
+                <div className="space-y-3">
+                  <div className="relative">
+                    <PhoneCall className={cn(
+                      'absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5',
+                      isDark ? 'text-gray-500' : 'text-gray-400'
+                    )} />
+                    <input
+                      type="tel"
+                      value={callbackPhone}
+                      onChange={(e) => setCallbackPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      placeholder="Phone Number"
+                      className={cn(
+                        'w-full pl-11 pr-4 py-3 rounded-xl border outline-none focus:border-gold-500',
+                        isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-gray-50 border-gray-300 text-black'
+                      )}
+                    />
+                  </div>
+                  <div className="relative">
+                    <MessageSquare className={cn(
+                      'absolute left-3 top-3 w-5 h-5',
+                      isDark ? 'text-gray-500' : 'text-gray-400'
+                    )} />
+                    <textarea
+                      value={callbackMessage}
+                      onChange={(e) => setCallbackMessage(e.target.value)}
+                      placeholder="Message (Optional)"
+                      rows={3}
+                      className={cn(
+                        'w-full pl-11 pr-4 py-3 rounded-xl border outline-none focus:border-gold-500 resize-none',
+                        isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-gray-50 border-gray-300 text-black'
+                      )}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-4">
                   <button
                     onClick={() => setShowCallbackModal(false)}
+                    disabled={callbackSubmitting}
                     className={cn(
                       'flex-1 py-3 rounded-xl font-semibold border',
                       isDark ? 'border-zinc-700 text-white' : 'border-gray-300 text-black'
@@ -451,9 +595,17 @@ export default function ProductDetail({
                   </button>
                   <button
                     onClick={handleRequestCallback}
-                    className="flex-1 py-3 rounded-xl font-semibold bg-gold-500 text-white hover:bg-gold-600"
+                    disabled={callbackSubmitting}
+                    className="flex-1 py-3 rounded-xl font-semibold bg-gold-500 text-white hover:bg-gold-600 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    Submit
+                    {callbackSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      'Submit Request'
+                    )}
                   </button>
                 </div>
               </>

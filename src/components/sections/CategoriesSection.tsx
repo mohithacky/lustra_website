@@ -38,7 +38,7 @@ export default function CategoriesSection({ categories, isDark, shopDomain }: Ca
 
         {/* Categories - horizontal scroll matching Flutter CategoryCarousel */}
         {/* Flutter heights: mobile 130px, tablet 230px, desktop 260px */}
-        <div className="h-[130px] md:h-[230px] lg:h-[260px] overflow-x-auto">
+        <div className="h-[130px] md:h-[230px] lg:h-[260px] overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <div className="flex gap-2.5 h-full px-6 min-w-max">
             {categories.map((category) => (
               <CategoryItem
@@ -64,7 +64,7 @@ function CategoryItem({ category, isDark, shopDomain }: {
 
   return (
     <Link
-      href={`/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+      href={`/categories/${category.name.replace(/\s+/g, '-')}`}
       className="flex flex-col items-center justify-center mx-1.5"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

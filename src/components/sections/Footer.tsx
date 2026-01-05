@@ -24,17 +24,26 @@ interface FooterProps {
 function getFooterLinkHref(linkText: string): string {
   const lowerLink = linkText.toLowerCase()
   
-  // Map common footer link texts to their routes
+  // About section links
+  if (lowerLink === 'our story') return '/our-story'
+  if (lowerLink === 'our shop') return '/our-shop'
+  if (lowerLink === 'careers') return '/careers'
+  if (lowerLink === 'press') return '/press'
+  
+  // Customer Care section links
+  if (lowerLink === 'faqs') return '/faqs'
+  if (lowerLink === 'contact us') return '/contact'
+  if (lowerLink === 'shipping & returns') return '/shipping'
+  if (lowerLink === 'warranty') return '/warranty'
+  
+  // Legal links
   if (lowerLink.includes('privacy')) return '/privacy'
   if (lowerLink.includes('terms') || lowerLink.includes('service')) return '/terms'
-  if (lowerLink.includes('about')) return '/about'
   if (lowerLink.includes('refund') || lowerLink.includes('return')) return '/refund'
-  if (lowerLink.includes('contact')) return '#contact'
-  if (lowerLink.includes('faq')) return '/faq'
-  if (lowerLink.includes('shipping')) return '/shipping'
+  if (lowerLink.includes('about')) return '/about'
   
-  // For collection/category links, convert to route
-  return `/${lowerLink.replace(/\s+/g, '-')}`
+  // Shop section - links to categories
+  return `/categories/${lowerLink.replace(/\s+/g, '-')}`
 }
 
 export default function Footer({ user, template, isDark }: FooterProps) {
