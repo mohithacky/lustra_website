@@ -1,9 +1,15 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { cn, getImageUrl } from '@/lib/utils'
-import { BestCollection } from '@/types/database'
+
+interface BestCollection {
+  name: string
+  image: string
+  description?: string
+}
 
 interface BestCollectionsSectionProps {
   collections: BestCollection[]
@@ -15,67 +21,107 @@ export default function BestCollectionsSection({ collections, isDark }: BestColl
 
   return (
     <section className={cn(
-      'py-16 md:py-24',
+      'py-12 md:py-16',
       isDark ? 'bg-[#080808]' : 'bg-offwhite'
     )}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-12">
+      <div className="max-w-[1100px] mx-auto px-6">
+        {/* Section Header - matches Flutter */}
+        <div className="text-center mb-10">
           <span className={cn(
             'text-xs font-bold tracking-[0.2em] uppercase',
-            isDark ? 'text-gray-400' : 'text-gray-500'
+            isDark ? 'text-white/70' : 'text-gray-500'
           )}>
-            Curated For You
+            BEST COLLECTIONS
           </span>
-          <h2 className="font-display text-3xl md:text-4xl font-semibold mt-2">
-            Best Collections
+          <h2 className={cn(
+            'font-display text-2xl font-semibold mt-2',
+            isDark ? 'text-white' : 'text-black'
+          )}>
+            Featured Collections
           </h2>
         </div>
 
-        {/* Collections Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        {/* Collections - matches Flutter FeaturedCollectionsShowcase layout */}
+        <div className="space-y-8">
           {collections.map((collection, index) => (
-            <Link
+            <FeaturedCollectionRow
               key={index}
-              href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
-              className={cn(
-                'group relative overflow-hidden rounded-2xl aspect-[4/5]',
-                isDark ? 'bg-zinc-900' : 'bg-white shadow-lg'
-              )}
-            >
-              <Image
-                src={getImageUrl(collection.image)}
-                alt={collection.name}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              />
-              <div className={cn(
-                'absolute inset-0',
-                'bg-gradient-to-t from-black/70 via-black/20 to-transparent'
-              )} />
-              
-              {/* Content */}
-              <div className="absolute inset-x-0 bottom-0 p-6">
-                <h3 className="font-display text-2xl text-white font-semibold mb-2">
-                  {collection.name}
-                </h3>
-                {collection.description && (
-                  <p className="text-white/70 text-sm line-clamp-2 mb-4">
-                    {collection.description}
-                  </p>
-                )}
-                <span className="inline-flex items-center text-gold-400 text-sm font-medium group-hover:text-gold-300 transition-colors">
-                  Explore Collection
-                  <svg className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </span>
-              </div>
-            </Link>
+              collection={collection}
+              reverse={index % 2 === 1}
+              isDark={isDark}
+            />
           ))}
         </div>
       </div>
     </section>
+  )
+}
+
+function FeaturedCollectionRow({ collection, reverse, isDark }: {
+  collection: BestCollection
+  reverse: boolean
+  isDark: boolean
+}) {
+  const [isHovered, setIsHovered] = useState(false)
+
+  return (
+    <div className={cn(
+      'flex flex-col md:flex-row gap-6',
+      reverse && 'md:flex-row-reverse'
+    )}>
+      {/* Image Card - matches Flutter _ImageCard */}
+      <Link
+        href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+        className="flex-1"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div 
+          className={cn(
+            'relative aspect-video rounded-xl overflow-hidden transition-transform duration-300',
+            isHovered && 'scale-[1.03]'
+          )}
+        >
+          <Image
+            src={getImageUrl(collection.image)}
+            alt={collection.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 50vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        </div>
+      </Link>
+
+      {/* Description Card - matches Flutter _DescriptionCard */}
+      <div className={cn(
+        'flex-1 p-6 md:p-8 rounded-xl shadow-lg',
+        isDark ? 'bg-zinc-800' : 'bg-white'
+      )}>
+        <h3 className={cn(
+          'font-display text-xl md:text-2xl font-bold mb-4',
+          isDark ? 'text-white' : 'text-black'
+        )}>
+          {collection.name}
+        </h3>
+        {collection.description && (
+          <p className={cn(
+            'text-sm md:text-base leading-relaxed mb-6',
+            isDark ? 'text-gray-300' : 'text-gray-700'
+          )}>
+            {collection.description}
+          </p>
+        )}
+        <Link
+          href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+          className="inline-flex items-center text-gold-500 font-bold text-sm hover:text-gold-600 transition-colors"
+        >
+          Explore Collection
+          <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+      </div>
+    </div>
   )
 }

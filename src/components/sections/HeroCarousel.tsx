@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 import { HeroCollection } from '@/types/database'
 
@@ -19,14 +18,6 @@ export default function HeroCarousel({ collections, isDark }: HeroCarouselProps)
     [Autoplay({ delay: 5000, stopOnInteraction: false })]
   )
   const [selectedIndex, setSelectedIndex] = useState(0)
-
-  const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev()
-  }, [emblaApi])
-
-  const scrollNext = useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext()
-  }, [emblaApi])
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return
@@ -45,11 +36,14 @@ export default function HeroCarousel({ collections, isDark }: HeroCarouselProps)
   if (!collections.length) return null
 
   return (
-    <section className="relative w-full h-[60vh] md:h-[80vh] lg:h-screen overflow-hidden">
-      <div className="embla h-full" ref={emblaRef}>
-        <div className="embla__container h-full">
+    <section className="relative w-full px-4 md:px-[120px] pt-4 pb-10">
+      <div className="embla overflow-hidden rounded-xl md:rounded-2xl" ref={emblaRef}>
+        <div className="embla__container">
           {collections.map((collection, index) => (
-            <div key={collection.id} className="embla__slide relative h-full">
+            <div 
+              key={collection.id} 
+              className="embla__slide relative aspect-video md:aspect-[21/9]"
+            >
               <Image
                 src={getImageUrl(collection.image_url)}
                 alt={collection.name}
@@ -58,21 +52,19 @@ export default function HeroCarousel({ collections, isDark }: HeroCarouselProps)
                 priority={index === 0}
                 sizes="100vw"
               />
-              {/* Gradient Overlay */}
-              <div className={cn(
-                'absolute inset-0',
-                isDark 
-                  ? 'bg-gradient-to-t from-black/80 via-black/30 to-transparent'
-                  : 'bg-gradient-to-t from-black/60 via-black/20 to-transparent'
-              )} />
+              {/* Gradient Overlay - matches Flutter */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               
-              {/* Content */}
-              <div className="absolute inset-0 flex items-end justify-center pb-20 md:pb-32">
-                <div className="text-center text-white px-4">
-                  <h2 className="font-display text-3xl md:text-5xl lg:text-6xl font-semibold mb-4 animate-fade-in">
+              {/* Content - positioned at bottom left like Flutter */}
+              <div className="absolute inset-0 flex items-end">
+                <div className="p-6 md:p-12 lg:p-16 max-w-lg">
+                  <h2 className="font-display text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2 animate-fade-in">
                     {collection.name}
                   </h2>
-                  <button className="btn-gold rounded-none uppercase text-sm tracking-widest">
+                  <p className="text-white/90 text-sm md:text-base mb-4 md:mb-6">
+                    Handcrafted pieces for every moment.
+                  </p>
+                  <button className="bg-gold-500 hover:bg-gold-600 text-white px-5 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold transition-colors">
                     Explore Collection
                   </button>
                 </div>
@@ -82,38 +74,18 @@ export default function HeroCarousel({ collections, isDark }: HeroCarouselProps)
         </div>
       </div>
 
-      {/* Navigation Arrows */}
+      {/* Dots Indicator - matches Flutter's animated indicator */}
       {collections.length > 1 && (
-        <>
-          <button
-            onClick={scrollPrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-full transition-colors"
-            aria-label="Previous slide"
-          >
-            <ChevronLeft className="w-6 h-6 text-white" />
-          </button>
-          <button
-            onClick={scrollNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-full transition-colors"
-            aria-label="Next slide"
-          >
-            <ChevronRight className="w-6 h-6 text-white" />
-          </button>
-        </>
-      )}
-
-      {/* Dots Indicator */}
-      {collections.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+        <div className="flex justify-center gap-2 mt-4">
           {collections.map((_, index) => (
             <button
               key={index}
               onClick={() => emblaApi?.scrollTo(index)}
               className={cn(
-                'w-2 h-2 rounded-full transition-all',
+                'h-2 rounded-full transition-all duration-300',
                 index === selectedIndex
-                  ? 'w-8 bg-gold-500'
-                  : 'bg-white/50 hover:bg-white/80'
+                  ? 'w-6 bg-gold-500'
+                  : isDark ? 'w-2 bg-zinc-600' : 'w-2 bg-gray-400'
               )}
               aria-label={`Go to slide ${index + 1}`}
             />

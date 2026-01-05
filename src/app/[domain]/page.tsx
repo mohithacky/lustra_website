@@ -98,7 +98,7 @@ export default async function StorePage({ params }: PageProps) {
       categories={categoriesArray}
       collections={collectionsArray}
     >
-      {/* Hero Carousel */}
+      {/* 1. Hero Carousel - matches Flutter order */}
       {heroCollections.length > 0 && (
         <HeroCarousel 
           collections={heroCollections} 
@@ -106,15 +106,7 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
-      {/* Trending Collections */}
-      {trendingCollections.length > 0 && (
-        <TrendingSection 
-          collections={trendingCollections} 
-          isDark={isDark} 
-        />
-      )}
-
-      {/* Categories */}
+      {/* 2. Categories - matches Flutter CategoryCarousel */}
       {categoriesArray.length > 0 && (
         <CategoriesSection 
           categories={categoriesArray} 
@@ -123,15 +115,7 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
-      {/* Best Collections */}
-      {bestCollections.length > 0 && (
-        <BestCollectionsSection 
-          collections={bestCollections} 
-          isDark={isDark} 
-        />
-      )}
-
-      {/* Products Section */}
+      {/* 3. Products Section (New Arrivals) - matches Flutter ProductShowcase */}
       {products.length > 0 && (
         <ProductsSection 
           products={products} 
@@ -141,7 +125,23 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
-      {/* Testimonials */}
+      {/* 4. Trending Collections - matches Flutter FourBoxStaggeredSection */}
+      {trendingCollections.length > 0 && (
+        <TrendingSection 
+          collections={trendingCollections} 
+          isDark={isDark} 
+        />
+      )}
+
+      {/* 5. Best Collections - matches Flutter FeaturedCollectionsShowcase */}
+      {bestCollections.length > 0 && (
+        <BestCollectionsSection 
+          collections={bestCollections} 
+          isDark={isDark} 
+        />
+      )}
+
+      {/* 6. Testimonials - matches Flutter JewelleryTestimonialSection */}
       {testimonials.length > 0 && (
         <TestimonialsSection 
           testimonials={testimonials} 

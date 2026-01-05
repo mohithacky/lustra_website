@@ -3,7 +3,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { cn, getImageUrl } from '@/lib/utils'
-import { Category } from '@/types/database'
+
+interface Category {
+  id: string
+  name: string
+  image_url: string | null
+}
 
 interface CategoriesSectionProps {
   categories: Category[]
@@ -16,57 +21,61 @@ export default function CategoriesSection({ categories, isDark, shopDomain }: Ca
 
   return (
     <section className={cn(
-      'py-16 md:py-24',
-      isDark ? 'bg-zinc-900' : 'bg-white'
+      'py-10',
+      isDark ? 'bg-[#080808]' : 'bg-offwhite'
     )}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-12">
+      <div className="max-w-[1100px] mx-auto px-6">
+        {/* Section Header - matches Flutter */}
+        <div className="text-center mb-8">
           <span className={cn(
-            'text-xs font-bold tracking-[0.2em] uppercase',
-            isDark ? 'text-gray-400' : 'text-gray-500'
+            'text-xs font-bold tracking-[0.15em] uppercase',
+            isDark ? 'text-white/70' : 'text-gray-500'
           )}>
-            Browse By
+            SHOP BY CATEGORY
           </span>
-          <h2 className="font-display text-3xl md:text-4xl font-semibold mt-2">
+          <h2 className={cn(
+            'font-display text-2xl font-semibold mt-2',
+            isDark ? 'text-white' : 'text-black'
+          )}>
             Categories
           </h2>
         </div>
 
-        {/* Categories Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
-          {categories.map((category) => (
-            <Link
-              key={category.id}
-              href={`/${shopDomain}/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
-              className="group flex flex-col items-center"
-            >
-              <div className={cn(
-                'relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden mb-3 transition-transform duration-300 group-hover:scale-105',
-                isDark ? 'ring-2 ring-zinc-700' : 'ring-2 ring-gray-100'
-              )}>
-                <Image
-                  src={getImageUrl(category.image_url)}
-                  alt={category.name}
-                  fill
-                  className="object-cover"
-                  sizes="112px"
-                />
+        {/* Categories - horizontal scroll like Flutter */}
+        <div className="overflow-x-auto pb-4 -mx-6 px-6">
+          <div className="flex gap-6 md:gap-8 min-w-max md:justify-center">
+            {categories.map((category) => (
+              <Link
+                key={category.id}
+                href={`/${shopDomain}/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                className="group flex flex-col items-center"
+              >
+                {/* Circular image - matches Flutter CategoryCarousel */}
                 <div className={cn(
-                  'absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300',
-                  'bg-gold-500/20'
-                )} />
-              </div>
-              <h3 className={cn(
-                'text-sm font-medium text-center transition-colors',
-                isDark 
-                  ? 'group-hover:text-gold-400' 
-                  : 'group-hover:text-gold-600'
-              )}>
-                {category.name}
-              </h3>
-            </Link>
-          ))}
+                  'relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden mb-3',
+                  'transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg',
+                  isDark ? 'ring-2 ring-zinc-700' : 'ring-2 ring-gray-200'
+                )}>
+                  <Image
+                    src={getImageUrl(category.image_url)}
+                    alt={category.name}
+                    fill
+                    className="object-cover"
+                    sizes="96px"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-gold-500/20 transition-colors duration-300" />
+                </div>
+                <h3 className={cn(
+                  'text-xs md:text-sm font-medium text-center transition-colors',
+                  isDark 
+                    ? 'text-white group-hover:text-gold-400' 
+                    : 'text-black group-hover:text-gold-600'
+                )}>
+                  {category.name}
+                </h3>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </section>
