@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { cn, getImageUrl, formatPrice } from '@/lib/utils'
 import { Heart, Share2, ShoppingCart, ShoppingBag, PhoneCall, ChevronLeft, ChevronRight, MessageSquare, Loader2 } from 'lucide-react'
 import { addToCart, addToWishlist, removeFromWishlist, isInWishlist, isInCart } from '@/lib/api'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseClient } from '@/lib/supabase-client'
 
 interface Product {
   id: string
@@ -34,12 +34,6 @@ interface ProductDetailProps {
   shopId?: string
   onLoginRequired?: () => void
 }
-
-// Supabase client for direct operations (matching Flutter)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 export default function ProductDetail({
   product,
@@ -181,6 +175,12 @@ export default function ProductDetail({
     try {
       const customer = getCustomer()
       const productImage = product.image_url || (product.images && product.images[0]) || null
+
+      // Get Supabase client
+      const supabase = getSupabaseClient()
+      if (!supabase) {
+        throw new Error('Supabase client not configured')
+      }
 
       // Insert callback request to Supabase (matching Flutter)
       const { error } = await supabase.from('customer_callback_requests').insert({
