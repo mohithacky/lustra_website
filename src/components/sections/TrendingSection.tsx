@@ -52,7 +52,7 @@ export default function TrendingSection({ collections, isDark, shopDomain }: Tre
             {/* Edit button for editor mode */}
             {canEditCollections && (
               <button
-                onClick={() => router.push(`/${shopDomain}/editor/trending`)}
+                onClick={() => router.push('/editor/trending')}
                 className="absolute top-0 right-0 p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-all hover:scale-110"
                 title="Edit Trending Collections"
               >

@@ -47,7 +47,7 @@ export default function HeroCarousel({ collections, isDark, shopDomain }: HeroCa
       {/* Edit button for editor mode */}
       {canEditCollections && (
         <button
-          onClick={() => router.push(`/${shopDomain}/editor/collections`)}
+          onClick={() => router.push('/editor/collections')}
           className="absolute top-6 right-6 md:right-[130px] z-20 p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-all hover:scale-110"
           title="Edit Hero Collections"
         >
@@ -82,7 +82,7 @@ export default function HeroCarousel({ collections, isDark, shopDomain }: HeroCa
                     Handcrafted pieces for every moment.
                   </p>
                   <Link 
-                    href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+                    href={`/collections/${collection.name.replace(/\s+/g, '-')}`}
                     className="inline-block bg-gold-500 hover:bg-gold-600 text-white px-5 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold transition-colors"
                   >
                     Explore Collection
