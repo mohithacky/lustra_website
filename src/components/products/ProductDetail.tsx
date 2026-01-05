@@ -111,56 +111,101 @@ export default function ProductDetail({
 
   const handleBuyNow = async () => {
     const customer = getCustomer()
-    if (!customer && onLoginRequired) {
-      onLoginRequired()
+    if (!customer) {
+      if (onLoginRequired) {
+        onLoginRequired()
+      } else {
+        alert('Please login to purchase')
+      }
       return
     }
-    if (!shopId || !customer) return
+    if (!shopId) {
+      console.error('Shop ID not available')
+      return
+    }
 
     // Add to cart and redirect to cart
     setIsAddingToCart(true)
-    const success = await addToCart(shopId, customer.id, product.id)
-    setIsAddingToCart(false)
-    
-    if (success) {
-      window.location.href = '/cart'
+    try {
+      const success = await addToCart(shopId, customer.id, product.id)
+      if (success) {
+        window.location.href = `/${shopDomain}/cart`
+      } else {
+        alert('Failed to add to cart. Please try again.')
+      }
+    } catch (e) {
+      console.error('Error in buy now:', e)
+      alert('Failed to process. Please try again.')
+    } finally {
+      setIsAddingToCart(false)
     }
   }
 
   const handleAddToCart = async () => {
     const customer = getCustomer()
-    if (!customer && onLoginRequired) {
-      onLoginRequired()
+    if (!customer) {
+      if (onLoginRequired) {
+        onLoginRequired()
+      } else {
+        alert('Please login to add items to cart')
+      }
       return
     }
-    if (!shopId || !customer) return
+    if (!shopId) {
+      console.error('Shop ID not available')
+      return
+    }
 
     setIsAddingToCart(true)
-    const success = await addToCart(shopId, customer.id, product.id)
-    setIsAddingToCart(false)
-    
-    if (success) {
-      setIsCarted(true)
+    try {
+      const success = await addToCart(shopId, customer.id, product.id)
+      if (success) {
+        setIsCarted(true)
+        alert('Added to cart!')
+      } else {
+        alert('Failed to add to cart. Please try again.')
+      }
+    } catch (e) {
+      console.error('Error adding to cart:', e)
+      alert('Failed to add to cart. Please try again.')
+    } finally {
+      setIsAddingToCart(false)
     }
   }
 
   const handleToggleWishlist = async () => {
     const customer = getCustomer()
-    if (!customer && onLoginRequired) {
-      onLoginRequired()
+    if (!customer) {
+      if (onLoginRequired) {
+        onLoginRequired()
+      } else {
+        alert('Please login to manage wishlist')
+      }
       return
     }
-    if (!shopId || !customer) return
+    if (!shopId) {
+      console.error('Shop ID not available')
+      return
+    }
 
     setIsTogglingWishlist(true)
-    if (isWishlisted) {
-      const success = await removeFromWishlist(shopId, customer.id, product.id)
-      if (success) setIsWishlisted(false)
-    } else {
-      const success = await addToWishlist(shopId, customer.id, product.id)
-      if (success) setIsWishlisted(true)
+    try {
+      if (isWishlisted) {
+        const success = await removeFromWishlist(shopId, customer.id, product.id)
+        if (success) {
+          setIsWishlisted(false)
+        }
+      } else {
+        const success = await addToWishlist(shopId, customer.id, product.id)
+        if (success) {
+          setIsWishlisted(true)
+        }
+      }
+    } catch (e) {
+      console.error('Error toggling wishlist:', e)
+    } finally {
+      setIsTogglingWishlist(false)
     }
-    setIsTogglingWishlist(false)
   }
 
   const handleRequestCallback = async () => {

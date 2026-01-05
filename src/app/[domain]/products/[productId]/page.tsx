@@ -84,6 +84,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         shopDomain={params.domain}
         shopName={user.shop_name}
         phoneNumber={user.phone_number}
+        shopId={user.id}
       />
       <Footer 
         user={user}
