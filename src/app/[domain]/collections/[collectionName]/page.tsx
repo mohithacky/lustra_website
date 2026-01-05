@@ -1,8 +1,9 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getProducts, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate, getProducts, getCategoriesMap, getCollectionsMap, getFooterData } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsGrid from '@/components/products/ProductsGrid'
+import Footer from '@/components/sections/Footer'
 
 interface PageProps {
   params: { domain: string; collectionName: string }
@@ -31,11 +32,12 @@ export default async function CollectionPage({ params }: PageProps) {
 
   const collectionName = decodeURIComponent(params.collectionName).replace(/-/g, ' ')
 
-  const [template, products, categoriesMap, collectionsMap] = await Promise.all([
+  const [template, products, categoriesMap, collectionsMap, footerData] = await Promise.all([
     getWebsiteTemplate(user.id),
     getProducts(user.id, { collection: collectionName, limit: 50 }),
     getCategoriesMap(user.id),
     getCollectionsMap(user.id),
+    getFooterData(user.id),
   ])
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
@@ -77,6 +79,11 @@ export default async function CollectionPage({ params }: PageProps) {
         title={collectionName}
         categories={Object.keys(categoriesMap)}
         collections={Object.keys(collectionsMap)}
+      />
+      <Footer 
+        user={user}
+        template={template ? { ...template, footer: footerData } : null}
+        isDark={isDark}
       />
     </WebsiteLayout>
   )

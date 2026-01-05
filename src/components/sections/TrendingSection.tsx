@@ -13,10 +13,9 @@ interface TrendingCollection {
 interface TrendingSectionProps {
   collections: TrendingCollection[]
   isDark: boolean
-  shopDomain?: string
 }
 
-export default function TrendingSection({ collections, isDark, shopDomain = '' }: TrendingSectionProps) {
+export default function TrendingSection({ collections, isDark }: TrendingSectionProps) {
   if (!collections.length) return null
 
   // Ensure we have exactly 4 items for the staggered grid like Flutter
@@ -47,25 +46,47 @@ export default function TrendingSection({ collections, isDark, shopDomain = '' }
           </div>
 
           {/* StaggeredGrid.count with crossAxisCount: 2
-              Flutter layout: Items are placed sequentially in rows
-              Row 0: [Item 0 (0.8)] [Item 1 (1.2)]  
-              Row 1: [Item 2 (1.2)] [Item 3 (0.8)]
+              Flutter layout: 2 COLUMNS, each holding 2 boxes stacked vertically
+              - Left column: Item 0 (0.8 short) on top, Item 2 (1.2 tall) below
+              - Right column: Item 1 (1.2 tall) on top, Item 3 (0.8 short) below
               
-              This creates a staggered effect where:
-              - Left column: short on top, tall on bottom
-              - Right column: tall on top, short on bottom
+              This creates the staggered masonry effect
           */}
-          <div className="grid grid-cols-2 gap-4">
-            {displayCollections.map((collection, index) => (
-              <TrendingBox
-                key={index}
-                collection={collection}
-                // Flutter mainAxisCellCount values: 0.8, 1.2, 1.2, 0.8
-                heightRatio={index === 0 || index === 3 ? 0.8 : 1.2}
-                isDark={isDark}
-                shopDomain={shopDomain}
-              />
-            ))}
+          <div className="flex gap-4">
+            {/* Left Column */}
+            <div className="flex-1 flex flex-col gap-4">
+              {displayCollections[0] && (
+                <TrendingBox
+                  collection={displayCollections[0]}
+                  heightRatio={0.8}
+                  isDark={isDark}
+                />
+              )}
+              {displayCollections[2] && (
+                <TrendingBox
+                  collection={displayCollections[2]}
+                  heightRatio={1.2}
+                  isDark={isDark}
+                />
+              )}
+            </div>
+            {/* Right Column */}
+            <div className="flex-1 flex flex-col gap-4">
+              {displayCollections[1] && (
+                <TrendingBox
+                  collection={displayCollections[1]}
+                  heightRatio={1.2}
+                  isDark={isDark}
+                />
+              )}
+              {displayCollections[3] && (
+                <TrendingBox
+                  collection={displayCollections[3]}
+                  heightRatio={0.8}
+                  isDark={isDark}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -73,11 +94,10 @@ export default function TrendingSection({ collections, isDark, shopDomain = '' }
   )
 }
 
-function TrendingBox({ collection, heightRatio, isDark, shopDomain }: { 
+function TrendingBox({ collection, heightRatio, isDark }: { 
   collection: TrendingCollection
   heightRatio: number
   isDark: boolean
-  shopDomain: string
 }) {
   const [isHovered, setIsHovered] = useState(false)
   

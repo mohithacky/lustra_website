@@ -1,8 +1,9 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getProductById, getCategoriesMap, getCollectionsMap, getProducts } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate, getProductById, getCategoriesMap, getCollectionsMap, getProducts, getFooterData } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductDetail from '@/components/products/ProductDetail'
+import Footer from '@/components/sections/Footer'
 
 interface PageProps {
   params: { domain: string; productId: string }
@@ -31,12 +32,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  const [template, product, categoriesMap, collectionsMap, relatedProducts] = await Promise.all([
+  const [template, product, categoriesMap, collectionsMap, relatedProducts, footerData] = await Promise.all([
     getWebsiteTemplate(user.id),
     getProductById(params.productId),
     getCategoriesMap(user.id),
     getCollectionsMap(user.id),
     getProducts(user.id, { limit: 4 }),
+    getFooterData(user.id),
   ])
 
   if (!product) {
@@ -82,6 +84,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
         shopDomain={params.domain}
         shopName={user.shop_name}
         phoneNumber={user.phone_number}
+      />
+      <Footer 
+        user={user}
+        template={template ? { ...template, footer: footerData } : null}
+        isDark={isDark}
       />
     </WebsiteLayout>
   )

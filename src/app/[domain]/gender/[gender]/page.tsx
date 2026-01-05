@@ -1,8 +1,9 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getProductsByGender, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate, getProductsByGender, getCategoriesMap, getCollectionsMap, getFooterData } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsGrid from '@/components/products/ProductsGrid'
+import Footer from '@/components/sections/Footer'
 
 interface PageProps {
   params: { domain: string; gender: string }
@@ -31,11 +32,12 @@ export default async function GenderPage({ params }: PageProps) {
 
   const gender = params.gender === 'him' ? 'Him' : 'Her'
 
-  const [template, products, categoriesMap, collectionsMap] = await Promise.all([
+  const [template, products, categoriesMap, collectionsMap, footerData] = await Promise.all([
     getWebsiteTemplate(user.id),
     getProductsByGender(user.id, gender, 50),
     getCategoriesMap(user.id),
     getCollectionsMap(user.id),
+    getFooterData(user.id),
   ])
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
@@ -77,6 +79,11 @@ export default async function GenderPage({ params }: PageProps) {
         title={`Shop for ${gender}`}
         categories={Object.keys(categoriesMap)}
         collections={Object.keys(collectionsMap)}
+      />
+      <Footer 
+        user={user}
+        template={template ? { ...template, footer: footerData } : null}
+        isDark={isDark}
       />
     </WebsiteLayout>
   )

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { cn, getImageUrl, formatPrice } from '@/lib/utils'
-import { Heart, Share2, Phone, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Heart, Share2, ShoppingCart, ShoppingBag, PhoneCall, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Product {
   id: string
@@ -29,6 +29,8 @@ interface ProductDetailProps {
   shopDomain: string
   shopName?: string | null
   phoneNumber?: string | null
+  shopId?: string
+  onLoginRequired?: () => void
 }
 
 export default function ProductDetail({
@@ -38,8 +40,13 @@ export default function ProductDetail({
   shopDomain,
   shopName,
   phoneNumber,
+  shopId,
+  onLoginRequired,
 }: ProductDetailProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [showCallbackModal, setShowCallbackModal] = useState(false)
+  const [callbackPhone, setCallbackPhone] = useState('')
+  const [callbackSubmitted, setCallbackSubmitted] = useState(false)
   
   // Combine main image with additional images
   const allImages: string[] = []
@@ -59,15 +66,40 @@ export default function ProductDetail({
     setSelectedImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1))
   }
 
-  const handleWhatsApp = () => {
-    if (!phoneNumber) return
-    const message = `Hi, I'm interested in ${product.name} from ${shopName || 'your store'}`
-    window.open(`https://wa.me/${phoneNumber.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank')
+  const handleBuyNow = () => {
+    // Check if user is logged in
+    const customer = localStorage.getItem('websiteCustomer')
+    if (!customer && onLoginRequired) {
+      onLoginRequired()
+      return
+    }
+    // TODO: Implement buy now flow - add to cart and go to checkout
+    alert('Buy Now functionality - Coming soon!')
   }
 
-  const handleCall = () => {
-    if (!phoneNumber) return
-    window.open(`tel:${phoneNumber}`, '_self')
+  const handleAddToCart = () => {
+    // Check if user is logged in
+    const customer = localStorage.getItem('websiteCustomer')
+    if (!customer && onLoginRequired) {
+      onLoginRequired()
+      return
+    }
+    // TODO: Implement add to cart
+    alert('Added to cart!')
+  }
+
+  const handleRequestCallback = async () => {
+    if (!callbackPhone || callbackPhone.length < 10) {
+      alert('Please enter a valid phone number')
+      return
+    }
+    // TODO: Save callback request to database
+    setCallbackSubmitted(true)
+    setTimeout(() => {
+      setShowCallbackModal(false)
+      setCallbackSubmitted(false)
+      setCallbackPhone('')
+    }, 2000)
   }
 
   return (
@@ -262,25 +294,45 @@ export default function ProductDetail({
 
             {/* Action Buttons */}
             <div className="space-y-3">
-              {phoneNumber && (
-                <>
-                  <button
-                    onClick={handleWhatsApp}
-                    className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold transition-colors"
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                    WhatsApp
-                  </button>
-                  <button
-                    onClick={handleCall}
-                    className="w-full flex items-center justify-center gap-2 bg-gold-500 hover:bg-gold-600 text-white py-3 rounded-xl font-semibold transition-colors"
-                  >
-                    <Phone className="w-5 h-5" />
-                    Call Now
-                  </button>
-                </>
-              )}
-              <div className="flex gap-3">
+              {/* Buy Now Button */}
+              <button
+                onClick={handleBuyNow}
+                className="w-full flex items-center justify-center gap-2 bg-gold-500 hover:bg-gold-600 text-white py-3.5 rounded-xl font-semibold transition-colors"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                Buy Now
+              </button>
+              
+              {/* Add to Cart Button */}
+              <button
+                onClick={handleAddToCart}
+                className={cn(
+                  'w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold transition-colors border-2',
+                  isDark 
+                    ? 'border-gold-500 text-gold-400 hover:bg-gold-500/10' 
+                    : 'border-gold-500 text-gold-600 hover:bg-gold-50'
+                )}
+              >
+                <ShoppingCart className="w-5 h-5" />
+                Add to Cart
+              </button>
+
+              {/* Request a Callback Button */}
+              <button
+                onClick={() => setShowCallbackModal(true)}
+                className={cn(
+                  'w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold transition-colors border',
+                  isDark 
+                    ? 'border-zinc-700 text-white hover:bg-zinc-800' 
+                    : 'border-gray-300 text-black hover:bg-gray-50'
+                )}
+              >
+                <PhoneCall className="w-5 h-5" />
+                Request a Callback
+              </button>
+
+              {/* Wishlist and Share */}
+              <div className="flex gap-3 pt-2">
                 <button className={cn(
                   'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors border',
                   isDark 
@@ -317,7 +369,7 @@ export default function ProductDetail({
               {relatedProducts.map((relProduct) => (
                 <Link
                   key={relProduct.id}
-                  href={`/${shopDomain}/products/${relProduct.id}`}
+                  href={`/products/${relProduct.id}`}
                   className="block"
                 >
                   <div className="rounded-xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-shadow">
@@ -345,6 +397,70 @@ export default function ProductDetail({
           </div>
         )}
       </div>
+
+      {/* Request Callback Modal */}
+      {showCallbackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowCallbackModal(false)}
+          />
+          <div className={cn(
+            'relative w-full max-w-md mx-4 rounded-2xl p-6',
+            isDark ? 'bg-zinc-900' : 'bg-white'
+          )}>
+            <h3 className={cn(
+              'font-display text-xl font-bold mb-4',
+              isDark ? 'text-white' : 'text-black'
+            )}>
+              Request a Callback
+            </h3>
+            {callbackSubmitted ? (
+              <div className="text-center py-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <PhoneCall className="w-6 h-6 text-green-600" />
+                </div>
+                <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
+                  We&apos;ll call you back soon!
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className={cn('text-sm mb-4', isDark ? 'text-gray-400' : 'text-gray-500')}>
+                  Enter your phone number and we&apos;ll call you back regarding {product.name}
+                </p>
+                <input
+                  type="tel"
+                  value={callbackPhone}
+                  onChange={(e) => setCallbackPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="Enter your phone number"
+                  className={cn(
+                    'w-full px-4 py-3 rounded-xl border mb-4 outline-none focus:border-gold-500',
+                    isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-gray-50 border-gray-300 text-black'
+                  )}
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowCallbackModal(false)}
+                    className={cn(
+                      'flex-1 py-3 rounded-xl font-semibold border',
+                      isDark ? 'border-zinc-700 text-white' : 'border-gray-300 text-black'
+                    )}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRequestCallback}
+                    className="flex-1 py-3 rounded-xl font-semibold bg-gold-500 text-white hover:bg-gold-600"
+                  >
+                    Submit
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

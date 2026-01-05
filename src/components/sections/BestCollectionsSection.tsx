@@ -14,10 +14,9 @@ interface BestCollection {
 interface BestCollectionsSectionProps {
   collections: BestCollection[]
   isDark: boolean
-  shopDomain?: string
 }
 
-export default function BestCollectionsSection({ collections, isDark, shopDomain = '' }: BestCollectionsSectionProps) {
+export default function BestCollectionsSection({ collections, isDark }: BestCollectionsSectionProps) {
   if (!collections.length) return null
 
   return (
@@ -50,7 +49,6 @@ export default function BestCollectionsSection({ collections, isDark, shopDomain
               collection={collection}
               reverse={index % 2 === 1}
               isDark={isDark}
-              shopDomain={shopDomain}
             />
           ))}
         </div>
@@ -59,11 +57,10 @@ export default function BestCollectionsSection({ collections, isDark, shopDomain
   )
 }
 
-function FeaturedCollectionRow({ collection, reverse, isDark, shopDomain }: {
+function FeaturedCollectionRow({ collection, reverse, isDark }: {
   collection: BestCollection
   reverse: boolean
   isDark: boolean
-  shopDomain: string
 }) {
   const [isHovered, setIsHovered] = useState(false)
 
