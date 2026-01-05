@@ -89,7 +89,7 @@ function TrendingBox({ collection, heightRatio, isDark, shopDomain }: {
 
   return (
     <Link
-      href={`/${shopDomain}/collections/${collection.label.toLowerCase().replace(/\s+/g, '-')}`}
+      href={`/collections/${collection.label.toLowerCase().replace(/\s+/g, '-')}`}
       className="block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

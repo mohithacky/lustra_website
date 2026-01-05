@@ -50,7 +50,7 @@ export default function ProductsSection({ products, isDark, title, shopDomain }:
             </h2>
           </div>
           <Link 
-            href={`/${shopDomain}/products`}
+            href={`/products`}
             className={cn(
               'text-sm font-semibold transition-colors',
               isDark ? 'text-gold-400 hover:text-gold-300' : 'text-gold-600 hover:text-gold-700'
@@ -87,7 +87,7 @@ function ProductCard({ product, isDark, shopDomain }: {
 
   return (
     <Link 
-      href={`/${shopDomain}/products/${product.id}`}
+      href={`/products/${product.id}`}
       className="block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

@@ -64,7 +64,7 @@ function CategoryItem({ category, isDark, shopDomain }: {
 
   return (
     <Link
-      href={`/${shopDomain}/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+      href={`/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
       className="flex flex-col items-center justify-center mx-1.5"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

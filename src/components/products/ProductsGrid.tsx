@@ -237,7 +237,7 @@ function ProductCard({ product, isDark, shopDomain, viewMode }: {
   if (viewMode === 'list') {
     return (
       <Link
-        href={`/${shopDomain}/products/${product.id}`}
+        href={`/products/${product.id}`}
         className={cn(
           'flex gap-4 p-4 rounded-xl transition-shadow',
           isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-white hover:shadow-lg'

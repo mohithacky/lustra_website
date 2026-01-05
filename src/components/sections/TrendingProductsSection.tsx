@@ -44,7 +44,7 @@ export default function TrendingProductsSection({ products, isDark, shopDomain }
           </h2>
           <div className="flex justify-end mt-2 px-6">
             <Link 
-              href={`/${shopDomain}/products?filter=trending`}
+              href={`/products?filter=trending`}
               className={cn(
                 'text-sm font-semibold transition-colors',
                 isDark ? 'text-gold-400 hover:text-gold-300' : 'text-gold-600 hover:text-gold-700'
@@ -82,7 +82,7 @@ function TrendingProductCard({ product, isDark, shopDomain }: {
 
   return (
     <Link 
-      href={`/${shopDomain}/products/${product.id}`}
+      href={`/products/${product.id}`}
       className="block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

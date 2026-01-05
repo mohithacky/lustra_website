@@ -39,8 +39,8 @@ export default function WebsiteLayout({
 
   // Navigation items matching Flutter AppBar
   const navItems = [
-    { label: 'Collections', key: 'collections', items: collections.map(c => ({ name: c.name, href: `/${shopDomain}/collections/${c.name.toLowerCase().replace(/\s+/g, '-')}` })) },
-    { label: 'Categories', key: 'categories', items: categories.map(c => ({ name: c.name, href: `/${shopDomain}/categories/${c.name.toLowerCase().replace(/\s+/g, '-')}` })) },
+    { label: 'Collections', key: 'collections', items: collections.map(c => ({ name: c.name, href: `/collections/${c.name.toLowerCase().replace(/\s+/g, '-')}` })) },
+    { label: 'Categories', key: 'categories', items: categories.map(c => ({ name: c.name, href: `/categories/${c.name.toLowerCase().replace(/\s+/g, '-')}` })) },
   ]
 
   return (
@@ -64,7 +64,7 @@ export default function WebsiteLayout({
             </button>
 
             {/* Center: Logo + Shop Name - matches Flutter centerTitle */}
-            <Link href={`/${shopDomain}`} className="flex items-center gap-2 mx-auto md:mx-0">
+            <Link href={`/`} className="flex items-center gap-2 mx-auto md:mx-0">
               {user.logo_url && (
                 <Image
                   src={getImageUrl(user.logo_url)}
@@ -138,7 +138,7 @@ export default function WebsiteLayout({
             <div className="flex items-center gap-1">
               {/* Search */}
               <Link
-                href={`/${shopDomain}/products`}
+                href={`/products`}
                 className={cn(
                   'p-2 transition-colors',
                   isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
@@ -210,7 +210,7 @@ export default function WebsiteLayout({
               <div className="p-4 space-y-4">
                 {/* Home Link */}
                 <Link
-                  href={`/${shopDomain}`}
+                  href={`/`}
                   className="block py-2 font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -229,7 +229,7 @@ export default function WebsiteLayout({
                     {collections.slice(0, 8).map((collection) => (
                       <Link
                         key={collection.id}
-                        href={`/${shopDomain}/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
                         className={cn(
                           'block py-2 text-sm',
                           isDark ? 'text-gray-300' : 'text-gray-600'
@@ -254,7 +254,7 @@ export default function WebsiteLayout({
                     {categories.slice(0, 8).map((category) => (
                       <Link
                         key={category.id}
-                        href={`/${shopDomain}/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        href={`/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
                         className={cn(
                           'block py-2 text-sm',
                           isDark ? 'text-gray-300' : 'text-gray-600'
@@ -269,7 +269,7 @@ export default function WebsiteLayout({
 
                 {/* All Products */}
                 <Link
-                  href={`/${shopDomain}/products`}
+                  href={`/products`}
                   className="block py-2 font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >

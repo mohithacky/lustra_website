@@ -74,7 +74,7 @@ function FeaturedCollectionRow({ collection, reverse, isDark, shopDomain }: {
     )}>
       {/* Image Card - matches Flutter _ImageCard */}
       <Link
-        href={`/${shopDomain}/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+        href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
         className="flex-1"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -116,7 +116,7 @@ function FeaturedCollectionRow({ collection, reverse, isDark, shopDomain }: {
           </p>
         )}
         <Link
-          href={`/${shopDomain}/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+          href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
           className="inline-flex items-center text-gold-500 font-bold text-sm hover:text-gold-600 transition-colors"
         >
           Explore Collection
