@@ -11,7 +11,8 @@ import {
   getBestCollections,
   getFooterData,
   getTestimonials,
-  getTrendingProducts
+  getTrendingProducts,
+  getSectionConfig
 } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import CategoriesSection from '@/components/sections/CategoriesSection'
@@ -54,7 +55,7 @@ export default async function StorePage({ params }: PageProps) {
     notFound()
   }
 
-  const [template, heroCollections, products, collectionsMap, categoriesMap, trendingCollections, bestCollections, footerData, testimonials, trendingProducts] = await Promise.all([
+  const [template, heroCollections, products, collectionsMap, categoriesMap, trendingCollections, bestCollections, footerData, testimonials, trendingProducts, heroCarouselConfig] = await Promise.all([
     getWebsiteTemplate(user.id),
     getHeroCollections(user.id),
     getProducts(user.id, { limit: 12 }),
@@ -65,6 +66,7 @@ export default async function StorePage({ params }: PageProps) {
     getFooterData(user.id),
     getTestimonials(user.id),
     getTrendingProducts(user.id, 10),
+    getSectionConfig(user.id, 'hero_carousel'),
   ])
 
   // Transform categories map to array format for components
@@ -101,10 +103,11 @@ export default async function StorePage({ params }: PageProps) {
       categories={categoriesArray}
       collections={collectionsArray}
     >
-      {/* 1. Hero Carousel - matches Flutter order, with editor controls */}
+      {/* 1. Hero Carousel - config from user_website_sections.config */}
       {heroCollections.length > 0 && (
         <EditableHeroCarousel 
-          collections={heroCollections} 
+          collections={heroCollections}
+          config={heroCarouselConfig ?? undefined}
           isDark={isDark}
           shopDomain={params.domain}
         />

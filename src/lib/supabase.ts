@@ -381,6 +381,64 @@ export async function getProductById(productId: string): Promise<ProductData | n
   return data as ProductData
 }
 
+// =============================================================================
+// USER WEBSITE SECTIONS
+// =============================================================================
+// Fetches section config from user_website_sections table
+// Config is used at runtime for behavioral overrides
+// Schema is stored in website_template_sections and is NEVER used at runtime
+// =============================================================================
+
+export interface UserWebsiteSection {
+  id: string
+  user_website_id: string
+  template_section_id: string | null
+  section_type: string
+  section_label: string | null
+  is_enabled: boolean
+  display_order: number
+  config: Record<string, any> | null
+  created_at: string
+  updated_at: string
+}
+
+export async function getUserWebsiteSections(userId: string): Promise<UserWebsiteSection[]> {
+  // First get the user's website
+  // Note: user_websites table is not in the Database types yet, using 'any' cast
+  const { data: website, error: websiteError } = await (supabase as any)
+    .from('user_websites')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .single()
+
+  if (websiteError || !website) {
+    // Gracefully return empty if user_websites doesn't exist or user has no website
+    return []
+  }
+
+  // Then get all sections for that website
+  // Note: user_website_sections table is not in the Database types yet, using 'any' cast
+  const { data, error } = await (supabase as any)
+    .from('user_website_sections')
+    .select('*')
+    .eq('user_website_id', website.id)
+    .order('display_order', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching user website sections:', error)
+    return []
+  }
+
+  return (data as UserWebsiteSection[]) || []
+}
+
+export async function getSectionConfig(userId: string, sectionType: string): Promise<Record<string, any> | null> {
+  const sections = await getUserWebsiteSections(userId)
+  const section = sections.find(s => s.section_type === sectionType && s.is_enabled)
+  return section?.config ?? null
+}
+
 // Get products for gender (Him/Her)
 export async function getProductsByGender(userId: string, gender: string, limit?: number): Promise<ProductData[]> {
   let query = supabase

@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, Upload, Wand2, Loader2, MoreVertical, Image as ImageIcon, Eye, EyeOff, X } from 'lucide-react'
+import { ArrowLeft, Upload, Wand2, Loader2, MoreVertical, Image as ImageIcon, Eye, EyeOff, X, Plus } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
-import { getEditorToken } from '@/lib/editor-context'
 
 interface Collection {
   id: string
@@ -52,26 +51,17 @@ export default function AddCollectionContent({
   const loadCollections = async () => {
     setIsLoading(true)
     try {
-      const token = getEditorToken()
-      if (!token) {
-        alert('Editor session expired. Please reopen from the app.')
-        router.back()
-        return
-      }
-
       const endpoint = collectionType === 'hero' 
         ? `/api/editor/collections/hero?shopId=${shopId}`
         : `/api/editor/collections/trending?shopId=${shopId}`
 
-      const response = await fetch(endpoint, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
+      const response = await fetch(endpoint)
 
       if (response.ok) {
         const data = await response.json()
         setCollections(data.collections || [])
+      } else {
+        console.error('Failed to load collections:', response.status)
       }
     } catch (error) {
       console.error('Error loading collections:', error)
@@ -95,29 +85,24 @@ export default function AddCollectionContent({
   }
 
   const handleGenerateImage = async () => {
-    if (!collectionName.trim()) {
+    const nameToUse = editingCollection || collectionName.trim()
+    if (!nameToUse) {
       alert('Please enter a collection name first')
       return
     }
 
     setIsGenerating(true)
     try {
-      const token = getEditorToken()
-      if (!token) {
-        alert('Editor session expired')
-        return
-      }
-
       const response = await fetch('/api/editor/generate-banner', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          collectionName,
+          collectionName: nameToUse,
           aspectRatio: collectionType === 'hero' ? '16:9' : '5:6',
           shopId,
+          collectionType,
         }),
       })
 
@@ -128,18 +113,20 @@ export default function AddCollectionContent({
         setUploadedImage(null)
         setUploadedImagePreview(null)
       } else {
-        alert('Failed to generate image')
+        const errorData = await response.json()
+        alert(`Failed to generate image: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error generating image:', error)
-      alert('Error generating image')
+      alert('Error generating image. Please try again.')
     } finally {
       setIsGenerating(false)
     }
   }
 
   const handleSaveCollection = async () => {
-    if (!collectionName.trim()) {
+    const nameToSave = editingCollection || collectionName.trim()
+    if (!nameToSave) {
       alert('Please enter a collection name')
       return
     }
@@ -152,21 +139,14 @@ export default function AddCollectionContent({
 
     setIsSaving(true)
     try {
-      const token = getEditorToken()
-      if (!token) {
-        alert('Editor session expired')
-        return
-      }
-
       const response = await fetch('/api/editor/collections/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           shopId,
-          collectionName,
+          collectionName: nameToSave,
           bannerImage: imageToSave,
           collectionType,
         }),
@@ -174,18 +154,15 @@ export default function AddCollectionContent({
 
       if (response.ok) {
         alert('Collection saved successfully!')
-        setShowAddForm(false)
-        setCollectionName('')
-        setGeneratedImage(null)
-        setUploadedImage(null)
-        setUploadedImagePreview(null)
+        resetForm()
         loadCollections()
       } else {
-        alert('Failed to save collection')
+        const errorData = await response.json()
+        alert(`Failed to save collection: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error saving collection:', error)
-      alert('Error saving collection')
+      alert('Error saving collection. Please try again.')
     } finally {
       setIsSaving(false)
     }
@@ -193,22 +170,15 @@ export default function AddCollectionContent({
 
   const handleToggleVisibility = async (collection: Collection) => {
     try {
-      const token = getEditorToken()
-      if (!token) {
-        alert('Editor session expired')
-        return
-      }
-
       const response = await fetch('/api/editor/collections/visibility', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           shopId,
           collectionName: collection.name,
-          isVisible: !collection.is_visible,
+          isVisible: collection.is_visible === false ? true : false,
           collectionType,
         }),
       })
@@ -342,8 +312,8 @@ export default function AddCollectionContent({
               <div className="mb-6">
                 <button
                   onClick={handleGenerateImage}
-                  disabled={isGenerating || !collectionName.trim()}
-                  className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isGenerating || (!editingCollection && !collectionName.trim())}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {isGenerating ? (
                     <>

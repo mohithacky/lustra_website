@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -10,18 +10,62 @@ import { PlusCircle, MinusCircle } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 import { HeroCollection } from '@/types/database'
 
+// =============================================================================
+// CONFIG TYPES
+// =============================================================================
+// Config is fetched from user_website_sections.config at runtime
+// Schema (for editor validation) is stored in website_template_sections.schema
+// and is NEVER used at runtime
+// =============================================================================
+
+export type HeroCarouselVariant = 'classic' | 'split' | 'full_screen'
+
+export interface HeroCarouselConfig {
+  variant?: HeroCarouselVariant
+  autoplay_delay?: number
+  show_gradient?: boolean
+  show_cta_button?: boolean
+  cta_button_text?: string
+}
+
 interface HeroCarouselProps {
   collections: HeroCollection[]
-  isDark: boolean
+  config?: HeroCarouselConfig
+  isDark?: boolean
   canEdit?: boolean
   shopDomain?: string
 }
 
-export default function HeroCarousel({ collections, isDark, canEdit = false, shopDomain }: HeroCarouselProps) {
+export default function HeroCarousel({ 
+  collections, 
+  config,
+  isDark = false, 
+  canEdit = false, 
+  shopDomain 
+}: HeroCarouselProps) {
   const router = useRouter()
+  
+  // =============================================================================
+  // CONFIG WITH SAFE DEFAULTS
+  // =============================================================================
+  // All config fields use safe defaults if not provided
+  // Config comes from user_website_sections.config at runtime
+  // =============================================================================
+  const variant = config?.variant ?? 'classic'
+  const autoplayDelay = config?.autoplay_delay ?? 5000
+  const showGradient = config?.show_gradient ?? true
+  const showCtaButton = config?.show_cta_button ?? true
+  const ctaButtonText = config?.cta_button_text ?? 'Explore Collection'
+
+  // Memoize autoplay plugin to prevent recreation on every render
+  const autoplayPlugin = useMemo(
+    () => Autoplay({ delay: autoplayDelay, stopOnInteraction: false }),
+    [autoplayDelay]
+  )
+
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true },
-    [Autoplay({ delay: 5000, stopOnInteraction: false })]
+    [autoplayPlugin]
   )
   const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -58,10 +102,12 @@ export default function HeroCarousel({ collections, isDark, canEdit = false, sho
                 priority={index === 0}
                 sizes="100vw"
               />
-              {/* Gradient Overlay - matches Flutter */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              {/* Gradient Overlay - controlled by config */}
+              {showGradient && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              )}
               
-              {/* Content - positioned at bottom left like Flutter */}
+              {/* Content - positioned at bottom left */}
               <div className="absolute inset-0 flex items-end">
                 <div className="p-6 md:p-12 lg:p-16 max-w-lg">
                   <h2 className="font-display text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2 animate-fade-in">
@@ -70,12 +116,14 @@ export default function HeroCarousel({ collections, isDark, canEdit = false, sho
                   <p className="text-white/90 text-sm md:text-base mb-4 md:mb-6">
                     Handcrafted pieces for every moment.
                   </p>
-                  <Link 
-                    href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
-                    className="inline-block bg-gold-500 hover:bg-gold-600 text-white px-5 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold transition-colors"
-                  >
-                    Explore Collection
-                  </Link>
+                  {showCtaButton && (
+                    <Link 
+                      href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+                      className="inline-block bg-gold-500 hover:bg-gold-600 text-white px-5 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold transition-colors"
+                    >
+                      {ctaButtonText}
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
