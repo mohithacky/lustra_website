@@ -107,7 +107,7 @@ export default function HeroCarousel({ collections, isDark, canEdit = false, sho
         <div className="max-w-[1100px] mx-auto px-6 mt-2">
           <div className="flex justify-end gap-2">
             <button
-              onClick={() => shopDomain && router.push(`/${shopDomain}/editor/collections/add`)}
+              onClick={() => shopDomain && router.push(`/editor/collections/add`)}
               className={cn(
                 'p-2 rounded-full transition-colors',
                 isDark ? 'hover:bg-zinc-800 text-white' : 'hover:bg-gray-100 text-black'
@@ -117,7 +117,7 @@ export default function HeroCarousel({ collections, isDark, canEdit = false, sho
               <PlusCircle className="w-6 h-6" />
             </button>
             <button
-              onClick={() => shopDomain && router.push(`/${shopDomain}/editor/collections/manage`)}
+              onClick={() => shopDomain && router.push(`/editor/collections/manage`)}
               className={cn(
                 'p-2 rounded-full transition-colors',
                 isDark ? 'hover:bg-zinc-800 text-white' : 'hover:bg-gray-100 text-black'

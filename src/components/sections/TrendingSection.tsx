@@ -131,7 +131,7 @@ function TrendingBox({ collection, heightRatio, isDark, canEdit = false, onEdit 
 
   return (
     <Link
-      href={`/collections/${collection.label.toLowerCase().replace(/\s+/g, '-')}`}
+      href={`/collections/${collection.label.replace(/\s+/g, '-')}`}
       className="block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
