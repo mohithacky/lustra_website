@@ -37,7 +37,7 @@ export default function EditorButtons({ shopDomain, isDark }: EditorButtonsProps
         <>
           {/* Add Collection Button */}
           <button
-            onClick={() => router.push(`/${shopDomain}/editor/collections/add`)}
+            onClick={() => router.push(`/editor/collections/add`)}
             className={cn(
               'flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all hover:scale-105',
               isDark 
