@@ -10,11 +10,14 @@ import { addToWishlist, removeFromWishlist, isInWishlist, isInCart } from '@/lib
 interface Product {
   id: string
   name: string
-  price: number
-  image_url?: string
-  category?: string
-  is_bestseller?: boolean
-  is_trending?: boolean
+  price: string | number | null
+  image_url?: string | null
+  images?: string[] | null
+  category?: string | null
+  collection?: string | null
+  weight?: string | null
+  is_bestseller?: boolean | null
+  is_trending?: boolean | null
 }
 
 interface ProductCardProps {
