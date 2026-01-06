@@ -14,16 +14,14 @@ import {
   getTrendingProducts
 } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
-import HeroCarousel from '@/components/sections/HeroCarousel'
 import CategoriesSection from '@/components/sections/CategoriesSection'
 import ProductsSection from '@/components/sections/ProductsSection'
 import ShopByRecipientSection from '@/components/sections/ShopByRecipientSection'
-import TrendingSection from '@/components/sections/TrendingSection'
 import TrendingProductsSection from '@/components/sections/TrendingProductsSection'
 import BestCollectionsSection from '@/components/sections/BestCollectionsSection'
 import TestimonialsSection from '@/components/sections/TestimonialsSection'
 import Footer from '@/components/sections/Footer'
-import EditorButtons from '@/components/editor/EditorButtons'
+import { EditableHeroCarousel, EditableTrendingSection } from '@/components/editor/EditableSections'
 
 interface PageProps {
   params: { domain: string }
@@ -103,11 +101,12 @@ export default async function StorePage({ params }: PageProps) {
       categories={categoriesArray}
       collections={collectionsArray}
     >
-      {/* 1. Hero Carousel - matches Flutter order */}
+      {/* 1. Hero Carousel - matches Flutter order, with editor controls */}
       {heroCollections.length > 0 && (
-        <HeroCarousel 
+        <EditableHeroCarousel 
           collections={heroCollections} 
-          isDark={isDark} 
+          isDark={isDark}
+          shopDomain={params.domain}
         />
       )}
 
@@ -142,11 +141,12 @@ export default async function StorePage({ params }: PageProps) {
 
       <div className="h-16" /> {/* Spacing */}
 
-      {/* 5. Trending Collections - matches Flutter FourBoxStaggeredSection */}
+      {/* 5. Trending Collections - matches Flutter FourBoxStaggeredSection, with edit icons */}
       {trendingCollections.length > 0 && (
-        <TrendingSection 
+        <EditableTrendingSection 
           collections={trendingCollections} 
           isDark={isDark}
+          shopDomain={params.domain}
         />
       )}
 
@@ -187,9 +187,6 @@ export default async function StorePage({ params }: PageProps) {
         template={template ? { ...template, footer: footerData } : null}
         isDark={isDark}
       />
-
-      {/* Editor Buttons - Only visible when opened in WebView with editor context */}
-      <EditorButtons shopDomain={params.domain} isDark={isDark} />
     </WebsiteLayout>
   )
 }
