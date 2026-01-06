@@ -3,10 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { cn, getImageUrl } from '@/lib/utils'
-import { Pencil } from 'lucide-react'
-import { useEditor } from '@/contexts/EditorContext'
 
 interface BestCollection {
   name: string
@@ -17,12 +14,9 @@ interface BestCollection {
 interface BestCollectionsSectionProps {
   collections: BestCollection[]
   isDark: boolean
-  shopDomain?: string
 }
 
-export default function BestCollectionsSection({ collections, isDark, shopDomain }: BestCollectionsSectionProps) {
-  const router = useRouter()
-  const { canEditCollections } = useEditor()
+export default function BestCollectionsSection({ collections, isDark }: BestCollectionsSectionProps) {
   if (!collections.length) return null
 
   return (
@@ -32,7 +26,7 @@ export default function BestCollectionsSection({ collections, isDark, shopDomain
     )}>
       <div className="max-w-[1100px] mx-auto px-6">
         {/* Section Header - matches Flutter */}
-        <div className="text-center mb-10 relative">
+        <div className="text-center mb-10">
           <span className={cn(
             'text-xs font-bold tracking-[0.2em] uppercase',
             isDark ? 'text-white/70' : 'text-gray-500'
@@ -45,16 +39,6 @@ export default function BestCollectionsSection({ collections, isDark, shopDomain
           )}>
             Featured Collections
           </h2>
-          {/* Edit button for editor mode */}
-          {canEditCollections && (
-            <button
-              onClick={() => router.push('/editor/collections')}
-              className="absolute top-0 right-0 p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-all hover:scale-110"
-              title="Edit Collections"
-            >
-              <Pencil className="w-4 h-4 text-gray-700" />
-            </button>
-          )}
         </div>
 
         {/* Collections - matches Flutter FeaturedCollectionsShowcase layout */}
