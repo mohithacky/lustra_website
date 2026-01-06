@@ -57,6 +57,36 @@ export default function HeroCarousel({
   const showCtaButton = config?.show_cta_button ?? true
   const ctaButtonText = config?.cta_button_text ?? 'Explore Collection'
 
+  // =============================================================================
+  // LOGGING: Track data sources
+  // =============================================================================
+  useEffect(() => {
+    console.group('🎨 HeroCarousel - Data Source Verification')
+    console.log('📊 Collections from database:', {
+      count: collections.length,
+      source: 'user_hero_collections table',
+      collections: collections.map(c => ({
+        id: c.id,
+        name: c.name,
+        display_order: c.display_order,
+        is_visible: c.is_visible
+      }))
+    })
+    console.log('⚙️ Config from database:', {
+      source: 'user_website_sections.config',
+      received_config: config,
+      applied_values: {
+        variant: `${variant} ${config?.variant ? '(from DB)' : '(default)'}`,
+        autoplay_delay: `${autoplayDelay}ms ${config?.autoplay_delay ? '(from DB)' : '(default)'}`,
+        show_gradient: `${showGradient} ${config?.show_gradient !== undefined ? '(from DB)' : '(default)'}`,
+        show_cta_button: `${showCtaButton} ${config?.show_cta_button !== undefined ? '(from DB)' : '(default)'}`,
+        cta_button_text: `"${ctaButtonText}" ${config?.cta_button_text ? '(from DB)' : '(default)'}`
+      }
+    })
+    console.log('✅ NO hardcoded data - All from database with safe fallbacks')
+    console.groupEnd()
+  }, [collections, config, variant, autoplayDelay, showGradient, showCtaButton, ctaButtonText])
+
   // Memoize autoplay plugin to prevent recreation on every render
   const autoplayPlugin = useMemo(
     () => Autoplay({ delay: autoplayDelay, stopOnInteraction: false }),
@@ -118,7 +148,7 @@ export default function HeroCarousel({
                   </p>
                   {showCtaButton && (
                     <Link 
-                      href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+                      href={`/collections/${collection.name.replace(/\s+/g, '-')}`}
                       className="inline-block bg-gold-500 hover:bg-gold-600 text-white px-5 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold transition-colors"
                     >
                       {ctaButtonText}

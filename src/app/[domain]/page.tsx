@@ -55,6 +55,12 @@ export default async function StorePage({ params }: PageProps) {
     notFound()
   }
 
+  console.log('🚀 [Page] Fetching all data for store page', { 
+    domain: params.domain, 
+    userId: user.id,
+    shopName: user.shop_name 
+  })
+
   const [template, heroCollections, products, collectionsMap, categoriesMap, trendingCollections, bestCollections, footerData, testimonials, trendingProducts, heroCarouselConfig] = await Promise.all([
     getWebsiteTemplate(user.id),
     getHeroCollections(user.id),
@@ -68,6 +74,18 @@ export default async function StorePage({ params }: PageProps) {
     getTrendingProducts(user.id, 10),
     getSectionConfig(user.id, 'hero_carousel'),
   ])
+
+  console.log('📦 [Page] Data fetched successfully:', {
+    heroCollections: {
+      count: heroCollections.length,
+      source: 'user_hero_collections table'
+    },
+    heroCarouselConfig: {
+      hasConfig: !!heroCarouselConfig,
+      config: heroCarouselConfig,
+      source: 'user_website_sections.config'
+    }
+  })
 
   // Transform categories map to array format for components
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({

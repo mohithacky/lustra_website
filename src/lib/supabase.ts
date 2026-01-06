@@ -116,6 +116,8 @@ export async function getWebsiteTemplateWithUser(userId: string) {
 }
 
 export async function getHeroCollections(userId: string) {
+  console.log('🔍 [DB Query] Fetching hero collections from user_hero_collections table', { userId })
+  
   const { data, error } = await supabase
     .from('user_hero_collections')
     .select('*')
@@ -124,9 +126,14 @@ export async function getHeroCollections(userId: string) {
     .order('display_order', { ascending: true })
 
   if (error) {
-    console.error('Error fetching hero collections:', error)
+    console.error('❌ [DB Error] Failed to fetch hero collections:', error)
     return []
   }
+
+  console.log('✅ [DB Result] Hero collections fetched:', {
+    count: data?.length || 0,
+    collections: data?.map((c: any) => ({ id: c.id, name: c.name, display_order: c.display_order }))
+  })
 
   return data || []
 }
@@ -434,8 +441,23 @@ export async function getUserWebsiteSections(userId: string): Promise<UserWebsit
 }
 
 export async function getSectionConfig(userId: string, sectionType: string): Promise<Record<string, any> | null> {
+  console.log('🔍 [DB Query] Fetching section config from user_website_sections', { 
+    userId, 
+    sectionType,
+    flow: 'user_websites → user_website_sections → config field'
+  })
+  
   const sections = await getUserWebsiteSections(userId)
   const section = sections.find(s => s.section_type === sectionType && s.is_enabled)
+  
+  console.log('✅ [DB Result] Section config fetched:', {
+    sectionType,
+    found: !!section,
+    is_enabled: section?.is_enabled,
+    config: section?.config,
+    note: section?.config ? 'Using config from database' : 'No config found - will use safe defaults'
+  })
+  
   return section?.config ?? null
 }
 
