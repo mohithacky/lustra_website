@@ -47,7 +47,7 @@ export default function HeroCarousel({ collections, isDark, shopDomain }: HeroCa
       {/* Edit button for editor mode */}
       {canEditCollections && (
         <button
-          onClick={() => router.push('/editor/collections')}
+          onClick={() => router.push(`/${shopDomain}/editor/collections`)}
           className="absolute top-6 right-6 md:right-[130px] z-20 p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-all hover:scale-110"
           title="Edit Hero Collections"
         >
