@@ -469,7 +469,7 @@ export async function getTemplateSections(templateId: string) {
  * Get user's active website sections
  * These control what actually renders on the user's website
  */
-export async function getUserWebsiteSections(userWebsiteId: string) {
+export async function getUserWebsiteSections(userWebsiteId: string): Promise<UserWebsiteSection[]> {
   const { data, error } = await supabase
     .from('user_website_sections')
     .select('*')
@@ -482,14 +482,14 @@ export async function getUserWebsiteSections(userWebsiteId: string) {
     return []
   }
 
-  return data || []
+  return (data as UserWebsiteSection[]) || []
 }
 
 /**
  * Get collections for a specific section
  * Filters by user_id and collection_label (which matches section_label)
  */
-export async function getCollectionsByLabel(userId: string, collectionLabel: string) {
+export async function getCollectionsByLabel(userId: string, collectionLabel: string): Promise<CollectionNew[]> {
   const { data, error } = await supabase
     .from('collections')
     .select('*')
@@ -503,7 +503,7 @@ export async function getCollectionsByLabel(userId: string, collectionLabel: str
     return []
   }
 
-  return data || []
+  return (data as CollectionNew[]) || []
 }
 
 /**
@@ -518,7 +518,7 @@ export async function getSectionData(userId: string, userWebsiteId: string, sect
     return null
   }
 
-  let collections: any[] = []
+  let collections: CollectionNew[] = []
   if (sectionType === 'hero_carousel' || sectionType === 'collections') {
     collections = await getCollectionsByLabel(userId, section.section_label || '')
   }

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { waitForEditorContext, canEditCollections as checkCanEditCollections } from '@/lib/editor-context'
 import HeroCarousel from '@/components/sections/HeroCarousel'
 import TrendingSection from '@/components/sections/TrendingSection'
-import { HeroCollection } from '@/types/database'
+import { HeroCollection, CollectionNew } from '@/types/database'
 
 interface TrendingCollection {
   label: string
@@ -12,12 +12,13 @@ interface TrendingCollection {
 }
 
 interface EditableHeroCarouselProps {
-  collections: HeroCollection[]
+  collections: HeroCollection[] | CollectionNew[]
   isDark: boolean
   shopDomain: string
+  config?: Record<string, any>
 }
 
-export function EditableHeroCarousel({ collections, isDark, shopDomain }: EditableHeroCarouselProps) {
+export function EditableHeroCarousel({ collections, isDark, shopDomain, config }: EditableHeroCarouselProps) {
   const [canEdit, setCanEdit] = useState(false)
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export function EditableHeroCarousel({ collections, isDark, shopDomain }: Editab
       isDark={isDark}
       canEdit={canEdit}
       shopDomain={shopDomain}
+      config={config}
     />
   )
 }
