@@ -3,22 +3,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
-import { PlusCircle, MinusCircle } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 import { HeroCollection } from '@/types/database'
 
 interface HeroCarouselProps {
   collections: HeroCollection[]
   isDark: boolean
-  canEdit?: boolean
-  shopDomain?: string
 }
 
-export default function HeroCarousel({ collections, isDark, canEdit = false, shopDomain }: HeroCarouselProps) {
-  const router = useRouter()
+export default function HeroCarousel({ collections, isDark }: HeroCarouselProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true },
     [Autoplay({ delay: 5000, stopOnInteraction: false })]
@@ -99,34 +94,6 @@ export default function HeroCarousel({ collections, isDark, canEdit = false, sho
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
-        </div>
-      )}
-
-      {/* Editor Controls - matches Flutter row of icons after HeroCarousel */}
-      {canEdit && (
-        <div className="max-w-[1100px] mx-auto px-6 mt-2">
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={() => shopDomain && router.push(`/editor/collections/add`)}
-              className={cn(
-                'p-2 rounded-full transition-colors',
-                isDark ? 'hover:bg-zinc-800 text-white' : 'hover:bg-gray-100 text-black'
-              )}
-              title="Add Collection"
-            >
-              <PlusCircle className="w-6 h-6" />
-            </button>
-            <button
-              onClick={() => shopDomain && router.push(`/editor/collections/manage`)}
-              className={cn(
-                'p-2 rounded-full transition-colors',
-                isDark ? 'hover:bg-zinc-800 text-white' : 'hover:bg-gray-100 text-black'
-              )}
-              title="Manage Collections"
-            >
-              <MinusCircle className="w-6 h-6" />
-            </button>
-          </div>
         </div>
       )}
     </section>

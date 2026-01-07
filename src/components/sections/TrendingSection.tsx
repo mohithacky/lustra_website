@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Edit } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 
 interface TrendingCollection {
@@ -15,23 +13,13 @@ interface TrendingCollection {
 interface TrendingSectionProps {
   collections: TrendingCollection[]
   isDark: boolean
-  canEdit?: boolean
-  shopDomain?: string
 }
 
-export default function TrendingSection({ collections, isDark, canEdit = false, shopDomain }: TrendingSectionProps) {
-  const router = useRouter()
-  
+export default function TrendingSection({ collections, isDark }: TrendingSectionProps) {
   if (!collections.length) return null
 
   // Ensure we have exactly 4 items for the staggered grid like Flutter
   const displayCollections = collections.slice(0, 4)
-  
-  const handleEditItem = (position: number) => {
-    if (shopDomain) {
-      router.push(`/${shopDomain}/editor/trending?position=${position}`)
-    }
-  }
 
   // Flutter responsive padding: <600: 16, <1200: 32, >=1200: 150
   return (
@@ -72,8 +60,6 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
                   collection={displayCollections[0]}
                   heightRatio={0.8}
                   isDark={isDark}
-                  canEdit={canEdit}
-                  onEdit={() => handleEditItem(0)}
                 />
               )}
               {displayCollections[2] && (
@@ -81,8 +67,6 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
                   collection={displayCollections[2]}
                   heightRatio={1.2}
                   isDark={isDark}
-                  canEdit={canEdit}
-                  onEdit={() => handleEditItem(2)}
                 />
               )}
             </div>
@@ -93,8 +77,6 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
                   collection={displayCollections[1]}
                   heightRatio={1.2}
                   isDark={isDark}
-                  canEdit={canEdit}
-                  onEdit={() => handleEditItem(1)}
                 />
               )}
               {displayCollections[3] && (
@@ -102,8 +84,6 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
                   collection={displayCollections[3]}
                   heightRatio={0.8}
                   isDark={isDark}
-                  canEdit={canEdit}
-                  onEdit={() => handleEditItem(3)}
                 />
               )}
             </div>
@@ -114,12 +94,10 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
   )
 }
 
-function TrendingBox({ collection, heightRatio, isDark, canEdit = false, onEdit }: { 
+function TrendingBox({ collection, heightRatio, isDark }: { 
   collection: TrendingCollection
   heightRatio: number
   isDark: boolean
-  canEdit?: boolean
-  onEdit?: () => void
 }) {
   const [isHovered, setIsHovered] = useState(false)
   
@@ -131,7 +109,7 @@ function TrendingBox({ collection, heightRatio, isDark, canEdit = false, onEdit 
 
   return (
     <Link
-      href={`/collections/${collection.label.replace(/\s+/g, '-')}`}
+      href={`/collections/${collection.label.toLowerCase().replace(/\s+/g, '-')}`}
       className="block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -159,21 +137,6 @@ function TrendingBox({ collection, heightRatio, isDark, canEdit = false, onEdit 
         
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        
-        {/* Edit button - top right like Flutter GridBox */}
-        {canEdit && (
-          <button
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onEdit?.()
-            }}
-            className="absolute top-2 right-2 p-1.5 bg-black/40 hover:bg-black/60 rounded-full transition-colors z-10"
-            title="Edit Collection"
-          >
-            <Edit className="w-4 h-4 text-white" />
-          </button>
-        )}
         
         {/* Label - positioned at bottom left like Flutter */}
         <div className="absolute bottom-3 left-3 md:bottom-4 md:left-4">

@@ -5,7 +5,6 @@ import EditTrendingContent from '@/components/editor/EditTrendingContent'
 
 interface PageProps {
   params: { domain: string }
-  searchParams: { position?: string }
 }
 
 export const metadata: Metadata = {
@@ -13,11 +12,9 @@ export const metadata: Metadata = {
   description: 'Edit trending collections on your website',
 }
 
-export default async function EditTrendingPage({ params, searchParams }: PageProps) {
+export default async function EditTrendingPage({ params }: PageProps) {
   const user = await getWebsiteByDomain(params.domain)
   if (!user) notFound()
 
-  const initialPosition = searchParams.position ? parseInt(searchParams.position, 10) : undefined
-
-  return <EditTrendingContent shopId={user.id} shopDomain={params.domain} initialPosition={initialPosition} />
+  return <EditTrendingContent shopId={user.id} shopDomain={params.domain} />
 }

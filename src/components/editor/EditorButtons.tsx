@@ -52,7 +52,7 @@ export default function EditorButtons({ shopDomain, isDark }: EditorButtonsProps
 
           {/* Edit Trending Collections Button */}
           <button
-            onClick={() => router.push(`/editor/trending`)}
+            onClick={() => router.push(`/${shopDomain}/editor/trending`)}
             className={cn(
               'flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all hover:scale-105',
               isDark 
@@ -69,7 +69,7 @@ export default function EditorButtons({ shopDomain, isDark }: EditorButtonsProps
 
       {canEditSect && (
         <button
-          onClick={() => router.push(`/editor/sections`)}
+          onClick={() => router.push(`/${shopDomain}/editor/sections`)}
           className={cn(
             'flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all hover:scale-105',
             isDark 
