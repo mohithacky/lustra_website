@@ -36,7 +36,29 @@ interface PageProps {
   params: { domain: string }
 }
 
+// List of file extensions that should NOT be treated as shop domains
+const EXCLUDED_EXTENSIONS = ['.js', '.css', '.json', '.ico', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.woff', '.woff2', '.ttf', '.map', '.txt', '.xml', '.webmanifest']
+
+function isValidDomain(domain: string): boolean {
+  // Exclude file requests
+  const lowerDomain = domain.toLowerCase()
+  if (EXCLUDED_EXTENSIONS.some(ext => lowerDomain.endsWith(ext))) {
+    return false
+  }
+  // Exclude known system paths
+  if (['favicon', 'robots', 'sitemap', '_next', 'api', 'static'].includes(lowerDomain)) {
+    return false
+  }
+  // Domain should be alphanumeric with optional hyphens/underscores
+  return /^[a-zA-Z0-9_-]+$/.test(domain)
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  // Skip metadata generation for invalid domains (static files, etc.)
+  if (!isValidDomain(params.domain)) {
+    return { title: 'Not Found' }
+  }
+
   const renderData = await getWebsiteRenderData(params.domain)
   
   if (!renderData) {
@@ -61,6 +83,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function StorePage({ params }: PageProps) {
+  // ============================================================================
+  // Validate domain parameter - exclude static file requests
+  // ============================================================================
+  if (!isValidDomain(params.domain)) {
+    console.log(`Skipping invalid domain: ${params.domain}`)
+    notFound()
+  }
+
   // ============================================================================
   // NEW ARCHITECTURE: Use the new rendering flow
   // ============================================================================
