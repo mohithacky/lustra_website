@@ -42,6 +42,12 @@ export interface ProductData {
 }
 
 export async function getWebsiteByDomain(domain: string): Promise<UserData | null> {
+  console.log('🔍 [DB Query] Looking up user by shop_domain', { 
+    domain,
+    table: 'users',
+    query: `shop_domain = '${domain}'`
+  })
+
   const { data, error } = await supabase
     .from('users')
     .select(`
@@ -57,10 +63,20 @@ export async function getWebsiteByDomain(domain: string): Promise<UserData | nul
     .eq('shop_domain', domain)
     .single()
 
-  if (error) {
-    console.error('Error fetching website by domain:', error)
+  if (error || !data) {
+    console.error('❌ [DB Error] Failed to fetch website by domain:', {
+      domain,
+      error,
+      hint: 'Check if shop_domain exists in users table. Run: SELECT id, shop_name, shop_domain FROM users;'
+    })
     return null
   }
+
+  console.log('✅ [DB Result] User found:', {
+    userId: data.id,
+    shopName: data.shop_name,
+    shopDomain: data.shop_domain
+  })
 
   return data as UserData
 }
@@ -116,13 +132,13 @@ export async function getWebsiteTemplateWithUser(userId: string) {
 }
 
 export async function getHeroCollections(userId: string) {
-  console.log('🔍 [DB Query] Fetching hero collections from user_hero_collections table', { userId })
+  console.log('🔍 [DB Query] Fetching hero collections from collections table', { userId })
   
-  const { data, error } = await supabase
-    .from('user_hero_collections')
+  const { data, error } = await (supabase as any)
+    .from('collections')
     .select('*')
     .eq('user_id', userId)
-    .eq('is_visible', true)
+    .eq('is_active', true)
     .order('display_order', { ascending: true })
 
   if (error) {
@@ -132,7 +148,7 @@ export async function getHeroCollections(userId: string) {
 
   console.log('✅ [DB Result] Hero collections fetched:', {
     count: data?.length || 0,
-    collections: data?.map((c: any) => ({ id: c.id, name: c.name, display_order: c.display_order }))
+    collections: data?.map((c: any) => ({ id: c.id, name: c.name, slug: c.slug, display_order: c.display_order }))
   })
 
   return data || []

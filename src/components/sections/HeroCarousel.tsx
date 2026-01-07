@@ -64,12 +64,13 @@ export default function HeroCarousel({
     console.group('🎨 HeroCarousel - Data Source Verification')
     console.log('📊 Collections from database:', {
       count: collections.length,
-      source: 'user_hero_collections table',
+      source: 'collections table',
       collections: collections.map(c => ({
         id: c.id,
         name: c.name,
+        slug: c.slug,
         display_order: c.display_order,
-        is_visible: c.is_visible
+        is_active: c.is_active
       }))
     })
     console.log('⚙️ Config from database:', {

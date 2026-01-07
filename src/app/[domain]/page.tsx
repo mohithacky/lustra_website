@@ -78,7 +78,7 @@ export default async function StorePage({ params }: PageProps) {
   console.log('📦 [Page] Data fetched successfully:', {
     heroCollections: {
       count: heroCollections.length,
-      source: 'user_hero_collections table'
+      source: 'collections table'
     },
     heroCarouselConfig: {
       hasConfig: !!heroCarouselConfig,
