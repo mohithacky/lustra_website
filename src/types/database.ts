@@ -15,6 +15,76 @@ export interface Database {
           updated_at: string
         }
       }
+      website_templates: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          is_active: boolean
+          is_premium: boolean
+          display_order: number
+          created_at: string
+          updated_at: string
+        }
+      }
+      website_template_sections: {
+        Row: {
+          id: string
+          template_id: string
+          section_type: string
+          section_label: string
+          description: string | null
+          default_config: Record<string, any> | null
+          schema: Record<string, any> | null
+          variant: string
+          is_required: boolean
+          is_enabled_by_default: boolean
+          display_order: number
+          icon: string | null
+          created_at: string
+          updated_at: string
+        }
+      }
+      user_websites: {
+        Row: {
+          id: string
+          user_id: string
+          template_id: string
+          theme: string | null
+          is_active: boolean
+          published_at: string | null
+          created_at: string
+          updated_at: string
+        }
+      }
+      user_website_sections: {
+        Row: {
+          id: string
+          user_website_id: string
+          template_section_id: string
+          section_type: string
+          section_label: string | null
+          is_enabled: boolean
+          display_order: number
+          config: Record<string, any> | null
+          created_at: string
+          updated_at: string
+        }
+      }
+      collections: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          slug: string
+          image_url: string | null
+          collection_label: string
+          display_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+      }
       user_website_templates: {
         Row: {
           id: string
@@ -216,3 +286,9 @@ export type HeroCollection = Database['public']['Tables']['user_hero_collections
 export type Collection = Database['public']['Tables']['user_collections']['Row']
 export type Category = Database['public']['Tables']['user_categories']['Row']
 export type WebsiteTemplate = Database['public']['Tables']['user_website_templates']['Row']
+
+export type WebsiteTemplateNew = Database['public']['Tables']['website_templates']['Row']
+export type WebsiteTemplateSection = Database['public']['Tables']['website_template_sections']['Row']
+export type UserWebsite = Database['public']['Tables']['user_websites']['Row']
+export type UserWebsiteSection = Database['public']['Tables']['user_website_sections']['Row']
+export type CollectionNew = Database['public']['Tables']['collections']['Row']
