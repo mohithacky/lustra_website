@@ -315,6 +315,8 @@ export async function getCollectionsByIds(ids: string[]): Promise<Collection[]> 
 }
 
 export async function getCollectionsByLabel(userId: string, label: string): Promise<Collection[]> {
+  console.log(`   Fetching collections: user_id=${userId}, label=${label}`)
+  
   const { data, error } = await supabase
     .from('collections')
     .select('*')
@@ -324,10 +326,11 @@ export async function getCollectionsByLabel(userId: string, label: string): Prom
     .order('display_order', { ascending: true })
 
   if (error) {
-    console.error(`Error fetching ${label} collections:`, error)
+    console.error(`   ❌ Error fetching ${label} collections:`, error.message)
     return []
   }
 
+  console.log(`   ✅ Found ${data?.length || 0} ${label} collections`)
   return (data || []) as Collection[]
 }
 
@@ -352,35 +355,58 @@ export async function getAllUserCollections(userId: string): Promise<Collection[
 // Main function: Get complete website render data
 // ============================================================================
 export async function getWebsiteRenderData(domain: string): Promise<WebsiteRenderData | null> {
+  console.log(`\n========== getWebsiteRenderData for domain: ${domain} ==========`)
+  
   // Step 1: Get user by domain
   const user = await getWebsiteByDomain(domain)
   if (!user) {
-    console.error('User not found for domain:', domain)
+    console.error('❌ User not found for domain:', domain)
     return null
   }
+  console.log(`✅ User found: ${user.id}, shop_name: ${user.shop_name}`)
 
   // Step 2: Get user's primary website
   const website = await getUserWebsite(user.id)
   if (!website) {
-    console.error('User website not found for user:', user.id)
+    console.error('❌ User website not found for user:', user.id)
     return null
   }
+  console.log(`✅ Website found: ${website.id}, template_id: ${website.template_id}, is_primary: ${website.is_primary}`)
 
   // Step 3: Get template
   const template = await getWebsiteTemplate(website.template_id)
   if (!template) {
-    console.error('Template not found:', website.template_id)
+    console.error('❌ Template not found:', website.template_id)
     return null
   }
+  console.log(`✅ Template found: ${template.name} (${template.slug})`)
 
   // Step 3b: Get template sections
   const templateSections = await getTemplateSections(template.id)
+  console.log(`📋 Template sections found: ${templateSections.length}`)
+  if (templateSections.length > 0) {
+    console.log(`   Types: ${templateSections.map(s => s.section_type).join(', ')}`)
+  }
 
   // Step 4: Get user's section customizations
   const userSections = await getUserWebsiteSections(website.id)
+  console.log(`📄 User website sections found: ${userSections.length}`)
+  if (userSections.length > 0) {
+    console.log(`   Types: ${userSections.map(s => s.section_type).join(', ')}`)
+  }
 
   // Step 5 & 6: Merge configs and fetch collections
   const sections = await getMergedSections(templateSections, userSections, user.id)
+  console.log(`🔗 Merged sections: ${sections.length}`)
+  
+  // Log collection counts per section
+  for (const section of sections) {
+    if (section.collections && section.collections.length > 0) {
+      console.log(`   ${section.section_type}: ${section.collections.length} collections`)
+    }
+  }
+  
+  console.log(`========== END getWebsiteRenderData ==========\n`)
 
   return {
     user,
