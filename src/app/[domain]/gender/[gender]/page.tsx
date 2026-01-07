@@ -76,7 +76,8 @@ export default async function GenderPage({ params }: PageProps) {
         products={products}
         isDark={isDark}
         shopDomain={params.domain}
-        title={`Shop for ${gender}`}
+        shopId={user.id}
+        title={`${gender.charAt(0).toUpperCase() + gender.slice(1)} Products`}
         categories={Object.keys(categoriesMap)}
         collections={Object.keys(collectionsMap)}
       />

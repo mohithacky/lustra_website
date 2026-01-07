@@ -18,13 +18,14 @@ interface TrendingCollection {
 interface EditTrendingContentProps {
   shopId: string
   shopDomain: string
+  initialPosition?: number
 }
 
-export default function EditTrendingContent({ shopId, shopDomain }: EditTrendingContentProps) {
+export default function EditTrendingContent({ shopId, shopDomain, initialPosition }: EditTrendingContentProps) {
   const router = useRouter()
   const [collections, setCollections] = useState<TrendingCollection[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [editingPosition, setEditingPosition] = useState<number | null>(null)
+  const [editingPosition, setEditingPosition] = useState<number | null>(initialPosition ?? null)
   
   // Form state
   const [collectionName, setCollectionName] = useState('')

@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { cn, getImageUrl, formatPrice } from '@/lib/utils'
-import { ChevronDown, Grid, List, SlidersHorizontal } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Grid, List, SlidersHorizontal, ChevronDown } from 'lucide-react'
+import ProductCard from '@/components/products/ProductCard'
 
 interface Product {
   id: string
@@ -23,6 +22,7 @@ interface ProductsGridProps {
   products: Product[]
   isDark: boolean
   shopDomain: string
+  shopId: string
   title: string
   categories: string[]
   collections: string[]
@@ -31,7 +31,8 @@ interface ProductsGridProps {
 export default function ProductsGrid({ 
   products, 
   isDark, 
-  shopDomain, 
+  shopDomain,
+  shopId,
   title,
   categories,
   collections 
@@ -208,6 +209,7 @@ export default function ProductsGrid({
                 isDark={isDark}
                 shopDomain={shopDomain}
                 viewMode={viewMode}
+                shopId={shopId}
               />
             ))}
           </div>
@@ -226,103 +228,3 @@ export default function ProductsGrid({
   )
 }
 
-function ProductCard({ product, isDark, shopDomain, viewMode }: {
-  product: Product
-  isDark: boolean
-  shopDomain: string
-  viewMode: 'grid' | 'list'
-}) {
-  const [isHovered, setIsHovered] = useState(false)
-
-  if (viewMode === 'list') {
-    return (
-      <Link
-        href={`/products/${product.id}`}
-        className={cn(
-          'flex gap-4 p-4 rounded-xl transition-shadow',
-          isDark ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-white hover:shadow-lg'
-        )}
-      >
-        <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
-          <Image
-            src={getImageUrl(product.image_url)}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="96px"
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className={cn(
-            'font-semibold text-sm truncate',
-            isDark ? 'text-white' : 'text-black'
-          )}>
-            {product.name}
-          </h3>
-          {product.category && (
-            <p className={cn(
-              'text-xs mt-1',
-              isDark ? 'text-gray-400' : 'text-gray-500'
-            )}>
-              {product.category}
-            </p>
-          )}
-          <p className={cn(
-            'font-bold mt-2',
-            isDark ? 'text-gold-400' : 'text-gold-600'
-          )}>
-            {formatPrice(product.price)}
-          </p>
-        </div>
-      </Link>
-    )
-  }
-
-  return (
-    <Link
-      href={`/${shopDomain}/products/${product.id}`}
-      className="block"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div 
-        className={cn(
-          'rounded-xl overflow-hidden transition-all duration-300',
-          'bg-white shadow-md',
-          isHovered && 'shadow-xl -translate-y-1'
-        )}
-      >
-        {/* Image */}
-        <div className="relative aspect-square overflow-hidden">
-          <Image
-            src={getImageUrl(product.image_url)}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          />
-          {/* Badges */}
-          {(product.is_bestseller || product.is_trending) && (
-            <div className="absolute top-2 left-2">
-              {product.is_bestseller && (
-                <span className="bg-gold-500 text-white text-xs px-2 py-1 rounded-full">
-                  Bestseller
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="p-3">
-          <h3 className="font-semibold text-sm text-black line-clamp-1 mb-1">
-            {product.name}
-          </h3>
-          <p className="font-bold text-black">
-            {formatPrice(product.price)}
-          </p>
-        </div>
-      </div>
-    </Link>
-  )
-}
