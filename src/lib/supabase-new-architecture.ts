@@ -133,7 +133,7 @@ export interface WebsiteRenderData {
 export async function getWebsiteByDomain(domain: string): Promise<UserData | null> {
   // Convert to lowercase to match Flutter's behavior
   const normalizedDomain = domain.toLowerCase()
-  console.log(`   Querying users table with shop_domain='${normalizedDomain}'`)
+  console.log(`[DB] Querying users table with shop_domain='${normalizedDomain}'`)
   
   const { data, error } = await supabase
     .from('users')
@@ -151,10 +151,11 @@ export async function getWebsiteByDomain(domain: string): Promise<UserData | nul
     .single()
 
   if (error) {
-    console.error('Error fetching website by domain:', error)
+    console.error(`[DB ERROR] Failed to fetch user by domain '${normalizedDomain}':`, JSON.stringify(error))
     return null
   }
 
+  console.log(`[DB SUCCESS] Found user: id=${data.id}, shop_name=${data.shop_name}`)
   return data as UserData
 }
 
@@ -162,6 +163,8 @@ export async function getWebsiteByDomain(domain: string): Promise<UserData | nul
 // Step 2: Get user's primary website
 // ============================================================================
 export async function getUserWebsite(userId: string): Promise<UserWebsite | null> {
+  console.log(`[DB] Querying user_websites for user_id='${userId}' (is_active=true, is_primary=true)`)
+  
   const { data, error } = await supabase
     .from('user_websites')
     .select('*')
@@ -171,6 +174,7 @@ export async function getUserWebsite(userId: string): Promise<UserWebsite | null
     .single()
 
   if (error) {
+    console.log(`[DB] Primary website query failed, trying fallback without is_primary filter...`)
     // Try without is_primary filter (for users who might not have primary set)
     const { data: fallbackData, error: fallbackError } = await supabase
       .from('user_websites')
@@ -182,12 +186,14 @@ export async function getUserWebsite(userId: string): Promise<UserWebsite | null
       .single()
     
     if (fallbackError) {
-      console.error('Error fetching user website:', fallbackError)
+      console.error(`[DB ERROR] Failed to fetch user_websites for user '${userId}':`, JSON.stringify(fallbackError))
       return null
     }
+    console.log(`[DB SUCCESS] Found website (fallback): id=${fallbackData.id}, template_id=${fallbackData.template_id}`)
     return fallbackData as UserWebsite
   }
 
+  console.log(`[DB SUCCESS] Found website: id=${data.id}, template_id=${data.template_id}, is_primary=${data.is_primary}`)
   return data as UserWebsite
 }
 
@@ -195,6 +201,8 @@ export async function getUserWebsite(userId: string): Promise<UserWebsite | null
 // Step 3: Get template and its sections
 // ============================================================================
 export async function getWebsiteTemplate(templateId: string): Promise<WebsiteTemplate | null> {
+  console.log(`[DB] Querying website_templates for id='${templateId}'`)
+  
   const { data, error } = await supabase
     .from('website_templates')
     .select('*')
@@ -202,14 +210,17 @@ export async function getWebsiteTemplate(templateId: string): Promise<WebsiteTem
     .single()
 
   if (error) {
-    console.error('Error fetching website template:', error)
+    console.error(`[DB ERROR] Failed to fetch template '${templateId}':`, JSON.stringify(error))
     return null
   }
 
+  console.log(`[DB SUCCESS] Found template: name=${data.name}, slug=${data.slug}`)
   return data as WebsiteTemplate
 }
 
 export async function getTemplateSections(templateId: string): Promise<WebsiteTemplateSection[]> {
+  console.log(`[DB] Querying website_template_sections for template_id='${templateId}'`)
+  
   const { data, error } = await supabase
     .from('website_template_sections')
     .select('*')
@@ -217,10 +228,14 @@ export async function getTemplateSections(templateId: string): Promise<WebsiteTe
     .order('display_order', { ascending: true })
 
   if (error) {
-    console.error('Error fetching template sections:', error)
+    console.error(`[DB ERROR] Failed to fetch template sections:`, JSON.stringify(error))
     return []
   }
 
+  console.log(`[DB SUCCESS] Found ${data?.length || 0} template sections`)
+  if (data && data.length > 0) {
+    console.log(`[DB] Section types: ${data.map(s => s.section_type).join(', ')}`)
+  }
   return (data || []) as WebsiteTemplateSection[]
 }
 
@@ -228,16 +243,24 @@ export async function getTemplateSections(templateId: string): Promise<WebsiteTe
 // Step 4: Get user's section customizations
 // ============================================================================
 export async function getUserWebsiteSections(userWebsiteId: string): Promise<UserWebsiteSection[]> {
+  console.log(`[DB] Querying user_website_sections for user_website_id='${userWebsiteId}'`)
+  
   const { data, error } = await supabase
     .from('user_website_sections')
     .select('*')
     .eq('user_website_id', userWebsiteId)
 
   if (error) {
-    console.error('Error fetching user website sections:', error)
+    console.error(`[DB ERROR] Failed to fetch user_website_sections:`, JSON.stringify(error))
     return []
   }
 
+  console.log(`[DB SUCCESS] Found ${data?.length || 0} user_website_sections`)
+  if (data && data.length > 0) {
+    console.log(`[DB] User section types: ${data.map(s => s.section_type).join(', ')}`)
+  } else {
+    console.log(`[DB WARNING] No user_website_sections found - will use template defaults`)
+  }
   return (data || []) as UserWebsiteSection[]
 }
 
@@ -319,7 +342,7 @@ export async function getCollectionsByIds(ids: string[]): Promise<Collection[]> 
 }
 
 export async function getCollectionsByLabel(userId: string, label: string): Promise<Collection[]> {
-  console.log(`   Fetching collections: user_id=${userId}, label=${label}`)
+  console.log(`[DB] Querying collections: user_id='${userId}', collection_label='${label}'`)
   
   const { data, error } = await supabase
     .from('collections')
@@ -330,11 +353,14 @@ export async function getCollectionsByLabel(userId: string, label: string): Prom
     .order('display_order', { ascending: true })
 
   if (error) {
-    console.error(`   ❌ Error fetching ${label} collections:`, error.message)
+    console.error(`[DB ERROR] Failed to fetch ${label} collections:`, JSON.stringify(error))
     return []
   }
 
-  console.log(`   ✅ Found ${data?.length || 0} ${label} collections`)
+  console.log(`[DB SUCCESS] Found ${data?.length || 0} ${label} collections`)
+  if (data && data.length > 0) {
+    console.log(`[DB] Collection names: ${data.map(c => c.name).join(', ')}`)
+  }
   return (data || []) as Collection[]
 }
 
@@ -359,58 +385,87 @@ export async function getAllUserCollections(userId: string): Promise<Collection[
 // Main function: Get complete website render data
 // ============================================================================
 export async function getWebsiteRenderData(domain: string): Promise<WebsiteRenderData | null> {
-  console.log(`\n========== getWebsiteRenderData for domain: ${domain} ==========`)
+  console.log(`\n`)
+  console.log(`================================================================`)
+  console.log(`[RENDER] Starting getWebsiteRenderData for domain: "${domain}"`)
+  console.log(`================================================================`)
   
   // Step 1: Get user by domain
+  console.log(`\n[STEP 1] Fetching user by shop_domain...`)
   const user = await getWebsiteByDomain(domain)
   if (!user) {
-    console.error('❌ User not found for domain:', domain)
+    console.error(`[RENDER ERROR] User not found for domain: "${domain}"`)
+    console.log(`[RENDER] FAILED - No user with shop_domain="${domain}" in users table`)
     return null
   }
-  console.log(`✅ User found: ${user.id}, shop_name: ${user.shop_name}`)
 
   // Step 2: Get user's primary website
+  console.log(`\n[STEP 2] Fetching user_websites for user_id="${user.id}"...`)
   const website = await getUserWebsite(user.id)
   if (!website) {
-    console.error('❌ User website not found for user:', user.id)
+    console.error(`[RENDER ERROR] No user_websites found for user: ${user.id}`)
+    console.log(`[RENDER] FAILED - User exists but has no entry in user_websites table`)
     return null
   }
-  console.log(`✅ Website found: ${website.id}, template_id: ${website.template_id}, is_primary: ${website.is_primary}`)
 
   // Step 3: Get template
+  console.log(`\n[STEP 3] Fetching template for template_id="${website.template_id}"...`)
   const template = await getWebsiteTemplate(website.template_id)
   if (!template) {
-    console.error('❌ Template not found:', website.template_id)
+    console.error(`[RENDER ERROR] Template not found: ${website.template_id}`)
+    console.log(`[RENDER] FAILED - Template does not exist`)
     return null
   }
-  console.log(`✅ Template found: ${template.name} (${template.slug})`)
 
   // Step 3b: Get template sections
+  console.log(`\n[STEP 4] Fetching website_template_sections for template="${template.slug}"...`)
   const templateSections = await getTemplateSections(template.id)
-  console.log(`📋 Template sections found: ${templateSections.length}`)
-  if (templateSections.length > 0) {
-    console.log(`   Types: ${templateSections.map(s => s.section_type).join(', ')}`)
-  }
 
   // Step 4: Get user's section customizations
+  console.log(`\n[STEP 5] Fetching user_website_sections for website_id="${website.id}"...`)
   const userSections = await getUserWebsiteSections(website.id)
-  console.log(`📄 User website sections found: ${userSections.length}`)
-  if (userSections.length > 0) {
-    console.log(`   Types: ${userSections.map(s => s.section_type).join(', ')}`)
-  }
 
   // Step 5 & 6: Merge configs and fetch collections
+  console.log(`\n[STEP 6] Merging sections and fetching collections for user_id="${user.id}"...`)
   const sections = await getMergedSections(templateSections, userSections, user.id)
-  console.log(`🔗 Merged sections: ${sections.length}`)
   
-  // Log collection counts per section
+  // ========== SUMMARY ==========
+  console.log(`\n================================================================`)
+  console.log(`[RENDER SUMMARY] Domain: ${domain}`)
+  console.log(`================================================================`)
+  console.log(`  User ID:              ${user.id}`)
+  console.log(`  Shop Name:            ${user.shop_name}`)
+  console.log(`  Website ID:           ${website.id}`)
+  console.log(`  Template:             ${template.name} (${template.slug})`)
+  console.log(`  Template Sections:    ${templateSections.length}`)
+  console.log(`  User Sections:        ${userSections.length}`)
+  console.log(`  Merged Sections:      ${sections.length}`)
+  console.log(``)
+  console.log(`  Collections by type:`)
+  
+  let totalCollections = 0
   for (const section of sections) {
-    if (section.collections && section.collections.length > 0) {
-      console.log(`   ${section.section_type}: ${section.collections.length} collections`)
+    const count = section.collections?.length || 0
+    totalCollections += count
+    if (count > 0) {
+      console.log(`    - ${section.section_type}: ${count} collections`)
     }
   }
   
-  console.log(`========== END getWebsiteRenderData ==========\n`)
+  console.log(`  Total Collections:    ${totalCollections}`)
+  console.log(`================================================================`)
+  
+  // Warnings for missing data
+  if (templateSections.length === 0) {
+    console.warn(`[WARNING] No template sections found! Run migration 033_create_default_template_sections.sql`)
+  }
+  if (totalCollections === 0) {
+    console.warn(`[WARNING] No collections found! The website sections that need collections won't render.`)
+    console.warn(`[WARNING] Either run onboarding again or manually insert collections into the collections table.`)
+  }
+  
+  console.log(`[RENDER] SUCCESS - Data fetched, returning to page.tsx`)
+  console.log(`================================================================\n`)
 
   return {
     user,

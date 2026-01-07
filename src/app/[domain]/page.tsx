@@ -102,6 +102,11 @@ export default async function StorePage({ params }: PageProps) {
 
   const { user, website, template, sections } = renderData
 
+  // Log render data summary
+  console.log(`\n[PAGE] Rendering StorePage for domain: ${params.domain}`)
+  console.log(`[PAGE] User: ${user.id} (${user.shop_name})`)
+  console.log(`[PAGE] Sections received: ${sections.length}`)
+
   // Get collections from merged sections
   const heroCollectionsFromSections = getHeroFromSections(sections)
   const trendingCollectionsFromSections = getTrendingFromSections(sections)
@@ -116,12 +121,24 @@ export default async function StorePage({ params }: PageProps) {
   const categoriesMap = transformCategoriesToMap(categoryCollections)
   const bestCollections = transformBestToLegacy(bestCollectionsFromSections)
 
+  // Log what will be rendered
+  console.log(`[PAGE] Data for rendering:`)
+  console.log(`  - Hero collections: ${heroCollections.length}`)
+  console.log(`  - Categories: ${Object.keys(categoriesMap).length}`)
+  console.log(`  - Trending collections: ${trendingCollections.length}`)
+  console.log(`  - Best collections: ${bestCollections.length}`)
+  console.log(`  - Show testimonials: ${showTestimonials}`)
+
   // Fetch products using legacy table (still using website_products)
   const [products, testimonials, trendingProducts] = await Promise.all([
     getProducts(user.id, { limit: 12 }),
     showTestimonials ? getTestimonials(user.id) : Promise.resolve([]),
     getTrendingProducts(user.id, 10),
   ])
+
+  console.log(`  - Products: ${products.length}`)
+  console.log(`  - Testimonials: ${testimonials.length}`)
+  console.log(`  - Trending products: ${trendingProducts.length}`)
 
   // Transform categories map to array format for components
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
