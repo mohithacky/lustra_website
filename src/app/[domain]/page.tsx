@@ -82,6 +82,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
+// Force dynamic rendering - disable caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function StorePage({ params }: PageProps) {
   // ============================================================================
   // Validate domain parameter - exclude static file requests

@@ -17,10 +17,19 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://phlccyxgyftspxnuzttf.supabase.co'
-const supabaseAnonKey = 'sb_publishable_tMc-l2KRHyKOXlR0tODIPw_VhBH-w5R'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://phlccyxgyftspxnuzttf.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_tMc-l2KRHyKOXlR0tODIPw_VhBH-w5R'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  console.warn('[SUPABASE] Using fallback hardcoded credentials. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel environment variables.')
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+})
 
 // ============================================================================
 // Types
