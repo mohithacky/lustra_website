@@ -102,6 +102,47 @@ export async function GET(
     } catch (e: any) {
       results.queries.collections = { success: false, error: e.message }
     }
+
+    // Test 5: Query website_template_sections (critical for rendering)
+    const templateId = results.queries.userWebsites?.data?.[0]?.template_id
+    if (templateId) {
+      try {
+        const { data: templateSectionsData, error: templateSectionsError } = await supabase
+          .from('website_template_sections')
+          .select('id, section_type, section_label, is_enabled_by_default, display_order')
+          .eq('template_id', templateId)
+          .order('display_order', { ascending: true })
+
+        results.queries.templateSections = {
+          success: !templateSectionsError,
+          count: templateSectionsData?.length || 0,
+          data: templateSectionsData,
+          error: templateSectionsError ? { code: templateSectionsError.code, message: templateSectionsError.message } : null,
+        }
+      } catch (e: any) {
+        results.queries.templateSections = { success: false, error: e.message }
+      }
+    }
+
+    // Test 6: Query user_website_sections (user customizations)
+    const websiteId = results.queries.userWebsites?.data?.[0]?.id
+    if (websiteId) {
+      try {
+        const { data: userSectionsData, error: userSectionsError } = await supabase
+          .from('user_website_sections')
+          .select('id, section_type, section_label, is_enabled, display_order, template_section_id')
+          .eq('user_website_id', websiteId)
+
+        results.queries.userWebsiteSections = {
+          success: !userSectionsError,
+          count: userSectionsData?.length || 0,
+          data: userSectionsData,
+          error: userSectionsError ? { code: userSectionsError.code, message: userSectionsError.message } : null,
+        }
+      } catch (e: any) {
+        results.queries.userWebsiteSections = { success: false, error: e.message }
+      }
+    }
   }
 
   return NextResponse.json(results, { status: 200 })
