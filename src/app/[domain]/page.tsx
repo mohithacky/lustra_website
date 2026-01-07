@@ -1,17 +1,26 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+// New Architecture imports
+import {
+  getWebsiteRenderData,
+  getHeroCollections as getHeroFromSections,
+  getTrendingCollections as getTrendingFromSections,
+  getCategoryCollections,
+  getBestCollections as getBestFromSections,
+  getFooterData as getFooterFromSections,
+  isTestimonialsEnabled,
+  transformHeroToLegacy,
+  transformTrendingToLegacy,
+  transformCategoriesToMap,
+  transformBestToLegacy,
+  Collection,
+} from '@/lib/supabase-new-architecture'
+// Legacy imports for products (still using old tables)
 import { 
-  getWebsiteByDomain, 
-  getWebsiteTemplate, 
-  getHeroCollections, 
   getProducts, 
-  getCollectionsMap,
-  getCategoriesMap,
-  getTrendingCollections,
-  getBestCollections,
-  getFooterData,
   getTestimonials,
-  getTrendingProducts
+  getTrendingProducts,
+  getWebsiteByDomain as getWebsiteByDomainLegacy,
 } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import CategoriesSection from '@/components/sections/CategoriesSection'
@@ -28,17 +37,21 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const user = await getWebsiteByDomain(params.domain)
+  const renderData = await getWebsiteRenderData(params.domain)
   
-  if (!user) {
+  if (!renderData) {
     return {
       title: 'Store Not Found',
     }
   }
 
+  const { user, website } = renderData
+  const metaTitle = website.meta_title || `${user.shop_name || 'Jewelry Store'} - Exquisite Jewelry Collection`
+  const metaDescription = website.meta_description || `Discover beautiful jewelry at ${user.shop_name}. Browse our collection of rings, necklaces, earrings, and more.`
+
   return {
-    title: `${user.shop_name || 'Jewelry Store'} - Exquisite Jewelry Collection`,
-    description: `Discover beautiful jewelry at ${user.shop_name}. Browse our collection of rings, necklaces, earrings, and more.`,
+    title: metaTitle,
+    description: metaDescription,
     openGraph: {
       title: user.shop_name || 'Jewelry Store',
       description: `Discover beautiful jewelry at ${user.shop_name}`,
@@ -48,22 +61,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function StorePage({ params }: PageProps) {
-  const user = await getWebsiteByDomain(params.domain)
+  // ============================================================================
+  // NEW ARCHITECTURE: Use the new rendering flow
+  // ============================================================================
+  const renderData = await getWebsiteRenderData(params.domain)
   
-  if (!user) {
+  if (!renderData) {
     notFound()
   }
 
-  const [template, heroCollections, products, collectionsMap, categoriesMap, trendingCollections, bestCollections, footerData, testimonials, trendingProducts] = await Promise.all([
-    getWebsiteTemplate(user.id),
-    getHeroCollections(user.id),
+  const { user, website, template, sections } = renderData
+
+  // Get collections from merged sections
+  const heroCollectionsFromSections = getHeroFromSections(sections)
+  const trendingCollectionsFromSections = getTrendingFromSections(sections)
+  const categoryCollections = getCategoryCollections(sections)
+  const bestCollectionsFromSections = getBestFromSections(sections)
+  const footerData = getFooterFromSections(sections)
+  const showTestimonials = isTestimonialsEnabled(sections)
+
+  // Transform to legacy format for existing components
+  const heroCollections = transformHeroToLegacy(heroCollectionsFromSections)
+  const trendingCollections = transformTrendingToLegacy(trendingCollectionsFromSections)
+  const categoriesMap = transformCategoriesToMap(categoryCollections)
+  const bestCollections = transformBestToLegacy(bestCollectionsFromSections)
+
+  // Fetch products using legacy table (still using website_products)
+  const [products, testimonials, trendingProducts] = await Promise.all([
     getProducts(user.id, { limit: 12 }),
-    getCollectionsMap(user.id),
-    getCategoriesMap(user.id),
-    getTrendingCollections(user.id),
-    getBestCollections(user.id),
-    getFooterData(user.id),
-    getTestimonials(user.id),
+    showTestimonials ? getTestimonials(user.id) : Promise.resolve([]),
     getTrendingProducts(user.id, 10),
   ])
 
@@ -79,19 +105,20 @@ export default async function StorePage({ params }: PageProps) {
     updated_at: '',
   }))
 
-  // Transform collections map to array format for components
-  const collectionsArray = Object.entries(collectionsMap).map(([name, bannerUrl], index) => ({
-    id: String(index),
-    user_id: user.id,
-    name,
-    banner_url: bannerUrl,
-    description: null,
-    display_order: index,
-    created_at: '',
-    updated_at: '',
+  // Transform hero collections to collections array format for layout
+  const collectionsArray = heroCollectionsFromSections.map((col: Collection, index: number) => ({
+    id: col.id,
+    user_id: col.user_id,
+    name: col.name,
+    banner_url: col.image_url || '',
+    description: null as string | null,
+    display_order: col.display_order,
+    created_at: col.created_at || '',
+    updated_at: col.updated_at || '',
   }))
 
-  const theme = template?.theme || 'light'
+  // Use theme from user_websites (new architecture)
+  const theme = website.theme || 'light'
   const isDark = theme === 'dark'
 
   return (
@@ -184,7 +211,16 @@ export default async function StorePage({ params }: PageProps) {
       {/* Footer */}
       <Footer 
         user={user}
-        template={template ? { ...template, footer: footerData } : null}
+        template={{ 
+          id: website.id,
+          user_id: user.id,
+          theme: website.theme,
+          website_type: website.website_type,
+          website_url: website.website_url,
+          footer: footerData,
+          created_at: website.created_at,
+          updated_at: website.updated_at,
+        } as any}
         isDark={isDark}
       />
     </WebsiteLayout>
