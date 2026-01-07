@@ -156,20 +156,17 @@ export default function ProductDetail({
       return
     }
 
-    console.log('[AddToCart] Starting:', { shopId, customerId: customer.id, productId: product.id })
     setIsAddingToCart(true)
     try {
       const success = await addToCart(shopId, customer.id, product.id)
-      console.log('[AddToCart] Result:', success)
       if (success) {
         setIsCarted(true)
         alert('Added to cart!')
       } else {
-        console.error('[AddToCart] Failed - API returned false')
         alert('Failed to add to cart. Please try again.')
       }
     } catch (e) {
-      console.error('[AddToCart] Error:', e)
+      console.error('Error adding to cart:', e)
       alert('Failed to add to cart. Please try again.')
     } finally {
       setIsAddingToCart(false)

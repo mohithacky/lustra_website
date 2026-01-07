@@ -23,7 +23,6 @@ import TrendingProductsSection from '@/components/sections/TrendingProductsSecti
 import BestCollectionsSection from '@/components/sections/BestCollectionsSection'
 import TestimonialsSection from '@/components/sections/TestimonialsSection'
 import Footer from '@/components/sections/Footer'
-import EditorButtons from '@/components/editor/EditorButtons'
 
 interface PageProps {
   params: { domain: string }
@@ -187,9 +186,6 @@ export default async function StorePage({ params }: PageProps) {
         template={template ? { ...template, footer: footerData } : null}
         isDark={isDark}
       />
-
-      {/* Editor Buttons - Only visible when opened in WebView with editor context */}
-      <EditorButtons shopDomain={params.domain} isDark={isDark} />
     </WebsiteLayout>
   )
 }

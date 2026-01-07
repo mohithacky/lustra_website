@@ -76,7 +76,6 @@ export default async function CategoryPage({ params }: PageProps) {
         products={products}
         isDark={isDark}
         shopDomain={params.domain}
-        shopId={user.id}
         title={categoryName}
         categories={Object.keys(categoriesMap)}
         collections={Object.keys(collectionsMap)}
