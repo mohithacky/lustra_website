@@ -212,19 +212,7 @@ export interface WebsiteData {
 }
 
 export type Product = Database['public']['Tables']['website_products']['Row']
-// HeroCollection now uses the collections table structure
-export interface HeroCollection {
-  id: string
-  user_id: string
-  name: string
-  slug: string
-  image_url: string
-  collection_label: string | null
-  display_order: number
-  is_active: boolean
-  created_at?: string
-  updated_at?: string
-}
+export type HeroCollection = Database['public']['Tables']['user_hero_collections']['Row']
 export type Collection = Database['public']['Tables']['user_collections']['Row']
 export type Category = Database['public']['Tables']['user_categories']['Row']
 export type WebsiteTemplate = Database['public']['Tables']['user_website_templates']['Row']

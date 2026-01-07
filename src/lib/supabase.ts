@@ -42,12 +42,6 @@ export interface ProductData {
 }
 
 export async function getWebsiteByDomain(domain: string): Promise<UserData | null> {
-  console.log('🔍 [DB Query] Looking up user by shop_domain', { 
-    domain,
-    table: 'users',
-    query: `shop_domain = '${domain}'`
-  })
-
   const { data, error } = await supabase
     .from('users')
     .select(`
@@ -63,24 +57,12 @@ export async function getWebsiteByDomain(domain: string): Promise<UserData | nul
     .eq('shop_domain', domain)
     .single()
 
-  if (error || !data) {
-    console.error('❌ [DB Error] Failed to fetch website by domain:', {
-      domain,
-      error,
-      hint: 'Check if shop_domain exists in users table. Run: SELECT id, shop_name, shop_domain FROM users;'
-    })
+  if (error) {
+    console.error('Error fetching website by domain:', error)
     return null
   }
 
-  const userData = data as UserData
-  
-  console.log('✅ [DB Result] User found:', {
-    userId: userData.id,
-    shopName: userData.shop_name,
-    shopDomain: userData.shop_domain
-  })
-
-  return userData
+  return data as UserData
 }
 
 export interface WebsiteTemplate {
@@ -134,24 +116,17 @@ export async function getWebsiteTemplateWithUser(userId: string) {
 }
 
 export async function getHeroCollections(userId: string) {
-  console.log('🔍 [DB Query] Fetching hero collections from collections table', { userId })
-  
-  const { data, error } = await (supabase as any)
-    .from('collections')
+  const { data, error } = await supabase
+    .from('user_hero_collections')
     .select('*')
     .eq('user_id', userId)
-    .eq('is_active', true)
+    .eq('is_visible', true)
     .order('display_order', { ascending: true })
 
   if (error) {
-    console.error('❌ [DB Error] Failed to fetch hero collections:', error)
+    console.error('Error fetching hero collections:', error)
     return []
   }
-
-  console.log('✅ [DB Result] Hero collections fetched:', {
-    count: data?.length || 0,
-    collections: data?.map((c: any) => ({ id: c.id, name: c.name, slug: c.slug, display_order: c.display_order }))
-  })
 
   return data || []
 }
@@ -404,79 +379,6 @@ export async function getProductById(productId: string): Promise<ProductData | n
   }
 
   return data as ProductData
-}
-
-// =============================================================================
-// USER WEBSITE SECTIONS
-// =============================================================================
-// Fetches section config from user_website_sections table
-// Config is used at runtime for behavioral overrides
-// Schema is stored in website_template_sections and is NEVER used at runtime
-// =============================================================================
-
-export interface UserWebsiteSection {
-  id: string
-  user_website_id: string
-  template_section_id: string | null
-  section_type: string
-  section_label: string | null
-  is_enabled: boolean
-  display_order: number
-  config: Record<string, any> | null
-  created_at: string
-  updated_at: string
-}
-
-export async function getUserWebsiteSections(userId: string): Promise<UserWebsiteSection[]> {
-  // First get the user's website
-  // Note: user_websites table is not in the Database types yet, using 'any' cast
-  const { data: website, error: websiteError } = await (supabase as any)
-    .from('user_websites')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('is_active', true)
-    .single()
-
-  if (websiteError || !website) {
-    // Gracefully return empty if user_websites doesn't exist or user has no website
-    return []
-  }
-
-  // Then get all sections for that website
-  // Note: user_website_sections table is not in the Database types yet, using 'any' cast
-  const { data, error } = await (supabase as any)
-    .from('user_website_sections')
-    .select('*')
-    .eq('user_website_id', website.id)
-    .order('display_order', { ascending: true })
-
-  if (error) {
-    console.error('Error fetching user website sections:', error)
-    return []
-  }
-
-  return (data as UserWebsiteSection[]) || []
-}
-
-export async function getSectionConfig(userId: string, sectionType: string): Promise<Record<string, any> | null> {
-  console.log('🔍 [DB Query] Fetching section config from user_website_sections', { 
-    userId, 
-    sectionType,
-    flow: 'user_websites → user_website_sections → config field'
-  })
-  
-  const sections = await getUserWebsiteSections(userId)
-  const section = sections.find(s => s.section_type === sectionType && s.is_enabled)
-  
-  console.log('✅ [DB Result] Section config fetched:', {
-    sectionType,
-    found: !!section,
-    is_enabled: section?.is_enabled,
-    config: section?.config,
-    note: section?.config ? 'Using config from database' : 'No config found - will use safe defaults'
-  })
-  
-  return section?.config ?? null
 }
 
 // Get products for gender (Him/Her)

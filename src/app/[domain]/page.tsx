@@ -11,8 +11,7 @@ import {
   getBestCollections,
   getFooterData,
   getTestimonials,
-  getTrendingProducts,
-  getSectionConfig
+  getTrendingProducts
 } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import CategoriesSection from '@/components/sections/CategoriesSection'
@@ -55,13 +54,7 @@ export default async function StorePage({ params }: PageProps) {
     notFound()
   }
 
-  console.log('🚀 [Page] Fetching all data for store page', { 
-    domain: params.domain, 
-    userId: user.id,
-    shopName: user.shop_name 
-  })
-
-  const [template, heroCollections, products, collectionsMap, categoriesMap, trendingCollections, bestCollections, footerData, testimonials, trendingProducts, heroCarouselConfig] = await Promise.all([
+  const [template, heroCollections, products, collectionsMap, categoriesMap, trendingCollections, bestCollections, footerData, testimonials, trendingProducts] = await Promise.all([
     getWebsiteTemplate(user.id),
     getHeroCollections(user.id),
     getProducts(user.id, { limit: 12 }),
@@ -72,20 +65,7 @@ export default async function StorePage({ params }: PageProps) {
     getFooterData(user.id),
     getTestimonials(user.id),
     getTrendingProducts(user.id, 10),
-    getSectionConfig(user.id, 'hero_carousel'),
   ])
-
-  console.log('📦 [Page] Data fetched successfully:', {
-    heroCollections: {
-      count: heroCollections.length,
-      source: 'collections table'
-    },
-    heroCarouselConfig: {
-      hasConfig: !!heroCarouselConfig,
-      config: heroCarouselConfig,
-      source: 'user_website_sections.config'
-    }
-  })
 
   // Transform categories map to array format for components
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
@@ -121,11 +101,10 @@ export default async function StorePage({ params }: PageProps) {
       categories={categoriesArray}
       collections={collectionsArray}
     >
-      {/* 1. Hero Carousel - config from user_website_sections.config */}
+      {/* 1. Hero Carousel - matches Flutter order, with editor controls */}
       {heroCollections.length > 0 && (
         <EditableHeroCarousel 
-          collections={heroCollections}
-          config={heroCarouselConfig ?? undefined}
+          collections={heroCollections} 
           isDark={isDark}
           shopDomain={params.domain}
         />
