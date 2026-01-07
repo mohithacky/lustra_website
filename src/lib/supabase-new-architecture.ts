@@ -131,6 +131,10 @@ export interface WebsiteRenderData {
 // Step 1: Get user by domain
 // ============================================================================
 export async function getWebsiteByDomain(domain: string): Promise<UserData | null> {
+  // Convert to lowercase to match Flutter's behavior
+  const normalizedDomain = domain.toLowerCase()
+  console.log(`   Querying users table with shop_domain='${normalizedDomain}'`)
+  
   const { data, error } = await supabase
     .from('users')
     .select(`
@@ -143,7 +147,7 @@ export async function getWebsiteByDomain(domain: string): Promise<UserData | nul
       logo_url,
       shop_domain
     `)
-    .eq('shop_domain', domain)
+    .eq('shop_domain', normalizedDomain)
     .single()
 
   if (error) {
