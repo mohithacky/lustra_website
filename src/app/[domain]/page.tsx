@@ -11,10 +11,7 @@ import {
   getBestCollections,
   getFooterData,
   getTestimonials,
-  getTrendingProducts,
-  getUserWebsite,
-  getUserWebsiteSections,
-  getSectionData
+  getTrendingProducts
 } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import CategoriesSection from '@/components/sections/CategoriesSection'
@@ -57,26 +54,6 @@ export default async function StorePage({ params }: PageProps) {
     notFound()
   }
 
-  // ============================================
-  // NEW ARCHITECTURE - Example for HeroCarousel
-  // ============================================
-  // Step 1: Get user's website instance
-  const userWebsite = await getUserWebsite(user.id)
-  
-  // Step 2: Get hero carousel section data (if using new architecture)
-  let heroCarouselData: Awaited<ReturnType<typeof getSectionData>> = null
-  if (userWebsite?.id) {
-    heroCarouselData = await getSectionData(user.id, userWebsite.id, 'hero_carousel')
-  }
-  
-  // heroCarouselData will contain:
-  // - section: The user_website_sections row with config
-  // - collections: The collections filtered by section_label
-  // - config: The config object from user_website_sections
-  
-  // ============================================
-  // LEGACY ARCHITECTURE - Still in use
-  // ============================================
   const [template, heroCollections, products, collectionsMap, categoriesMap, trendingCollections, bestCollections, footerData, testimonials, trendingProducts] = await Promise.all([
     getWebsiteTemplate(user.id),
     getHeroCollections(user.id),
@@ -125,16 +102,7 @@ export default async function StorePage({ params }: PageProps) {
       collections={collectionsArray}
     >
       {/* 1. Hero Carousel - matches Flutter order, with editor controls */}
-      {/* NEW ARCHITECTURE: Use heroCarouselData if available */}
-      {heroCarouselData && heroCarouselData.collections.length > 0 ? (
-        <EditableHeroCarousel 
-          collections={heroCarouselData.collections} 
-          isDark={isDark}
-          shopDomain={params.domain}
-          config={heroCarouselData.config}
-        />
-      ) : heroCollections.length > 0 && (
-        /* LEGACY: Fallback to old data structure */
+      {heroCollections.length > 0 && (
         <EditableHeroCarousel 
           collections={heroCollections} 
           isDark={isDark}

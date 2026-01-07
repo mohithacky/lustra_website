@@ -8,44 +8,20 @@ import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
 import { PlusCircle, MinusCircle } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
-import { HeroCollection, CollectionNew } from '@/types/database'
-
-interface HeroCarouselConfig {
-  variant?: string
-  autoplay?: boolean
-  autoplayDelay?: number
-  showDots?: boolean
-  showGradient?: boolean
-  showButton?: boolean
-  buttonText?: string
-}
+import { HeroCollection } from '@/types/database'
 
 interface HeroCarouselProps {
-  collections: HeroCollection[] | CollectionNew[]
+  collections: HeroCollection[]
   isDark: boolean
   canEdit?: boolean
   shopDomain?: string
-  config?: HeroCarouselConfig
 }
 
-export default function HeroCarousel({ collections, isDark, canEdit = false, shopDomain, config = {} }: HeroCarouselProps) {
+export default function HeroCarousel({ collections, isDark, canEdit = false, shopDomain }: HeroCarouselProps) {
   const router = useRouter()
-  
-  const {
-    variant = 'classic',
-    autoplay = true,
-    autoplayDelay = 5000,
-    showDots = true,
-    showGradient = true,
-    showButton = true,
-    buttonText = 'Explore Collection'
-  } = config
-  
-  const autoplayPlugin = autoplay ? [Autoplay({ delay: autoplayDelay, stopOnInteraction: false })] : []
-  
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true },
-    autoplayPlugin
+    [Autoplay({ delay: 5000, stopOnInteraction: false })]
   )
   const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -65,14 +41,6 @@ export default function HeroCarousel({ collections, isDark, canEdit = false, sho
 
   if (!collections.length) return null
 
-  const getCollectionImageUrl = (collection: any) => {
-    return getImageUrl(collection.image_url)
-  }
-
-  const getCollectionName = (collection: any) => {
-    return collection.name
-  }
-
   return (
     <section className="relative w-full px-4 md:px-[120px] pt-4 pb-10">
       <div className="embla overflow-hidden rounded-xl md:rounded-2xl" ref={emblaRef}>
@@ -83,35 +51,31 @@ export default function HeroCarousel({ collections, isDark, canEdit = false, sho
               className="embla__slide relative aspect-video md:aspect-[21/9]"
             >
               <Image
-                src={getCollectionImageUrl(collection)}
-                alt={getCollectionName(collection)}
+                src={getImageUrl(collection.image_url)}
+                alt={collection.name}
                 fill
                 className="object-cover"
                 priority={index === 0}
                 sizes="100vw"
               />
-              {/* Gradient Overlay - controlled by config */}
-              {showGradient && (
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              )}
+              {/* Gradient Overlay - matches Flutter */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               
               {/* Content - positioned at bottom left like Flutter */}
               <div className="absolute inset-0 flex items-end">
                 <div className="p-6 md:p-12 lg:p-16 max-w-lg">
                   <h2 className="font-display text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2 animate-fade-in">
-                    {getCollectionName(collection)}
+                    {collection.name}
                   </h2>
                   <p className="text-white/90 text-sm md:text-base mb-4 md:mb-6">
                     Handcrafted pieces for every moment.
                   </p>
-                  {showButton && (
-                    <Link 
-                      href={`/collections/${getCollectionName(collection).toLowerCase().replace(/\s+/g, '-')}`}
-                      className="inline-block bg-gold-500 hover:bg-gold-600 text-white px-5 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold transition-colors"
-                    >
-                      {buttonText}
-                    </Link>
-                  )}
+                  <Link 
+                    href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+                    className="inline-block bg-gold-500 hover:bg-gold-600 text-white px-5 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold transition-colors"
+                  >
+                    Explore Collection
+                  </Link>
                 </div>
               </div>
             </div>
@@ -119,8 +83,8 @@ export default function HeroCarousel({ collections, isDark, canEdit = false, sho
         </div>
       </div>
 
-      {/* Dots Indicator - controlled by config */}
-      {showDots && collections.length > 1 && (
+      {/* Dots Indicator - matches Flutter's animated indicator */}
+      {collections.length > 1 && (
         <div className="flex justify-center gap-2 mt-4">
           {collections.map((_, index) => (
             <button
