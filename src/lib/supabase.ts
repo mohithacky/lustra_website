@@ -72,13 +72,15 @@ export async function getWebsiteByDomain(domain: string): Promise<UserData | nul
     return null
   }
 
+  const userData = data as UserData
+  
   console.log('✅ [DB Result] User found:', {
-    userId: data.id,
-    shopName: data.shop_name,
-    shopDomain: data.shop_domain
+    userId: userData.id,
+    shopName: userData.shop_name,
+    shopDomain: userData.shop_domain
   })
 
-  return data as UserData
+  return userData
 }
 
 export interface WebsiteTemplate {
