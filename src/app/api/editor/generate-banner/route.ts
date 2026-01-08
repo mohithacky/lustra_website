@@ -7,20 +7,59 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api-5sqqk2n6
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://phlccyxgyftspxnuzttf.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-// Get the prompt for image generation (matching Flutter's _getImageGenerationPrompt)
-function getImageGenerationPrompt(collectionName: string, aspectRatio: string, isTrending: boolean = false): string {
-  if (isTrending) {
-    const isSmallBox = aspectRatio === '3:2'
-    return `Generate a poster image for a collection named ${collectionName} on the background I have provided in the image. This image will be shown on a ecommerce website for jewelleries. The poster should contain Indian model. Cover the full white background. It's not compulsory that you keep the background just white. The theme should be light pink and the background theme should be light pink.
+// Get the prompt for image generation based on collection type
+function getImageGenerationPrompt(collectionName: string, aspectRatio: string, collectionType: string): string {
+  const basePrompt = `Generate a poster image for a collection named "${collectionName}" on the background I have provided in the image. This image will be shown on an ecommerce website for jewelleries.`
+  
+  switch (collectionType) {
+    case 'hero':
+      return `${basePrompt} The poster should contain an elegant Indian model wearing jewellery. Cover the full white background with a luxurious setting. It's not compulsory that you keep the background just white - use warm gold or cream tones.
 
 No Text on the image.
-
 The jewellery the model will be wearing must be either gold or diamond.
-No seperate product showcase just the model with jewelleries wearing.
+The model should be prominently featured with elegant pose.
+No flowers texture in the background.
+The image should be in 16:9 landscape aspect ratio for hero carousel display.`
+
+    case 'trending':
+      const isSmallBox = aspectRatio === '3:2'
+      return `${basePrompt} The poster should contain an Indian model wearing jewellery. Cover the full white background. It's not compulsory that you keep the background just white. The theme should be light pink and the background theme should be light pink.
+
+No Text on the image.
+The jewellery the model will be wearing must be either gold or diamond.
+No separate product showcase just the model with jewelleries wearing.
 No flowers texture in the background.
 ${isSmallBox ? 'The image should be in landscape orientation (3:2 aspect ratio).' : 'The image should be in portrait orientation (5:6 aspect ratio).'}`
-  } else {
-    return `Generate a poster image for a collection named ${collectionName} on the background I have provided in the image. This image will be shown on a ecommerce website for jewelleries. The poster should contain model. Cover the full white background. It's not compulsory that you keep the background just white. The image should be in 16:9 landscape aspect ratio.`
+
+    case 'category':
+      return `${basePrompt} Create a circular-friendly image showcasing ${collectionName} jewellery category. The image should feature elegant jewellery pieces or a model wearing the jewellery.
+
+No Text on the image.
+The image should work well when cropped to a circle.
+Use a clean, elegant background - light cream or soft pink tones.
+Focus on the jewellery as the main subject.
+The image should be in 1:1 square aspect ratio.`
+
+    case 'best':
+      return `${basePrompt} The poster should feature a stunning collection display or model wearing premium jewellery. Use luxurious gold and cream tones.
+
+No Text on the image.
+The jewellery should be either gold or diamond, showcased elegantly.
+Create a premium, high-end aesthetic.
+The image should be in 16:9 landscape aspect ratio.`
+
+    case 'occasion':
+      return `${basePrompt} Create an image that represents the "${collectionName}" occasion with appropriate jewellery styling and mood.
+
+No Text on the image.
+Feature jewellery appropriate for the occasion.
+Use colors and styling that evoke the occasion's mood.
+The image should be in 16:9 landscape aspect ratio.`
+
+    default:
+      return `${basePrompt} The poster should contain a model wearing jewellery. Cover the full white background. The image should be in 16:9 landscape aspect ratio.
+
+No Text on the image.`
   }
 }
 
@@ -54,8 +93,7 @@ export async function POST(request: NextRequest) {
     // Since we're in server-side context, we'll use the editor token to authenticate with backend
     // The backend will validate the editor token and use the userId from it
     
-    const isTrending = collectionType === 'trending'
-    const prompt = getImageGenerationPrompt(collectionName, aspectRatio, isTrending)
+    const prompt = getImageGenerationPrompt(collectionName, aspectRatio, collectionType)
     const backgroundBase64 = getBackgroundImageBase64(aspectRatio)
 
     console.log('Calling /upload endpoint with prompt:', prompt.substring(0, 100) + '...')
