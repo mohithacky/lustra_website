@@ -61,7 +61,7 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
       {/* Edit button - matches Flutter Footer edit icon */}
       {canEdit && (
         <button
-          onClick={() => shopDomain && router.push(`/${shopDomain}/editor/footer`)}
+          onClick={() => shopDomain && router.push(`/editor/footer`)}
           className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
           title="Edit Footer"
         >

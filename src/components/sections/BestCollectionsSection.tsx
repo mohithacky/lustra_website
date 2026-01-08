@@ -47,7 +47,7 @@ export default function BestCollectionsSection({ collections, isDark, canEdit = 
           {/* Edit button - matches Flutter FeaturedCollectionsShowcase */}
           {canEdit && (
             <button
-              onClick={() => shopDomain && router.push(`/${shopDomain}/editor/best-collections`)}
+              onClick={() => shopDomain && router.push(`/editor/best-collections`)}
               className={cn(
                 'absolute right-0 top-0 p-2 rounded-full transition-colors',
                 isDark ? 'hover:bg-zinc-800 text-white' : 'hover:bg-gray-100 text-black'

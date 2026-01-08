@@ -42,7 +42,7 @@ export default function CategoriesSection({ categories, isDark, shopDomain, canE
           {/* Edit button */}
           {canEdit && (
             <button
-              onClick={() => router.push(`/${shopDomain}/editor/categories`)}
+              onClick={() => router.push(`/editor/categories`)}
               className={cn(
                 'absolute right-6 top-0 p-2 rounded-full transition-colors',
                 isDark ? 'hover:bg-zinc-800 text-white' : 'hover:bg-gray-100 text-black'
