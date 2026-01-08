@@ -29,7 +29,7 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
   
   const handleEditItem = (position: number) => {
     if (shopDomain) {
-      router.push(`/editor/trending?position=${position}`)
+      router.push(`/${shopDomain}/editor/trending?position=${position}`)
     }
   }
 

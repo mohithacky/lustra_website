@@ -101,9 +101,22 @@ export default function CollectionsEditor({
 
     setIsGenerating(true)
     try {
+      // Get editor token from window.lustraEditorContext
+      const editorContext = (window as any).lustraEditorContext
+      const editorToken = editorContext?.token
+      
+      if (!editorToken) {
+        alert('Editor session not found. Please reload the page.')
+        setIsGenerating(false)
+        return
+      }
+
       const response = await fetch('/api/editor/generate-banner', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${editorToken}`,
+        },
         body: JSON.stringify({
           collectionName: nameToUse,
           aspectRatio,

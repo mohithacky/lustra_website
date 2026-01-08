@@ -37,22 +37,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'collectionName is required' }, { status: 400 })
     }
 
+    // Get the editor token from Authorization header (passed from client)
+    const authHeader = request.headers.get('authorization')
+    
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const editorToken = authHeader.replace('Bearer ', '')
+
     const isTrending = collectionType === 'trending'
     const prompt = getImageGenerationPrompt(collectionName, aspectRatio, isTrending)
     const backgroundBase64 = getBackgroundImageBase64(aspectRatio)
 
-    console.log('Generating banner with prompt:', prompt.substring(0, 100) + '...')
+    console.log('[generate-banner] Generating banner with prompt:', prompt.substring(0, 100) + '...')
+    console.log('[generate-banner] Using editor token (first 20 chars):', editorToken.substring(0, 20) + '...')
 
-    // Call backend /upload endpoint (same as Flutter's GeminiService.generateImageWithUpload)
-    const response = await fetch(`${BACKEND_URL}/upload`, {
+    // Call backend /generate-collection-banner endpoint (doesn't require auth token)
+    // We'll use the simpler endpoint that just needs collection name
+    const response = await fetch(`${BACKEND_URL}/generate-collection-banner`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${editorToken}`,
       },
       body: JSON.stringify({
-        prompt,
-        imgBase64: [backgroundBase64],
-        mimeType: 'image/png'
+        collectionName,
       }),
     })
 
