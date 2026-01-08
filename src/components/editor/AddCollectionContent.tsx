@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { ArrowLeft, Upload, Wand2, Loader2, MoreVertical, Image as ImageIcon, Eye, EyeOff, X, Plus } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
+import { waitForEditorContext } from '@/lib/editor-context'
 
 interface Collection {
   id: string
@@ -30,6 +31,7 @@ export default function AddCollectionContent({
   const [collections, setCollections] = useState<Collection[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editorToken, setEditorToken] = useState<string | null>(null)
   
   // Form state
   const [collectionName, setCollectionName] = useState('')
@@ -46,6 +48,15 @@ export default function AddCollectionContent({
 
   useEffect(() => {
     loadCollections()
+    // Wait for editor token from injected context (Flutter re-injects on page load)
+    waitForEditorContext(5000).then((context) => {
+      if (context?.token) {
+        console.log('[AddCollectionContent] Got editor token')
+        setEditorToken(context.token)
+      } else {
+        console.warn('[AddCollectionContent] No editor token available')
+      }
+    })
   }, [])
 
   const loadCollections = async () => {
@@ -91,6 +102,11 @@ export default function AddCollectionContent({
       return
     }
 
+    if (!editorToken) {
+      alert('Editor authentication not ready. Please wait a moment and try again.')
+      return
+    }
+
     setIsGenerating(true)
     try {
       const response = await fetch('/api/editor/generate-banner', {
@@ -103,6 +119,7 @@ export default function AddCollectionContent({
           aspectRatio: collectionType === 'hero' ? '16:9' : '5:6',
           shopId,
           collectionType,
+          editorToken,
         }),
       })
 
