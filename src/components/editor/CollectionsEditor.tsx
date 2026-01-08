@@ -29,6 +29,8 @@ interface CollectionsEditorProps {
   description: string
   aspectRatio?: string
   maxItems?: number
+  showAIGeneration?: boolean
+  addButtonText?: string
 }
 
 export default function CollectionsEditor({ 
@@ -39,6 +41,8 @@ export default function CollectionsEditor({
   description,
   aspectRatio = '16:9',
   maxItems,
+  showAIGeneration = true,
+  addButtonText,
 }: CollectionsEditorProps) {
   const router = useRouter()
   const [collections, setCollections] = useState<Collection[]>([])
@@ -166,6 +170,7 @@ export default function CollectionsEditor({
       formData.append('file', file)
       formData.append('userId', userId)
       formData.append('collectionName', name)
+      formData.append('collectionType', collectionLabel) // Pass collection type for correct bucket selection
 
       const uploadResponse = await fetch('/api/editor/upload', {
         method: 'POST',
@@ -324,7 +329,7 @@ export default function CollectionsEditor({
               className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
-              Add Collection
+              {addButtonText || 'Add Collection'}
             </button>
           )}
         </div>
@@ -382,24 +387,26 @@ export default function CollectionsEditor({
 
             {/* Banner Source Tabs */}
             <div className="flex gap-4 mb-6">
-              <button
-                onClick={handleGenerateImage}
-                disabled={isGenerating || (!editingCollection && !collectionName.trim())}
-                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-5 h-5 mr-2" />
-                    Generate with AI
-                  </>
-                )}
-              </button>
-              <label className="flex-1">
+              {showAIGeneration && (
+                <button
+                  onClick={handleGenerateImage}
+                  disabled={isGenerating || (!editingCollection && !collectionName.trim())}
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-5 h-5 mr-2" />
+                      Generate with AI
+                    </>
+                  )}
+                </button>
+              )}
+              <label className={showAIGeneration ? "flex-1" : "w-full"}>
                 <input
                   type="file"
                   accept="image/*"

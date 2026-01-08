@@ -24,6 +24,8 @@ export default async function EditCategoriesPage({ params }: PageProps) {
       title="Categories"
       description="Product categories shown in the Shop by Category section"
       aspectRatio="1:1"
+      showAIGeneration={false}
+      addButtonText="Add Category"
     />
   )
 }
