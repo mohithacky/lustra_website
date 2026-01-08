@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Instagram, Facebook, Twitter, MapPin, Phone, Mail } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Instagram, Facebook, Twitter, MapPin, Phone, Mail, Edit } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 
 interface FooterProps {
@@ -18,6 +19,8 @@ interface FooterProps {
     footer?: Record<string, string[]> | null
   } | null
   isDark: boolean
+  canEdit?: boolean
+  shopDomain?: string
 }
 
 // Helper function to get the correct href for footer links
@@ -46,14 +49,25 @@ function getFooterLinkHref(linkText: string): string {
   return `/categories/${lowerLink.replace(/\s+/g, '-')}`
 }
 
-export default function Footer({ user, template, isDark }: FooterProps) {
+export default function Footer({ user, template, isDark, canEdit = false, shopDomain }: FooterProps) {
+  const router = useRouter()
   const footerData = template?.footer as Record<string, string[]> | undefined
 
   return (
     <footer className={cn(
-      'pt-16 pb-8',
+      'pt-16 pb-8 relative',
       isDark ? 'bg-black text-white' : 'bg-zinc-900 text-white'
     )}>
+      {/* Edit button - matches Flutter Footer edit icon */}
+      {canEdit && (
+        <button
+          onClick={() => shopDomain && router.push(`/${shopDomain}/editor/footer`)}
+          className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+          title="Edit Footer"
+        >
+          <Edit className="w-5 h-5 text-white" />
+        </button>
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">

@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Edit } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 
 interface Category {
@@ -15,9 +17,12 @@ interface CategoriesSectionProps {
   categories: Category[]
   isDark: boolean
   shopDomain: string
+  canEdit?: boolean
 }
 
-export default function CategoriesSection({ categories, isDark, shopDomain }: CategoriesSectionProps) {
+export default function CategoriesSection({ categories, isDark, shopDomain, canEdit = false }: CategoriesSectionProps) {
+  const router = useRouter()
+  
   if (!categories.length) return null
 
   return (
@@ -27,13 +32,26 @@ export default function CategoriesSection({ categories, isDark, shopDomain }: Ca
     )}>
       <div className="mx-auto">
         {/* Section Header - matches Flutter */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-6 relative">
           <span className={cn(
             'text-xs font-bold tracking-[0.15em] uppercase',
             isDark ? 'text-white/70' : 'text-gray-500'
           )}>
             SHOP BY CATEGORY
           </span>
+          {/* Edit button */}
+          {canEdit && (
+            <button
+              onClick={() => router.push(`/${shopDomain}/editor/categories`)}
+              className={cn(
+                'absolute right-6 top-0 p-2 rounded-full transition-colors',
+                isDark ? 'hover:bg-zinc-800 text-white' : 'hover:bg-gray-100 text-black'
+              )}
+              title="Edit Categories"
+            >
+              <Edit className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Categories - horizontal scroll matching Flutter CategoryCarousel */}

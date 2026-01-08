@@ -23,14 +23,17 @@ import {
   getWebsiteByDomain as getWebsiteByDomainLegacy,
 } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
-import CategoriesSection from '@/components/sections/CategoriesSection'
 import ProductsSection from '@/components/sections/ProductsSection'
 import ShopByRecipientSection from '@/components/sections/ShopByRecipientSection'
 import TrendingProductsSection from '@/components/sections/TrendingProductsSection'
-import BestCollectionsSection from '@/components/sections/BestCollectionsSection'
 import TestimonialsSection from '@/components/sections/TestimonialsSection'
-import Footer from '@/components/sections/Footer'
-import { EditableHeroCarousel, EditableTrendingSection } from '@/components/editor/EditableSections'
+import { 
+  EditableHeroCarousel, 
+  EditableTrendingSection, 
+  EditableBestCollections,
+  EditableCategories,
+  EditableFooter,
+} from '@/components/editor/EditableSections'
 
 interface PageProps {
   params: { domain: string }
@@ -190,7 +193,7 @@ export default async function StorePage({ params }: PageProps) {
 
       {/* 2. Categories - matches Flutter CategoryCarousel */}
       {categoriesArray.length > 0 && (
-        <CategoriesSection 
+        <EditableCategories 
           categories={categoriesArray} 
           isDark={isDark}
           shopDomain={params.domain}
@@ -243,9 +246,10 @@ export default async function StorePage({ params }: PageProps) {
 
       {/* 7. Best Collections - matches Flutter FeaturedCollectionsShowcase */}
       {bestCollections.length > 0 && (
-        <BestCollectionsSection 
+        <EditableBestCollections 
           collections={bestCollections} 
           isDark={isDark}
+          shopDomain={params.domain}
         />
       )}
 
@@ -260,7 +264,7 @@ export default async function StorePage({ params }: PageProps) {
       )}
 
       {/* Footer */}
-      <Footer 
+      <EditableFooter 
         user={user}
         template={{ 
           id: website.id,
@@ -273,6 +277,7 @@ export default async function StorePage({ params }: PageProps) {
           updated_at: website.updated_at,
         } as any}
         isDark={isDark}
+        shopDomain={params.domain}
       />
     </WebsiteLayout>
   )

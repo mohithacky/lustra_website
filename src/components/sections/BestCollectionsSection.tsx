@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Edit } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 
 interface BestCollection {
@@ -14,9 +16,12 @@ interface BestCollection {
 interface BestCollectionsSectionProps {
   collections: BestCollection[]
   isDark: boolean
+  canEdit?: boolean
+  shopDomain?: string
 }
 
-export default function BestCollectionsSection({ collections, isDark }: BestCollectionsSectionProps) {
+export default function BestCollectionsSection({ collections, isDark, canEdit = false, shopDomain }: BestCollectionsSectionProps) {
+  const router = useRouter()
   if (!collections.length) return null
 
   return (
@@ -26,7 +31,7 @@ export default function BestCollectionsSection({ collections, isDark }: BestColl
     )}>
       <div className="max-w-[1100px] mx-auto px-6">
         {/* Section Header - matches Flutter */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 relative">
           <span className={cn(
             'text-xs font-bold tracking-[0.2em] uppercase',
             isDark ? 'text-white/70' : 'text-gray-500'
@@ -39,6 +44,19 @@ export default function BestCollectionsSection({ collections, isDark }: BestColl
           )}>
             Featured Collections
           </h2>
+          {/* Edit button - matches Flutter FeaturedCollectionsShowcase */}
+          {canEdit && (
+            <button
+              onClick={() => shopDomain && router.push(`/${shopDomain}/editor/best-collections`)}
+              className={cn(
+                'absolute right-0 top-0 p-2 rounded-full transition-colors',
+                isDark ? 'hover:bg-zinc-800 text-white' : 'hover:bg-gray-100 text-black'
+              )}
+              title="Edit Best Collections"
+            >
+              <Edit className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Collections - matches Flutter FeaturedCollectionsShowcase layout */}
