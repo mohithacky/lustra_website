@@ -30,7 +30,6 @@ interface CollectionsEditorProps {
   aspectRatio?: string
   maxItems?: number
   showAIGeneration?: boolean
-  addButtonText?: string
 }
 
 export default function CollectionsEditor({ 
@@ -40,9 +39,8 @@ export default function CollectionsEditor({
   title,
   description,
   aspectRatio = '16:9',
-  maxItems,
   showAIGeneration = true,
-  addButtonText,
+  maxItems,
 }: CollectionsEditorProps) {
   const router = useRouter()
   const [collections, setCollections] = useState<Collection[]>([])
@@ -170,7 +168,6 @@ export default function CollectionsEditor({
       formData.append('file', file)
       formData.append('userId', userId)
       formData.append('collectionName', name)
-      formData.append('collectionType', collectionLabel) // Pass collection type for correct bucket selection
 
       const uploadResponse = await fetch('/api/editor/upload', {
         method: 'POST',
@@ -214,6 +211,7 @@ export default function CollectionsEditor({
             userId,
             name: nameToSave,
             imageUrl,
+            collectionLabel,
           }
         : {
             userId,
@@ -329,7 +327,7 @@ export default function CollectionsEditor({
               className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
-              {addButtonText || 'Add Collection'}
+              {collectionLabel === 'category' ? 'Add Category' : 'Add Collection'}
             </button>
           )}
         </div>
@@ -356,7 +354,9 @@ export default function CollectionsEditor({
           <div className="bg-white rounded-xl shadow-lg border-2 border-amber-200 p-6 mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">
-                {editingCollection ? `Edit: ${editingCollection.name}` : 'Add New Collection'}
+                {editingCollection 
+                  ? `Edit: ${editingCollection.name}` 
+                  : collectionLabel === 'category' ? 'Add New Category' : 'Add New Collection'}
               </h2>
               <button onClick={resetForm} className="p-1 hover:bg-gray-100 rounded">
                 <X className="w-5 h-5" />
@@ -413,7 +413,12 @@ export default function CollectionsEditor({
                   onChange={handleImageUpload}
                   className="hidden"
                 />
-                <div className="w-full py-3 rounded-lg font-semibold border-2 border-amber-500 text-amber-700 hover:bg-amber-50 cursor-pointer flex items-center justify-center">
+                <div className={cn(
+                  "w-full py-3 rounded-lg font-semibold cursor-pointer flex items-center justify-center",
+                  showAIGeneration 
+                    ? "border-2 border-amber-500 text-amber-700 hover:bg-amber-50"
+                    : "bg-amber-500 hover:bg-amber-600 text-white"
+                )}>
                   <Upload className="w-5 h-5 mr-2" />
                   Upload Image
                 </div>
@@ -461,13 +466,15 @@ export default function CollectionsEditor({
         ) : collections.length === 0 ? (
           <div className="text-center py-16 bg-gray-100 rounded-xl">
             <ImageIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-500 mb-4">No collections yet</p>
+            <p className="text-gray-500 mb-4">
+              {collectionLabel === 'category' ? 'No categories yet' : 'No collections yet'}
+            </p>
             {canAddMore && (
               <button
                 onClick={() => setShowAddForm(true)}
                 className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold"
               >
-                Add Your First Collection
+                {collectionLabel === 'category' ? 'Add Your First Category' : 'Add Your First Collection'}
               </button>
             )}
           </div>

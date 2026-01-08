@@ -141,33 +141,6 @@ export default function AddCollectionContent({
     }
   }
 
-  const uploadImageToStorage = async (imageData: string, name: string): Promise<string> => {
-    // If it's a base64 image, convert to blob and upload
-    if (imageData.startsWith('data:')) {
-      const response = await fetch(imageData)
-      const blob = await response.blob()
-      const file = new File([blob], `${name}.png`, { type: 'image/png' })
-      
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('userId', shopId)
-      formData.append('collectionName', name)
-      formData.append('collectionType', collectionType) // Pass collection type for correct bucket selection
-
-      const uploadResponse = await fetch('/api/editor/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (uploadResponse.ok) {
-        const data = await uploadResponse.json()
-        return data.url
-      }
-      throw new Error('Failed to upload image')
-    }
-    return imageData
-  }
-
   const handleSaveCollection = async () => {
     const nameToSave = editingCollection || collectionName.trim()
     if (!nameToSave) {
@@ -183,21 +156,16 @@ export default function AddCollectionContent({
 
     setIsSaving(true)
     try {
-      // Upload image to storage first
-      const imageUrl = await uploadImageToStorage(imageToSave, nameToSave)
-
-      // Save to collections table
-      const response = await fetch('/api/editor/collections', {
+      const response = await fetch('/api/editor/collections/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: shopId,
-          name: nameToSave,
-          imageUrl,
-          collectionLabel: collectionType,
-          displayOrder: collections.length,
+          shopId,
+          collectionName: nameToSave,
+          bannerImage: imageToSave,
+          collectionType,
         }),
       })
 

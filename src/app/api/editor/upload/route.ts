@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File
     const userId = formData.get('userId') as string
     const collectionName = formData.get('collectionName') as string
-    const collectionType = formData.get('collectionType') as string // 'category', 'hero', 'trending'
 
     if (!file || !userId) {
       return NextResponse.json(
@@ -23,44 +22,45 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[Upload] Uploading file for user:', userId, 'collection:', collectionName, 'type:', collectionType)
+    console.log('[Upload] Uploading file for user:', userId, 'collection:', collectionName)
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Determine bucket and filename based on collection type (matching Flutter)
-    const safeName = (collectionName || 'collection').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+    // Generate unique filename
+    const timestamp = Date.now()
+    const safeName = (collectionName || 'collection').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
     const extension = file.name.split('.').pop() || 'png'
-    
-    let bucketName: string
-    let filename: string
-    
-    if (collectionType === 'category') {
-      // Categories use category-images bucket with simple naming: userId/categoryName.ext
-      bucketName = 'category-images'
-      filename = `${userId}/${safeName}.${extension}`
-    } else {
-      // Collections (hero/trending) use collection-banners bucket
-      bucketName = 'collection-banners'
-      filename = `${userId}/${safeName}.${extension}`
-    }
+    const filename = `${userId}/${safeName}_${timestamp}.${extension}`
 
-    console.log('[Upload] Uploading to bucket:', bucketName, 'path:', filename)
-
-    // Upload to Supabase Storage
-    const uploadResult = await supabase.storage
-      .from(bucketName)
+    // Try to upload to 'collection-banners' bucket first, fallback to 'website-images' if it doesn't exist
+    let uploadResult = await supabase.storage
+      .from('collection-banners')
       .upload(filename, buffer, {
         contentType: file.type || 'image/png',
         upsert: true,
       })
 
+    let bucketName = 'collection-banners'
+    
+    // If bucket doesn't exist, try website-images bucket
+    if (uploadResult.error?.message?.includes('not found') || uploadResult.error?.message?.includes('Bucket')) {
+      console.log('[Upload] collection-banners bucket not found, trying website-images')
+      bucketName = 'website-images'
+      uploadResult = await supabase.storage
+        .from('website-images')
+        .upload(filename, buffer, {
+          contentType: file.type || 'image/png',
+          upsert: true,
+        })
+    }
+
     if (uploadResult.error) {
       console.error('[Upload] Error uploading file:', uploadResult.error)
       return NextResponse.json({ 
         error: uploadResult.error.message,
-        details: `Failed to upload to ${bucketName} bucket. The bucket may not exist or you may not have permission.`
+        details: 'Failed to upload to storage. The bucket may not exist or you may not have permission.'
       }, { status: 500 })
     }
 
