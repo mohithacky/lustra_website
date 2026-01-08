@@ -8,11 +8,11 @@ interface PageProps {
 }
 
 export const metadata: Metadata = {
-  title: 'Edit Trending Collections',
-  description: 'Edit trending collections on your website',
+  title: 'Edit Hero Collections',
+  description: 'Manage hero carousel collections on your website',
 }
 
-export default async function EditTrendingPage({ params }: PageProps) {
+export default async function EditHeroCollectionsPage({ params }: PageProps) {
   const user = await getWebsiteByDomain(params.domain)
   if (!user) notFound()
 
@@ -20,11 +20,10 @@ export default async function EditTrendingPage({ params }: PageProps) {
     <CollectionsEditor 
       userId={user.id} 
       shopDomain={params.domain} 
-      collectionLabel="trending"
-      title="Trending Collections"
-      description="Featured collections shown in the trending section (max 4 items, positions 0 & 3 use 3:2 ratio, positions 1 & 2 use 5:6 ratio)"
-      aspectRatio="Mixed (3:2 / 5:6)"
-      maxItems={4}
+      collectionLabel="hero"
+      title="Hero Carousel Collections"
+      description="Manage collections shown in the hero carousel (16:9 landscape)"
+      aspectRatio="16:9"
     />
   )
 }

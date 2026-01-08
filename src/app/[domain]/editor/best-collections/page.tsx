@@ -8,11 +8,11 @@ interface PageProps {
 }
 
 export const metadata: Metadata = {
-  title: 'Edit Trending Collections',
-  description: 'Edit trending collections on your website',
+  title: 'Edit Best Collections',
+  description: 'Manage featured/best collections on your website',
 }
 
-export default async function EditTrendingPage({ params }: PageProps) {
+export default async function EditBestCollectionsPage({ params }: PageProps) {
   const user = await getWebsiteByDomain(params.domain)
   if (!user) notFound()
 
@@ -20,11 +20,11 @@ export default async function EditTrendingPage({ params }: PageProps) {
     <CollectionsEditor 
       userId={user.id} 
       shopDomain={params.domain} 
-      collectionLabel="trending"
-      title="Trending Collections"
-      description="Featured collections shown in the trending section (max 4 items, positions 0 & 3 use 3:2 ratio, positions 1 & 2 use 5:6 ratio)"
-      aspectRatio="Mixed (3:2 / 5:6)"
-      maxItems={4}
+      collectionLabel="best"
+      title="Best Collections"
+      description="Featured collections showcased in the Best Collections section (recommended: 2 items)"
+      aspectRatio="1:1"
+      maxItems={2}
     />
   )
 }
