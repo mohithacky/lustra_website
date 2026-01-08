@@ -8,6 +8,7 @@ import {
   Image as ImageIcon, Eye, EyeOff, X, Plus, Trash2, GripVertical 
 } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
+import { getEditorContext } from '@/lib/editor-context'
 
 interface Collection {
   id: string
@@ -43,6 +44,7 @@ export default function CollectionsEditor({
   const [collections, setCollections] = useState<Collection[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editorToken, setEditorToken] = useState<string | null>(null)
   
   // Form state
   const [collectionName, setCollectionName] = useState('')
@@ -59,6 +61,11 @@ export default function CollectionsEditor({
 
   useEffect(() => {
     loadCollections()
+    // Get editor token from injected context
+    const context = getEditorContext()
+    if (context?.token) {
+      setEditorToken(context.token)
+    }
   }, [])
 
   const loadCollections = async () => {
@@ -99,29 +106,22 @@ export default function CollectionsEditor({
       return
     }
 
+    if (!editorToken) {
+      alert('Editor session not found. Please reload the page.')
+      return
+    }
+
     setIsGenerating(true)
     try {
-      // Get editor token from window.lustraEditorContext
-      const editorContext = (window as any).lustraEditorContext
-      const editorToken = editorContext?.token
-      
-      if (!editorToken) {
-        alert('Editor session not found. Please reload the page.')
-        setIsGenerating(false)
-        return
-      }
-
       const response = await fetch('/api/editor/generate-banner', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${editorToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           collectionName: nameToUse,
           aspectRatio,
           shopId: userId,
           collectionType: collectionLabel,
+          editorToken,
         }),
       })
 
