@@ -8,7 +8,7 @@ import {
   Image as ImageIcon, Eye, EyeOff, X, Plus, Trash2, GripVertical 
 } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
-import { getEditorContext } from '@/lib/editor-context'
+import { waitForEditorContext } from '@/lib/editor-context'
 
 interface Collection {
   id: string
@@ -61,11 +61,15 @@ export default function CollectionsEditor({
 
   useEffect(() => {
     loadCollections()
-    // Get editor token from injected context
-    const context = getEditorContext()
-    if (context?.token) {
-      setEditorToken(context.token)
-    }
+    // Wait for editor token from injected context (Flutter re-injects on page load)
+    waitForEditorContext(5000).then((context) => {
+      if (context?.token) {
+        console.log('[CollectionsEditor] Got editor token')
+        setEditorToken(context.token)
+      } else {
+        console.warn('[CollectionsEditor] No editor token available')
+      }
+    })
   }, [])
 
   const loadCollections = async () => {
@@ -106,9 +110,17 @@ export default function CollectionsEditor({
       return
     }
 
-    if (!editorToken) {
-      alert('Editor session not found. Please reload the page.')
-      return
+    let tokenToUse = editorToken
+    if (!tokenToUse) {
+      // Try one more time to get the token
+      const context = await waitForEditorContext(3000)
+      if (context?.token) {
+        tokenToUse = context.token
+        setEditorToken(context.token)
+      } else {
+        alert('Editor session not found. Please reload the page from the app.')
+        return
+      }
     }
 
     setIsGenerating(true)
@@ -121,7 +133,7 @@ export default function CollectionsEditor({
           aspectRatio,
           shopId: userId,
           collectionType: collectionLabel,
-          editorToken,
+          editorToken: tokenToUse,
         }),
       })
 
