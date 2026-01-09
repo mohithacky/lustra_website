@@ -32,7 +32,7 @@ export default function BestCollectionsSection({ collections, isDark, canEdit = 
       {/* Single Edit Button for Entire Section */}
       {canEdit && (
         <button
-          onClick={() => shopDomain && router.push(`/${shopDomain}/editor/best-collections`)}
+          onClick={() => shopDomain && router.push(`/editor/best-collections`)}
           className="absolute top-4 right-4 z-20 flex items-center gap-2 px-3 py-2 bg-white/90 hover:bg-white rounded-full shadow-lg border border-gray-200 transition-all hover:scale-105"
           title="Edit Best Collections"
         >
