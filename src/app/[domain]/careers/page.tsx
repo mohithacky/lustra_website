@@ -4,6 +4,7 @@ import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMap, getCollection
 import { getFooterDataForUser, getPageContentForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
+import EditableStaticPage from '@/components/pages/EditableStaticPage'
 
 interface PageProps {
   params: { domain: string }
@@ -47,16 +48,14 @@ export default async function CareersPage({ params }: PageProps) {
 
   return (
     <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray}>
-      <div className={`min-h-screen py-16 px-6 ${isDark ? 'bg-[#080808]' : 'bg-offwhite'}`}>
-        <div className="max-w-3xl mx-auto">
-          <h1 className={`font-display text-3xl md:text-4xl font-bold mb-8 ${isDark ? 'text-white' : 'text-black'}`}>
-            {pageTitle}
-          </h1>
-          <div className={`whitespace-pre-wrap leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-            {content}
-          </div>
-        </div>
-      </div>
+      <EditableStaticPage
+        userId={user.id}
+        slug="careers"
+        initialTitle={pageTitle}
+        initialContent={content}
+        isDark={isDark}
+        canEdit={true}
+      />
       <Footer user={user} template={template ? { ...template, footer: footerData } : null} isDark={isDark} />
     </WebsiteLayout>
   )

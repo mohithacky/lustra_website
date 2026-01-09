@@ -1,9 +1,10 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
-import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
+import { getFooterDataForUser, getPageContentForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
+import EditableStaticPage from '@/components/pages/EditableStaticPage'
 
 interface PageProps {
   params: { domain: string }
@@ -29,11 +30,12 @@ export default async function TermsPage({ params }: PageProps) {
     notFound()
   }
 
-  const [template, categoriesMap, collectionsMap, footerData] = await Promise.all([
+  const [template, categoriesMap, collectionsMap, footerData, pageContent] = await Promise.all([
     getWebsiteTemplate(user.id),
     getCategoriesMap(user.id),
     getCollectionsMap(user.id),
     getFooterDataForUser(user.id),
+    getPageContentForUser(user.id, 'terms'),
   ])
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
@@ -61,8 +63,8 @@ export default async function TermsPage({ params }: PageProps) {
   const theme = template?.theme || 'light'
   const isDark = theme === 'dark'
 
-  // Get terms content from user data or use default
-  const termsContent = (user as unknown as { terms_of_service?: string }).terms_of_service || getDefaultTerms(user.shop_name || 'Our Store')
+  const pageTitle = pageContent?.title || 'Terms of Service'
+  const content = pageContent?.content || getDefaultTerms(user.shop_name || 'Our Store')
 
   return (
     <WebsiteLayout 
@@ -71,21 +73,14 @@ export default async function TermsPage({ params }: PageProps) {
       categories={categoriesArray}
       collections={collectionsArray}
     >
-      <div className={isDark ? 'bg-[#080808] text-white' : 'bg-white text-black'}>
-        <div className="max-w-4xl mx-auto px-6 py-12">
-          <h1 className="font-display text-3xl md:text-4xl font-bold mb-8">
-            Terms of Service
-          </h1>
-          <div className="prose prose-lg max-w-none">
-            <div 
-              className={isDark ? 'text-gray-300' : 'text-gray-700'}
-              style={{ whiteSpace: 'pre-wrap', lineHeight: '1.8' }}
-            >
-              {termsContent}
-            </div>
-          </div>
-        </div>
-      </div>
+      <EditableStaticPage
+        userId={user.id}
+        slug="terms"
+        initialTitle={pageTitle}
+        initialContent={content}
+        isDark={isDark}
+        canEdit={true}
+      />
       <Footer 
         user={user}
         template={template ? { ...template, footer: footerData } : null}
