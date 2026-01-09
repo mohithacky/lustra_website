@@ -17,11 +17,12 @@ export async function GET(request: NextRequest) {
     // Create Supabase client with service role key for server-side operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey)
 
-    // Fetch all hero collections for the user (matching Flutter's getHeroCollections)
+    // Fetch all hero collections for the user from new unified collections table
     const { data: collections, error } = await supabase
-      .from('user_hero_collections')
+      .from('collections')
       .select('*')
       .eq('user_id', shopId)
+      .eq('collection_label', 'hero')
       .order('display_order', { ascending: true })
 
     if (error) {

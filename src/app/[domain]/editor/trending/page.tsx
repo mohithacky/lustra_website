@@ -25,6 +25,7 @@ export default async function EditTrendingPage({ params }: PageProps) {
       description="Featured collections shown in the trending section (max 4 items, positions 0 & 3 use 3:2 ratio, positions 1 & 2 use 5:6 ratio)"
       aspectRatio="Mixed (3:2 / 5:6)"
       maxItems={4}
+      showAIGeneration={true}
     />
   )
 }

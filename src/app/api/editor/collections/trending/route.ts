@@ -17,12 +17,13 @@ export async function GET(request: NextRequest) {
     // Create Supabase client with service role key for server-side operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey)
 
-    // Fetch all trending collections for the user (matching Flutter's getTrendingCollectionsNew)
+    // Fetch all trending collections for the user from new unified collections table
     const { data: collections, error } = await supabase
-      .from('user_trending_collections')
+      .from('collections')
       .select('*')
       .eq('user_id', shopId)
-      .order('position', { ascending: true })
+      .eq('collection_label', 'trending')
+      .order('display_order', { ascending: true })
 
     if (error) {
       console.error('Error fetching trending collections:', error)
