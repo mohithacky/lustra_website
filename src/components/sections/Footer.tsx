@@ -53,6 +53,11 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
   const router = useRouter()
   const footerData = template?.footer as Record<string, string[]> | undefined
 
+  // Ensure consistent footer structure: About, Shop, Customer Care
+  const aboutLinks = footerData?.['About'] || []
+  const shopLinks = footerData?.['Shop'] || []
+  const customerCareLinks = footerData?.['Customer Care'] || []
+
   return (
     <footer className={cn(
       'pt-16 pb-8 relative',
@@ -70,7 +75,7 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
       )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
@@ -126,28 +131,68 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
             </div>
           </div>
 
-          {/* Footer Links */}
-          {footerData && Object.entries(footerData).map(([title, links]) => (
-            links && links.length > 0 && (
-              <div key={title}>
-                <h4 className="font-semibold text-sm uppercase tracking-wider mb-4">
-                  {title}
-                </h4>
-                <ul className="space-y-3">
-                  {links.map((link, index) => (
-                    <li key={index}>
-                      <Link 
-                        href={getFooterLinkHref(link)}
-                        className="text-gray-400 hover:text-gold-400 text-sm transition-colors"
-                      >
-                        {link}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )
-          ))}
+          {/* About Column */}
+          {aboutLinks.length > 0 && (
+            <div>
+              <h4 className="font-semibold text-sm uppercase tracking-wider mb-4">
+                About
+              </h4>
+              <ul className="space-y-3">
+                {aboutLinks.map((link, index) => (
+                  <li key={index}>
+                    <Link 
+                      href={getFooterLinkHref(link)}
+                      className="text-gray-400 hover:text-gold-400 text-sm transition-colors"
+                    >
+                      {link}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Shop Column - matches Flutter implementation */}
+          {shopLinks.length > 0 && (
+            <div>
+              <h4 className="font-semibold text-sm uppercase tracking-wider mb-4">
+                Shop
+              </h4>
+              <ul className="space-y-3">
+                {shopLinks.map((link, index) => (
+                  <li key={index}>
+                    <Link 
+                      href={getFooterLinkHref(link)}
+                      className="text-gray-400 hover:text-gold-400 text-sm transition-colors"
+                    >
+                      {link}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Customer Care Column */}
+          {customerCareLinks.length > 0 && (
+            <div>
+              <h4 className="font-semibold text-sm uppercase tracking-wider mb-4">
+                Customer Care
+              </h4>
+              <ul className="space-y-3">
+                {customerCareLinks.map((link, index) => (
+                  <li key={index}>
+                    <Link 
+                      href={getFooterLinkHref(link)}
+                      className="text-gray-400 hover:text-gold-400 text-sm transition-colors"
+                    >
+                      {link}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Contact Column */}
           <div>
