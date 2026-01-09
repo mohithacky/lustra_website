@@ -449,7 +449,7 @@ export default function AddCollectionContent({
                 </div>
                 
                 {/* Popup Menu - matches Flutter PopupMenuButton */}
-                <div className="relative px-2">
+                <div className="relative px-4">
                   <button
                     onClick={() => setOpenMenuId(openMenuId === collection.id ? null : collection.id)}
                     className="p-2 hover:bg-gray-100 rounded-full"
@@ -458,7 +458,7 @@ export default function AddCollectionContent({
                   </button>
                   
                   {openMenuId === collection.id && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                    <div className="absolute right-4 bottom-full mb-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
                       <button
                         onClick={() => handleEditImage(collection)}
                         className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3"
