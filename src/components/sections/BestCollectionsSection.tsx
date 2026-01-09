@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Edit } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 
 interface BestCollection {
@@ -26,12 +26,24 @@ export default function BestCollectionsSection({ collections, isDark, canEdit = 
 
   return (
     <section className={cn(
-      'py-12 md:py-16',
+      'py-12 md:py-16 relative',
       isDark ? 'bg-[#080808]' : 'bg-offwhite'
     )}>
+      {/* Single Edit Button for Entire Section */}
+      {canEdit && (
+        <button
+          onClick={() => shopDomain && router.push(`/${shopDomain}/editor/best-collections`)}
+          className="absolute top-4 right-4 z-20 flex items-center gap-2 px-3 py-2 bg-white/90 hover:bg-white rounded-full shadow-lg border border-gray-200 transition-all hover:scale-105"
+          title="Edit Best Collections"
+        >
+          <Pencil className="w-4 h-4 text-gray-700" />
+          <span className="text-sm font-medium text-gray-700">Edit Section</span>
+        </button>
+      )}
+      
       <div className="max-w-[1100px] mx-auto px-6">
         {/* Section Header - matches Flutter */}
-        <div className="text-center mb-10 relative">
+        <div className="text-center mb-10">
           <span className={cn(
             'text-xs font-bold tracking-[0.2em] uppercase',
             isDark ? 'text-white/70' : 'text-gray-500'
@@ -44,19 +56,6 @@ export default function BestCollectionsSection({ collections, isDark, canEdit = 
           )}>
             Featured Collections
           </h2>
-          {/* Edit button - matches Flutter FeaturedCollectionsShowcase */}
-          {canEdit && (
-            <button
-              onClick={() => shopDomain && router.push(`/editor/best-collections`)}
-              className={cn(
-                'absolute right-0 top-0 p-2 rounded-full transition-colors',
-                isDark ? 'hover:bg-zinc-800 text-white' : 'hover:bg-gray-100 text-black'
-              )}
-              title="Edit Best Collections"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
-          )}
         </div>
 
         {/* Collections - matches Flutter FeaturedCollectionsShowcase layout */}

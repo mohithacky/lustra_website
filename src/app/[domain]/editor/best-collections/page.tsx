@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getWebsiteByDomain } from '@/lib/supabase'
-import CollectionsEditor from '@/components/editor/CollectionsEditor'
+import BestCollectionsEditor from '@/components/editor/BestCollectionsEditor'
 
 interface PageProps {
   params: { domain: string }
@@ -9,7 +9,7 @@ interface PageProps {
 
 export const metadata: Metadata = {
   title: 'Edit Best Collections',
-  description: 'Manage featured/best collections on your website',
+  description: 'Select 2 hero collections to feature as best collections',
 }
 
 export default async function EditBestCollectionsPage({ params }: PageProps) {
@@ -17,14 +17,9 @@ export default async function EditBestCollectionsPage({ params }: PageProps) {
   if (!user) notFound()
 
   return (
-    <CollectionsEditor 
+    <BestCollectionsEditor 
       userId={user.id} 
       shopDomain={params.domain} 
-      collectionLabel="best"
-      title="Best Collections"
-      description="Featured collections showcased in the Best Collections section (recommended: 2 items)"
-      aspectRatio="1:1"
-      maxItems={2}
     />
   )
 }
