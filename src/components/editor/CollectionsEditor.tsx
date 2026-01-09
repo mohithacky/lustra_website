@@ -221,18 +221,25 @@ export default function CollectionsEditor({
             displayOrder: collections.length,
           }
 
+      console.log('[CollectionsEditor] Saving collection:', { method, body: { ...body, imageUrl: body.imageUrl?.substring(0, 50) } })
+
       const response = await fetch('/api/editor/collections', {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
 
+      console.log('[CollectionsEditor] Save response status:', response.status)
+
       if (response.ok) {
+        const result = await response.json()
+        console.log('[CollectionsEditor] Save successful:', result)
         alert(editingCollection ? 'Collection updated!' : 'Collection added!')
         resetForm()
         loadCollections()
       } else {
         const errorData = await response.json()
+        console.error('[CollectionsEditor] Save failed:', errorData)
         alert(`Failed to save: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {

@@ -4,8 +4,17 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://phlccyxgyftspxnuzttf.supabase.co'
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-// Use service role for write operations
-const supabase = createClient(supabaseUrl, supabaseServiceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')
+// Log which key is being used (first 20 chars only for security)
+const keyUsed = supabaseServiceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+console.log('[Collections API] Using key type:', supabaseServiceKey ? 'SERVICE_ROLE' : 'ANON', 'key prefix:', keyUsed.substring(0, 20))
+
+// Use service role for write operations - with explicit auth options to ensure RLS bypass
+const supabase = createClient(supabaseUrl, keyUsed, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+})
 
 // Map collection labels to section types
 const LABEL_TO_SECTION_TYPE: Record<string, string> = {
@@ -115,7 +124,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { userId, name, imageUrl, collectionLabel, displayOrder, slug } = body
 
+    console.log('[Collections POST] Request body:', { userId, name, imageUrl: imageUrl?.substring(0, 50), collectionLabel, displayOrder })
+
     if (!userId || !name || !collectionLabel) {
+      console.error('[Collections POST] Missing required fields:', { userId: !!userId, name: !!name, collectionLabel: !!collectionLabel })
       return NextResponse.json(
         { error: 'userId, name, and collectionLabel are required' },
         { status: 400 }
@@ -124,26 +136,73 @@ export async function POST(request: NextRequest) {
 
     const collectionSlug = slug || name.toLowerCase().replace(/\s+/g, '-')
 
-    const { data, error } = await supabase
+    console.log('[Collections POST] Attempting to insert:', {
+      user_id: userId,
+      name,
+      slug: collectionSlug,
+      collection_label: collectionLabel,
+      display_order: displayOrder || 0,
+    })
+
+    const insertData = {
+      user_id: userId,
+      name,
+      slug: collectionSlug,
+      collection_label: collectionLabel,
+      image_url: imageUrl || null,
+      display_order: displayOrder || 0,
+      is_active: true,
+    }
+    
+    console.log('[Collections POST] Insert data:', JSON.stringify(insertData, null, 2))
+
+    // First check if this collection already exists
+    const { data: existing } = await supabase
       .from('collections')
-      .upsert({
-        user_id: userId,
-        name,
-        slug: collectionSlug,
-        collection_label: collectionLabel,
-        image_url: imageUrl || null,
-        display_order: displayOrder || 0,
-        is_active: true,
-      }, {
-        onConflict: 'user_id,collection_label,name',
-      })
-      .select()
-      .single()
+      .select('id')
+      .eq('user_id', userId)
+      .eq('collection_label', collectionLabel)
+      .eq('name', name)
+      .maybeSingle()
+
+    console.log('[Collections POST] Existing collection check:', existing)
+
+    let data, error
+    if (existing) {
+      // Update existing
+      const result = await supabase
+        .from('collections')
+        .update({
+          slug: insertData.slug,
+          image_url: insertData.image_url,
+          display_order: insertData.display_order,
+          is_active: insertData.is_active,
+        })
+        .eq('id', existing.id)
+        .select()
+        .single()
+      data = result.data
+      error = result.error
+    } else {
+      // Insert new
+      const result = await supabase
+        .from('collections')
+        .insert(insertData)
+        .select()
+        .single()
+      data = result.data
+      error = result.error
+    }
+
+    console.log('[Collections POST] Upsert result - data:', data, 'error:', error)
 
     if (error) {
-      console.error('Error creating collection:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[Collections POST] Error creating collection:', JSON.stringify(error, null, 2))
+      console.error('[Collections POST] Error code:', error.code, 'message:', error.message, 'details:', error.details, 'hint:', error.hint)
+      return NextResponse.json({ error: error.message, details: error, code: error.code }, { status: 500 })
     }
+
+    console.log('[Collections POST] Successfully created collection:', data?.id, 'name:', data?.name)
 
     // Sync to user_website_sections
     await updateWebsiteSectionCollections(userId, collectionLabel)

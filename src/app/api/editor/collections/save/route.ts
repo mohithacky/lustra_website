@@ -60,102 +60,66 @@ export async function POST(request: NextRequest) {
 
     const imageUrl = publicUrlData.publicUrl
 
-    if (collectionType === 'hero') {
-      // Get current max display order (matching Flutter's addHeroCollection)
-      const { data: existing } = await supabase
-        .from('user_hero_collections')
-        .select('display_order')
-        .eq('user_id', shopId)
-        .order('display_order', { ascending: false })
-        .limit(1)
+    console.log('[Collections Save] Saving to collections table:', { shopId, collectionName, collectionType })
 
-      const maxOrder = existing && existing.length > 0 ? (existing[0].display_order || 0) : 0
+    // Use the new unified collections table
+    const collectionLabel = collectionType === 'hero' ? 'hero' : 'trending'
+    const slug = collectionName.toLowerCase().replace(/\s+/g, '-')
 
-      // Check if collection with same name exists
-      const { data: existingCollection } = await supabase
-        .from('user_hero_collections')
-        .select('id')
-        .eq('user_id', shopId)
-        .eq('name', collectionName)
-        .single()
+    // Get current max display order for this collection type
+    const { data: existing } = await supabase
+      .from('collections')
+      .select('display_order')
+      .eq('user_id', shopId)
+      .eq('collection_label', collectionLabel)
+      .order('display_order', { ascending: false })
+      .limit(1)
 
-      if (existingCollection) {
-        // Update existing collection image
-        const { error: updateError } = await supabase
-          .from('user_hero_collections')
-          .update({ 
-            image_url: `${imageUrl}?v=${Date.now()}` // Add cache buster like Flutter
-          })
-          .eq('user_id', shopId)
-          .eq('name', collectionName)
+    const maxOrder = existing && existing.length > 0 ? (existing[0].display_order || 0) : 0
 
-        if (updateError) {
-          console.error('Update error:', updateError)
-          return NextResponse.json({ error: 'Failed to update collection' }, { status: 500 })
-        }
-      } else {
-        // Insert new hero collection (matching Flutter's addHeroCollection)
-        const { error: insertError } = await supabase
-          .from('user_hero_collections')
-          .insert({
-            user_id: shopId,
-            name: collectionName,
-            image_url: imageUrl,
-            is_visible: true,
-            display_order: maxOrder + 1
-          })
+    // Check if collection with same name exists
+    const { data: existingCollection } = await supabase
+      .from('collections')
+      .select('id')
+      .eq('user_id', shopId)
+      .eq('collection_label', collectionLabel)
+      .eq('name', collectionName)
+      .maybeSingle()
 
-        if (insertError) {
-          console.error('Insert error:', insertError)
-          return NextResponse.json({ error: 'Failed to save collection' }, { status: 500 })
-        }
+    if (existingCollection) {
+      // Update existing collection image
+      console.log('[Collections Save] Updating existing collection:', existingCollection.id)
+      const { error: updateError } = await supabase
+        .from('collections')
+        .update({ 
+          image_url: `${imageUrl}?v=${Date.now()}`, // Add cache buster
+          slug,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingCollection.id)
+
+      if (updateError) {
+        console.error('[Collections Save] Update error:', updateError)
+        return NextResponse.json({ error: 'Failed to update collection', details: updateError }, { status: 500 })
       }
-    } else if (collectionType === 'trending') {
-      // For trending collections (matching Flutter's setTrendingCollection)
-      const targetPosition = position ?? 0
-      const targetAspectRatio = aspectRatio || getAspectRatioForPosition(targetPosition)
+    } else {
+      // Insert new collection
+      console.log('[Collections Save] Inserting new collection')
+      const { error: insertError } = await supabase
+        .from('collections')
+        .insert({
+          user_id: shopId,
+          name: collectionName,
+          slug,
+          collection_label: collectionLabel,
+          image_url: imageUrl,
+          display_order: maxOrder + 1,
+          is_active: true
+        })
 
-      // Check if position is already taken
-      const { data: existingAtPosition } = await supabase
-        .from('user_trending_collections')
-        .select('id')
-        .eq('user_id', shopId)
-        .eq('position', targetPosition)
-        .single()
-
-      if (existingAtPosition) {
-        // Update existing
-        const { error: updateError } = await supabase
-          .from('user_trending_collections')
-          .update({
-            name: collectionName,
-            image_url: `${imageUrl}?v=${Date.now()}`,
-            aspect_ratio: targetAspectRatio
-          })
-          .eq('user_id', shopId)
-          .eq('position', targetPosition)
-
-        if (updateError) {
-          console.error('Update error:', updateError)
-          return NextResponse.json({ error: 'Failed to update trending collection' }, { status: 500 })
-        }
-      } else {
-        // Insert new
-        const { error: insertError } = await supabase
-          .from('user_trending_collections')
-          .insert({
-            user_id: shopId,
-            name: collectionName,
-            image_url: imageUrl,
-            position: targetPosition,
-            aspect_ratio: targetAspectRatio,
-            is_visible: true
-          })
-
-        if (insertError) {
-          console.error('Insert error:', insertError)
-          return NextResponse.json({ error: 'Failed to save trending collection' }, { status: 500 })
-        }
+      if (insertError) {
+        console.error('[Collections Save] Insert error:', insertError)
+        return NextResponse.json({ error: 'Failed to save collection', details: insertError }, { status: 500 })
       }
     }
 
