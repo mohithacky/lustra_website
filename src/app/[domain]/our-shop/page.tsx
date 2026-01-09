@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
-import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
+import { getFooterDataForUser, getPageContentForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 import Image from 'next/image'
@@ -24,11 +24,12 @@ export default async function OurShopPage({ params }: PageProps) {
   const user = await getWebsiteByDomain(params.domain)
   if (!user) notFound()
 
-  const [template, categoriesMap, collectionsMap, footerData] = await Promise.all([
+  const [template, categoriesMap, collectionsMap, footerData, pageContent] = await Promise.all([
     getWebsiteTemplate(user.id),
     getCategoriesMap(user.id),
     getCollectionsMap(user.id),
     getFooterDataForUser(user.id),
+    getPageContentForUser(user.id, 'our-shop'),
   ])
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
@@ -44,12 +45,15 @@ export default async function OurShopPage({ params }: PageProps) {
   const theme = template?.theme || 'light'
   const isDark = theme === 'dark'
 
+  const pageTitle = pageContent?.title || 'Our Shop'
+  const content = pageContent?.content
+
   return (
     <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray}>
       <div className={`min-h-screen py-16 px-6 ${isDark ? 'bg-[#080808]' : 'bg-offwhite'}`}>
         <div className="max-w-4xl mx-auto">
           <h1 className={`font-display text-3xl md:text-4xl font-bold mb-8 text-center ${isDark ? 'text-white' : 'text-black'}`}>
-            Our Shop
+            {pageTitle}
           </h1>
 
           {/* Shop Image */}

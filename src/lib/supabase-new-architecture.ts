@@ -535,6 +535,7 @@ export interface WebsitePage {
   title: string
   slug: string
   page_type: string
+  content?: string | null
   is_active: boolean
   display_order: number
 }
@@ -648,6 +649,38 @@ export async function getWebsitePages(userWebsiteId: string): Promise<WebsitePag
   }
 
   return (data || []) as WebsitePage[]
+}
+
+// ============================================================================
+// Fetch a single page by slug
+// ============================================================================
+export async function getPageBySlug(userWebsiteId: string, slug: string): Promise<WebsitePage | null> {
+  const { data, error } = await supabase
+    .from('user_website_pages')
+    .select('*')
+    .eq('user_website_id', userWebsiteId)
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .single()
+
+  if (error) {
+    console.log(`[DB] Page '${slug}' not found in user_website_pages table`)
+    return null
+  }
+
+  return data as WebsitePage
+}
+
+// ============================================================================
+// Fetch page content for a user by slug
+// ============================================================================
+export async function getPageContentForUser(userId: string, slug: string): Promise<WebsitePage | null> {
+  // Get user's website
+  const website = await getUserWebsite(userId)
+  if (!website) return null
+
+  // Fetch the page
+  return getPageBySlug(website.id, slug)
 }
 
 // ============================================================================

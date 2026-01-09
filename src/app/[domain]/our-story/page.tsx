@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
-import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
+import { getFooterDataForUser, getPageContentForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 
@@ -21,11 +21,12 @@ export default async function OurStoryPage({ params }: PageProps) {
   const user = await getWebsiteByDomain(params.domain)
   if (!user) notFound()
 
-  const [template, categoriesMap, collectionsMap, footerData] = await Promise.all([
+  const [template, categoriesMap, collectionsMap, footerData, pageContent] = await Promise.all([
     getWebsiteTemplate(user.id),
     getCategoriesMap(user.id),
     getCollectionsMap(user.id),
     getFooterDataForUser(user.id),
+    getPageContentForUser(user.id, 'our-story'),
   ])
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
@@ -53,8 +54,9 @@ export default async function OurStoryPage({ params }: PageProps) {
   const theme = template?.theme || 'light'
   const isDark = theme === 'dark'
 
-  // Get content from user data
-  const content = (user as unknown as { footer_our_story?: string })?.footer_our_story || getDefaultContent(user.shop_name)
+  // Get content from database or use default
+  const content = pageContent?.content || getDefaultContent(user.shop_name)
+  const pageTitle = pageContent?.title || 'Our Story'
 
   return (
     <WebsiteLayout
@@ -66,7 +68,7 @@ export default async function OurStoryPage({ params }: PageProps) {
       <div className={`min-h-screen py-16 px-6 ${isDark ? 'bg-[#080808]' : 'bg-offwhite'}`}>
         <div className="max-w-3xl mx-auto">
           <h1 className={`font-display text-3xl md:text-4xl font-bold mb-8 ${isDark ? 'text-white' : 'text-black'}`}>
-            Our Story
+            {pageTitle}
           </h1>
           <div className={`whitespace-pre-wrap leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
             {content}
