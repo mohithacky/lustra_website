@@ -591,3 +591,24 @@ export function transformBestToLegacy(collections: Collection[]): Array<{
     description: `Discover the ${c.name} collection`,
   }))
 }
+
+// ============================================================================
+// Helper function to fetch footer data for any user (for non-home pages)
+// ============================================================================
+export async function getFooterDataForUser(userId: string): Promise<Record<string, string[]>> {
+  // Get user's website
+  const website = await getUserWebsite(userId)
+  if (!website) return {}
+
+  // Get template sections
+  const templateSections = await getTemplateSections(website.template_id)
+  
+  // Get user sections
+  const userSections = await getUserWebsiteSections(website.id)
+  
+  // Merge sections
+  const mergedSections = await getMergedSections(templateSections, userSections, userId)
+  
+  // Extract footer data
+  return getFooterData(mergedSections)
+}

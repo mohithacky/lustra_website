@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getProductById, getCategoriesMap, getCollectionsMap, getProducts, getFooterData } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate, getProductById, getCategoriesMap, getCollectionsMap, getProducts } from '@/lib/supabase'
+import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductDetail from '@/components/products/ProductDetail'
 import Footer from '@/components/sections/Footer'
@@ -38,7 +39,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     getCategoriesMap(user.id),
     getCollectionsMap(user.id),
     getProducts(user.id, { limit: 4 }),
-    getFooterData(user.id),
+    getFooterDataForUser(user.id),
   ])
 
   if (!product) {

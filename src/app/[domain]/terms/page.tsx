@@ -1,9 +1,9 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
+import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
-import { getFooterData } from '@/lib/supabase'
 
 interface PageProps {
   params: { domain: string }
@@ -33,7 +33,7 @@ export default async function TermsPage({ params }: PageProps) {
     getWebsiteTemplate(user.id),
     getCategoriesMap(user.id),
     getCollectionsMap(user.id),
-    getFooterData(user.id),
+    getFooterDataForUser(user.id),
   ])
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({

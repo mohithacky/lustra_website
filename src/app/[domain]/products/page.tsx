@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getProducts, getCategoriesMap, getCollectionsMap, getFooterData } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate, getProducts, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
+import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsGrid from '@/components/products/ProductsGrid'
 import Footer from '@/components/sections/Footer'
@@ -39,7 +40,7 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
     }),
     getCategoriesMap(user.id),
     getCollectionsMap(user.id),
-    getFooterData(user.id),
+    getFooterDataForUser(user.id),
   ])
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({

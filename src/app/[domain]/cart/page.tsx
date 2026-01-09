@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMap, getCollectionsMap, getFooterData } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
+import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 import CartContent from '@/components/cart/CartContent'
@@ -25,7 +26,7 @@ export default async function CartPage({ params }: PageProps) {
     getWebsiteTemplate(user.id),
     getCategoriesMap(user.id),
     getCollectionsMap(user.id),
-    getFooterData(user.id),
+    getFooterDataForUser(user.id),
   ])
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
