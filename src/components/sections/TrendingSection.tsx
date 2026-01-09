@@ -32,7 +32,7 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
       // Positions 0 & 3 use small boxes (3:2 ratio)
       // Positions 1 & 2 use large boxes (5:6 ratio)
       const size = (position === 0 || position === 3) ? 'small' : 'large'
-      router.push(`/${shopDomain}/editor/trending?size=${size}`)
+      router.push(`/editor/trending?size=${size}`)
     }
   }
 
