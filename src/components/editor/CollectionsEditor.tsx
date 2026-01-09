@@ -30,6 +30,7 @@ interface CollectionsEditorProps {
   aspectRatio?: string
   maxItems?: number
   showAIGeneration?: boolean
+  aspectRatioFilter?: 'small' | 'large'  // For trending: small=3:2, large=5:6
 }
 
 export default function CollectionsEditor({ 
@@ -41,6 +42,7 @@ export default function CollectionsEditor({
   aspectRatio = '16:9',
   showAIGeneration = true,
   maxItems,
+  aspectRatioFilter,
 }: CollectionsEditorProps) {
   const router = useRouter()
   const [collections, setCollections] = useState<Collection[]>([])
@@ -60,6 +62,10 @@ export default function CollectionsEditor({
   // Edit mode state
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  
+  // Replace collection state (for when slots are full)
+  const [showReplaceModal, setShowReplaceModal] = useState(false)
+  const [pendingNewCollection, setPendingNewCollection] = useState<{name: string, imageUrl: string} | null>(null)
 
   useEffect(() => {
     loadCollections()
@@ -77,9 +83,16 @@ export default function CollectionsEditor({
   const loadCollections = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/editor/collections?userId=${userId}&label=${collectionLabel}`)
+      // Build URL with optional aspect ratio filter for trending
+      let url = `/api/editor/collections?userId=${userId}&label=${collectionLabel}`
+      if (aspectRatioFilter) {
+        url += `&aspectRatio=${aspectRatioFilter === 'small' ? '3:2' : '5:6'}`
+      }
+      
+      const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
+        console.log('[CollectionsEditor] Loaded collections:', data.collections?.length, 'aspectRatioFilter:', aspectRatioFilter)
         setCollections(data.collections || [])
       } else {
         console.error('Failed to load collections:', response.status)
@@ -203,8 +216,23 @@ export default function CollectionsEditor({
       if (imageToSave) {
         imageUrl = await uploadImageToStorage(imageToSave, nameToSave)
       }
+      
+      // If slots are full and this is a new collection, show replace modal
+      if (!editingCollection && effectiveMaxItems && collections.length >= effectiveMaxItems) {
+        setPendingNewCollection({ name: nameToSave, imageUrl: imageUrl || '' })
+        setShowReplaceModal(true)
+        setIsSaving(false)
+        return
+      }
 
       const method = editingCollection ? 'PUT' : 'POST'
+      
+      // Determine aspect ratio for trending collections
+      let aspectRatioValue: string | undefined
+      if (collectionLabel === 'trending' && aspectRatioFilter) {
+        aspectRatioValue = aspectRatioFilter === 'small' ? '3:2' : '5:6'
+      }
+      
       const body = editingCollection 
         ? {
             id: editingCollection.id,
@@ -212,6 +240,7 @@ export default function CollectionsEditor({
             name: nameToSave,
             imageUrl,
             collectionLabel,
+            ...(aspectRatioValue && { aspectRatio: aspectRatioValue }),
           }
         : {
             userId,
@@ -219,6 +248,7 @@ export default function CollectionsEditor({
             imageUrl,
             collectionLabel,
             displayOrder: collections.length,
+            ...(aspectRatioValue && { aspectRatio: aspectRatioValue }),
           }
 
       console.log('[CollectionsEditor] Saving collection:', { method, body: { ...body, imageUrl: body.imageUrl?.substring(0, 50) } })
@@ -236,6 +266,8 @@ export default function CollectionsEditor({
         console.log('[CollectionsEditor] Save successful:', result)
         alert(editingCollection ? 'Collection updated!' : 'Collection added!')
         resetForm()
+        setShowReplaceModal(false)
+        setPendingNewCollection(null)
         loadCollections()
       } else {
         const errorData = await response.json()
@@ -307,9 +339,55 @@ export default function CollectionsEditor({
     setUploadedImage(null)
     setUploadedImagePreview(null)
     setBannerSource('generate')
+    setShowReplaceModal(false)
+    setPendingNewCollection(null)
   }
 
-  const canAddMore = !maxItems || collections.length < maxItems
+  // Handle replacing an existing collection when slots are full
+  const handleReplaceCollection = async (collectionToReplace: Collection) => {
+    if (!pendingNewCollection) return
+    
+    // Delete the old collection first
+    try {
+      await fetch(`/api/editor/collections?id=${collectionToReplace.id}&userId=${userId}`, {
+        method: 'DELETE',
+      })
+      
+      // Now save the new collection
+      let aspectRatioValue: string | undefined
+      if (collectionLabel === 'trending' && aspectRatioFilter) {
+        aspectRatioValue = aspectRatioFilter === 'small' ? '3:2' : '5:6'
+      }
+      
+      const response = await fetch('/api/editor/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          name: pendingNewCollection.name,
+          imageUrl: pendingNewCollection.imageUrl,
+          collectionLabel,
+          displayOrder: collectionToReplace.display_order,
+          ...(aspectRatioValue && { aspectRatio: aspectRatioValue }),
+        }),
+      })
+      
+      if (response.ok) {
+        alert('Collection replaced successfully!')
+        resetForm()
+        loadCollections()
+      } else {
+        alert('Failed to replace collection')
+      }
+    } catch (error) {
+      console.error('Error replacing collection:', error)
+      alert('Error replacing collection')
+    }
+  }
+
+  // For trending with aspectRatioFilter, max is 2 slots per size
+  const effectiveMaxItems = aspectRatioFilter ? 2 : maxItems
+  const canAddMore = !effectiveMaxItems || collections.length < effectiveMaxItems
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -328,7 +406,7 @@ export default function CollectionsEditor({
               <p className="text-sm text-gray-500 mt-1">{description}</p>
             </div>
           </div>
-          {!showAddForm && canAddMore && (
+          {!showAddForm && (
             <button
               onClick={() => setShowAddForm(true)}
               className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2"
@@ -340,18 +418,19 @@ export default function CollectionsEditor({
         </div>
 
         {/* Info Banner */}
-        {maxItems && (
+        {effectiveMaxItems && (
           <div className={cn(
             'mb-6 p-4 rounded-lg border',
-            collections.length >= maxItems 
+            collections.length >= effectiveMaxItems 
               ? 'bg-orange-50 border-orange-200' 
               : 'bg-blue-50 border-blue-200'
           )}>
             <p className={cn(
               'text-sm',
-              collections.length >= maxItems ? 'text-orange-800' : 'text-blue-800'
+              collections.length >= effectiveMaxItems ? 'text-orange-800' : 'text-blue-800'
             )}>
-              {collections.length} of {maxItems} slots used. Aspect ratio: {aspectRatio}
+              {collections.length} of {effectiveMaxItems} slots used. Aspect ratio: {aspectRatio}
+              {collections.length >= effectiveMaxItems && ' - Add new to replace existing'}
             </p>
           </div>
         )}
@@ -476,14 +555,12 @@ export default function CollectionsEditor({
             <p className="text-gray-500 mb-4">
               {collectionLabel === 'category' ? 'No categories yet' : 'No collections yet'}
             </p>
-            {canAddMore && (
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold"
-              >
-                {collectionLabel === 'category' ? 'Add Your First Category' : 'Add Your First Collection'}
-              </button>
-            )}
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold"
+            >
+              {collectionLabel === 'category' ? 'Add Your First Category' : 'Add Your First Collection'}
+            </button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -522,7 +599,7 @@ export default function CollectionsEditor({
                 </div>
                 
                 {/* Menu */}
-                <div className="relative px-2">
+                <div className="relative px-4">
                   <button
                     onClick={() => setOpenMenuId(openMenuId === collection.id ? null : collection.id)}
                     className="p-2 hover:bg-gray-100 rounded-full"
@@ -531,7 +608,7 @@ export default function CollectionsEditor({
                   </button>
                   
                   {openMenuId === collection.id && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                    <div className="absolute right-4 bottom-full mb-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
                       <button
                         onClick={() => handleEditImage(collection)}
                         className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3"
@@ -561,6 +638,54 @@ export default function CollectionsEditor({
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Replace Collection Modal */}
+        {showReplaceModal && pendingNewCollection && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+              <h3 className="text-xl font-bold mb-2">Replace Existing Collection</h3>
+              <p className="text-gray-600 mb-4">
+                All {effectiveMaxItems} slots are filled. Choose which collection to replace with "{pendingNewCollection.name}":
+              </p>
+              
+              <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
+                {collections.map((collection) => (
+                  <button
+                    key={collection.id}
+                    onClick={() => handleReplaceCollection(collection)}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-amber-500 hover:bg-amber-50 transition-colors"
+                  >
+                    <div className="relative w-16 h-12 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
+                      {collection.image_url ? (
+                        <Image
+                          src={getImageUrl(collection.image_url)}
+                          alt={collection.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="w-6 h-6 text-gray-300" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="font-medium text-gray-900">{collection.name}</span>
+                  </button>
+                ))}
+              </div>
+              
+              <button
+                onClick={() => {
+                  setShowReplaceModal(false)
+                  setPendingNewCollection(null)
+                }}
+                className="w-full py-2 text-gray-600 hover:text-gray-900"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
       </div>

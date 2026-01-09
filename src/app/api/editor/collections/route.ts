@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const userId = searchParams.get('userId')
   const collectionLabel = searchParams.get('label') // hero, category, trending, best, occasion
+  const aspectRatioFilter = searchParams.get('aspectRatio') // Optional: '3:2' or '5:6' for trending
 
   if (!userId) {
     return NextResponse.json({ error: 'userId is required' }, { status: 400 })
@@ -98,11 +99,16 @@ export async function GET(request: NextRequest) {
       .from('collections')
       .select('*')
       .eq('user_id', userId)
-      .eq('is_active', true)
       .order('display_order', { ascending: true })
 
     if (collectionLabel) {
       query = query.eq('collection_label', collectionLabel)
+    }
+
+    // For trending collections, optionally filter by aspect ratio
+    // Small boxes (positions 0 & 3) use 3:2, Large boxes (positions 1 & 2) use 5:6
+    if (aspectRatioFilter && collectionLabel === 'trending') {
+      query = query.eq('aspect_ratio', aspectRatioFilter)
     }
 
     const { data, error } = await query
@@ -122,9 +128,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, name, imageUrl, collectionLabel, displayOrder, slug } = body
+    const { userId, name, imageUrl, collectionLabel, displayOrder, slug, aspectRatio } = body
 
-    console.log('[Collections POST] Request body:', { userId, name, imageUrl: imageUrl?.substring(0, 50), collectionLabel, displayOrder })
+    console.log('[Collections POST] Request body:', { userId, name, imageUrl: imageUrl?.substring(0, 50), collectionLabel, displayOrder, aspectRatio })
 
     if (!userId || !name || !collectionLabel) {
       console.error('[Collections POST] Missing required fields:', { userId: !!userId, name: !!name, collectionLabel: !!collectionLabel })
@@ -144,7 +150,7 @@ export async function POST(request: NextRequest) {
       display_order: displayOrder || 0,
     })
 
-    const insertData = {
+    const insertData: Record<string, any> = {
       user_id: userId,
       name,
       slug: collectionSlug,
@@ -152,6 +158,11 @@ export async function POST(request: NextRequest) {
       image_url: imageUrl || null,
       display_order: displayOrder || 0,
       is_active: true,
+    }
+    
+    // Add aspect_ratio for trending collections
+    if (aspectRatio && collectionLabel === 'trending') {
+      insertData.aspect_ratio = aspectRatio
     }
     
     console.log('[Collections POST] Insert data:', JSON.stringify(insertData, null, 2))
