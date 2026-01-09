@@ -517,9 +517,48 @@ export function getOccasionCollections(sections: MergedSection[]): Collection[] 
   return occasionSection?.collections || []
 }
 
+export interface FooterGroup {
+  title: string
+  page_slugs: string[]
+}
+
+export interface FooterConfig {
+  groups?: FooterGroup[]
+  show_social_links?: boolean
+  show_contact_info?: boolean
+  show_copyright?: boolean
+}
+
+export interface WebsitePage {
+  id: string
+  user_website_id: string
+  title: string
+  slug: string
+  page_type: string
+  is_active: boolean
+  display_order: number
+}
+
+export function getFooterConfig(sections: MergedSection[]): FooterConfig {
+  const footerSection = getSectionByType(sections, 'footer')
+  return footerSection?.config || {}
+}
+
+// Legacy function for backward compatibility - converts to old format
 export function getFooterData(sections: MergedSection[]): Record<string, string[]> {
   const footerSection = getSectionByType(sections, 'footer')
-  // Footer data is now stored in config since there's no content column
+  // Check for new structure (groups array)
+  if (footerSection?.config?.groups) {
+    const result: Record<string, string[]> = {}
+    for (const group of footerSection.config.groups) {
+      // Convert page slugs to display titles for backward compatibility
+      result[group.title] = group.page_slugs.map((slug: string) => 
+        slug.split('-').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+      )
+    }
+    return result
+  }
+  // Fallback to old structure
   return footerSection?.config?.footer || {}
 }
 
@@ -593,6 +632,25 @@ export function transformBestToLegacy(collections: Collection[]): Array<{
 }
 
 // ============================================================================
+// Fetch pages for a website
+// ============================================================================
+export async function getWebsitePages(userWebsiteId: string): Promise<WebsitePage[]> {
+  const { data, error } = await supabase
+    .from('user_website_pages')
+    .select('*')
+    .eq('user_website_id', userWebsiteId)
+    .eq('is_active', true)
+    .order('display_order', { ascending: true })
+
+  if (error) {
+    console.log(`[DB] user_website_pages table may not exist yet, falling back to config-based footer`)
+    return []
+  }
+
+  return (data || []) as WebsitePage[]
+}
+
+// ============================================================================
 // Helper function to fetch footer data for any user (for non-home pages)
 // ============================================================================
 export async function getFooterDataForUser(userId: string): Promise<Record<string, string[]>> {
@@ -609,6 +667,42 @@ export async function getFooterDataForUser(userId: string): Promise<Record<strin
   // Merge sections
   const mergedSections = await getMergedSections(templateSections, userSections, userId)
   
-  // Extract footer data
+  // Get footer config
+  const footerConfig = getFooterConfig(mergedSections)
+  
+  // If using new page-based architecture (groups with page_slugs)
+  if (footerConfig.groups && footerConfig.groups.length > 0) {
+    // Fetch pages from user_website_pages table
+    const pages = await getWebsitePages(website.id)
+    
+    // Build footer data from pages based on config groups
+    const result: Record<string, string[]> = {}
+    
+    for (const group of footerConfig.groups) {
+      const groupPages: string[] = []
+      
+      for (const slug of group.page_slugs) {
+        // Find the page by slug
+        const page = pages.find(p => p.slug === slug)
+        if (page) {
+          groupPages.push(page.title)
+        } else {
+          // Page not in database yet, convert slug to title as fallback
+          const title = slug.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ')
+          groupPages.push(title)
+        }
+      }
+      
+      if (groupPages.length > 0) {
+        result[group.title] = groupPages
+      }
+    }
+    
+    return result
+  }
+  
+  // Fallback to old config-based footer data
   return getFooterData(mergedSections)
 }
