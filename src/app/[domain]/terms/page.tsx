@@ -79,7 +79,6 @@ export default async function TermsPage({ params }: PageProps) {
         initialTitle={pageTitle}
         initialContent={content}
         isDark={isDark}
-        canEdit={true}
       />
       <Footer 
         user={user}

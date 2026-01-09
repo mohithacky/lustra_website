@@ -79,7 +79,6 @@ export default async function PrivacyPage({ params }: PageProps) {
         initialTitle={pageTitle}
         initialContent={content}
         isDark={isDark}
-        canEdit={true}
       />
       <Footer 
         user={user}

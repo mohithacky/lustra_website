@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Pencil, Save, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useEditor } from '@/components/editor/EditorProvider'
 
 interface EditableStaticPageProps {
   userId: string
@@ -10,7 +11,6 @@ interface EditableStaticPageProps {
   initialTitle: string
   initialContent: string
   isDark: boolean
-  canEdit?: boolean
 }
 
 export default function EditableStaticPage({
@@ -19,8 +19,8 @@ export default function EditableStaticPage({
   initialTitle,
   initialContent,
   isDark,
-  canEdit = false,
 }: EditableStaticPageProps) {
+  const { isEditorMode } = useEditor()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [title, setTitle] = useState(initialTitle)
@@ -156,8 +156,8 @@ export default function EditableStaticPage({
 
   return (
     <div className={`min-h-screen py-16 px-6 ${isDark ? 'bg-[#080808]' : 'bg-offwhite'} relative`}>
-      {/* Edit Button */}
-      {canEdit && (
+      {/* Edit Button - Only show in editor mode */}
+      {isEditorMode && (
         <button
           onClick={handleEdit}
           className="absolute top-4 right-4 z-20 flex items-center gap-2 px-3 py-2 bg-white/90 hover:bg-white rounded-full shadow-lg border border-gray-200 transition-all hover:scale-105"

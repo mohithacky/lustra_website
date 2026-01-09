@@ -54,7 +54,6 @@ export default async function ShippingPage({ params }: PageProps) {
         initialTitle={pageTitle}
         initialContent={content}
         isDark={isDark}
-        canEdit={true}
       />
       <Footer user={user} template={template ? { ...template, footer: footerData } : null} isDark={isDark} />
     </WebsiteLayout>

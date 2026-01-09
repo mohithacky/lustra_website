@@ -79,7 +79,6 @@ export default async function RefundPage({ params }: PageProps) {
         initialTitle={pageTitle}
         initialContent={content}
         isDark={isDark}
-        canEdit={true}
       />
       <Footer 
         user={user}
