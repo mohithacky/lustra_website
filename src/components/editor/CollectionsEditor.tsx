@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { 
   ArrowLeft, Upload, Wand2, Loader2, MoreVertical, 
-  Image as ImageIcon, Eye, EyeOff, X, Plus, Trash2, GripVertical 
+  Image as ImageIcon, Eye, EyeOff, X, Plus, Trash2, GripVertical, RefreshCw 
 } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 import { waitForEditorContext } from '@/lib/editor-context'
@@ -220,8 +220,10 @@ export default function CollectionsEditor({
         imageUrl = await uploadImageToStorage(imageToSave, nameToSave)
       }
       
-      // If slots are full and this is a new collection, show replace modal
-      if (!editingCollection && effectiveMaxItems && collections.length >= effectiveMaxItems) {
+      // If ACTIVE slots are full and this is a new collection, show replace modal
+      // Only show replace modal for ACTIVE collections
+      const currentActiveCount = collections.filter(c => c.is_active).length
+      if (!editingCollection && effectiveMaxItems && currentActiveCount >= effectiveMaxItems) {
         setPendingNewCollection({ name: nameToSave, imageUrl: imageUrl || '' })
         setShowReplaceModal(true)
         setIsSaving(false)
@@ -377,13 +379,20 @@ export default function CollectionsEditor({
   }
 
   // Handle replacing an existing collection when slots are full
+  // This deactivates the old collection instead of deleting it
   const handleReplaceCollection = async (collectionToReplace: Collection) => {
     if (!pendingNewCollection) return
     
-    // Delete the old collection first
     try {
-      await fetch(`/api/editor/collections?id=${collectionToReplace.id}&userId=${userId}`, {
-        method: 'DELETE',
+      // Deactivate the old collection (don't delete it)
+      await fetch('/api/editor/collections', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: collectionToReplace.id,
+          userId,
+          isActive: false,
+        }),
       })
       
       // Now save the new collection
@@ -418,9 +427,60 @@ export default function CollectionsEditor({
     }
   }
 
+  // Handle activating an inactive collection by replacing an active one
+  const handleActivateAndReplace = async (inactiveCollection: Collection, activeToReplace: Collection) => {
+    try {
+      // Deactivate the currently active one
+      await fetch('/api/editor/collections', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: activeToReplace.id,
+          userId,
+          isActive: false,
+        }),
+      })
+      
+      // Activate the previously inactive one
+      const response = await fetch('/api/editor/collections', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: inactiveCollection.id,
+          userId,
+          isActive: true,
+          displayOrder: activeToReplace.display_order,
+        }),
+      })
+      
+      if (response.ok) {
+        alert('Collection activated!')
+        setOpenMenuId(null)
+        setMenuPosition(null)
+        setShowReplaceActiveModal(false)
+        setCollectionToActivate(null)
+        loadCollections()
+      } else {
+        alert('Failed to activate collection')
+      }
+    } catch (error) {
+      console.error('Error activating collection:', error)
+      alert('Error activating collection')
+    }
+  }
+
   // For trending with aspectRatioFilter, max is 2 slots per size
   const effectiveMaxItems = aspectRatioFilter ? 2 : maxItems
-  const canAddMore = !effectiveMaxItems || collections.length < effectiveMaxItems
+  
+  // Count only ACTIVE collections for slot calculation
+  const activeCollections = collections.filter(c => c.is_active)
+  const inactiveCollections = collections.filter(c => !c.is_active)
+  const activeSlotsFull = effectiveMaxItems ? activeCollections.length >= effectiveMaxItems : false
+  const canAddMore = true // Always allow adding, will show replace modal if slots full
+  
+  // State for replace active modal (when activating an inactive collection)
+  const [showReplaceActiveModal, setShowReplaceActiveModal] = useState(false)
+  const [collectionToActivate, setCollectionToActivate] = useState<Collection | null>(null)
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -597,19 +657,28 @@ export default function CollectionsEditor({
           </div>
         ) : (
           <div className="space-y-3">
-            {collections.map((collection) => (
+            {/* Active collections first, then inactive */}
+            {[...activeCollections, ...inactiveCollections].map((collection) => (
               <div 
                 key={collection.id} 
-                className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center overflow-hidden"
+                className={cn(
+                  "rounded-xl border shadow-sm flex items-center overflow-hidden transition-all",
+                  collection.is_active
+                    ? "bg-white border-gray-200"
+                    : "bg-gray-50 border-dashed border-gray-300 opacity-70"
+                )}
               >
                 {/* Image thumbnail */}
-                <div className="relative w-28 h-20 flex-shrink-0 bg-gray-100">
+                <div className={cn(
+                  "relative w-28 h-20 flex-shrink-0",
+                  collection.is_active ? "bg-gray-100" : "bg-gray-200"
+                )}>
                   {collection.image_url ? (
                     <Image
                       src={getImageUrl(collection.image_url)}
                       alt={collection.name}
                       fill
-                      className="object-cover"
+                      className={cn("object-cover", !collection.is_active && "grayscale")}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -620,14 +689,17 @@ export default function CollectionsEditor({
                 
                 {/* Content */}
                 <div className="flex-1 px-4 py-2">
-                  <h3 className="font-semibold text-gray-900">{collection.name}</h3>
+                  <h3 className={cn(
+                    "font-semibold",
+                    collection.is_active ? "text-gray-900" : "text-gray-500"
+                  )}>{collection.name}</h3>
                   <span className={cn(
                     'inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded',
                     collection.is_active
                       ? 'bg-green-50 text-green-700'
-                      : 'bg-gray-100 text-gray-600'
+                      : 'bg-amber-50 text-amber-700'
                   )}>
-                    {collection.is_active ? 'Active' : 'Hidden'}
+                    {collection.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
                 
@@ -649,17 +721,20 @@ export default function CollectionsEditor({
           </div>
         )}
 
-        {/* Replace Collection Modal */}
+        {/* Replace Collection Modal - for new collection replacing an active one */}
         {showReplaceModal && pendingNewCollection && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
               <h3 className="text-xl font-bold mb-2">Replace Existing Collection</h3>
               <p className="text-gray-600 mb-4">
-                All {effectiveMaxItems} slots are filled. Choose which collection to replace with "{pendingNewCollection.name}":
+                All {effectiveMaxItems} active slots are filled. Choose which active collection to replace with "{pendingNewCollection.name}":
+              </p>
+              <p className="text-sm text-amber-600 mb-4">
+                The replaced collection will be deactivated but kept in your list.
               </p>
               
               <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
-                {collections.map((collection) => (
+                {activeCollections.map((collection) => (
                   <button
                     key={collection.id}
                     onClick={() => handleReplaceCollection(collection)}
@@ -697,12 +772,63 @@ export default function CollectionsEditor({
           </div>
         )}
 
+        {/* Replace Active Modal - for activating an inactive collection */}
+        {showReplaceActiveModal && collectionToActivate && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+              <h3 className="text-xl font-bold mb-2">Activate Collection</h3>
+              <p className="text-gray-600 mb-4">
+                Choose which active collection to replace with "{collectionToActivate.name}":
+              </p>
+              <p className="text-sm text-amber-600 mb-4">
+                The replaced collection will be deactivated but kept in your list.
+              </p>
+              
+              <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
+                {activeCollections.map((collection) => (
+                  <button
+                    key={collection.id}
+                    onClick={() => handleActivateAndReplace(collectionToActivate, collection)}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-amber-500 hover:bg-amber-50 transition-colors"
+                  >
+                    <div className="relative w-16 h-12 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
+                      {collection.image_url ? (
+                        <Image
+                          src={getImageUrl(collection.image_url)}
+                          alt={collection.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="w-6 h-6 text-gray-300" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="font-medium text-gray-900">{collection.name}</span>
+                  </button>
+                ))}
+              </div>
+              
+              <button
+                onClick={() => {
+                  setShowReplaceActiveModal(false)
+                  setCollectionToActivate(null)
+                }}
+                className="w-full py-2 text-gray-600 hover:text-gray-900"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Dropdown Menu Portal - renders outside overflow container */}
         {openMenuId && menuPosition && typeof window !== 'undefined' && createPortal(
           <div 
             className="dropdown-menu fixed w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50"
             style={{
-              top: `${menuPosition.top - 120}px`, // Position above button
+              top: `${menuPosition.top - (collections.find(c => c.id === openMenuId)?.is_active === false && activeSlotsFull ? 160 : 120)}px`,
               left: `${menuPosition.left}px`,
             }}
           >
@@ -716,17 +842,50 @@ export default function CollectionsEditor({
               <ImageIcon className="w-4 h-4" />
               Change Image
             </button>
+            
+            {/* For inactive collections when slots are full, show Replace button */}
+            {(() => {
+              const collection = collections.find(c => c.id === openMenuId)
+              if (collection && !collection.is_active && activeSlotsFull) {
+                return (
+                  <button
+                    onClick={() => {
+                      setCollectionToActivate(collection)
+                      setShowReplaceActiveModal(true)
+                      setOpenMenuId(null)
+                      setMenuPosition(null)
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3 text-amber-600"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Replace Active
+                  </button>
+                )
+              }
+              return null
+            })()}
+            
             <button
               onClick={() => {
                 const collection = collections.find(c => c.id === openMenuId)
-                if (collection) handleToggleVisibility(collection)
+                if (collection) {
+                  // If inactive and slots are full, show replace modal instead of just activating
+                  if (!collection.is_active && activeSlotsFull) {
+                    setCollectionToActivate(collection)
+                    setShowReplaceActiveModal(true)
+                    setOpenMenuId(null)
+                    setMenuPosition(null)
+                  } else {
+                    handleToggleVisibility(collection)
+                  }
+                }
               }}
               className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3"
             >
               {collections.find(c => c.id === openMenuId)?.is_active ? (
                 <><EyeOff className="w-4 h-4" /> Hide</>
               ) : (
-                <><Eye className="w-4 h-4" /> Show</>
+                <><Eye className="w-4 h-4" /> {activeSlotsFull ? 'Activate (Replace)' : 'Show'}</>
               )}
             </button>
             <button

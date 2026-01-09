@@ -110,6 +110,9 @@ export async function GET(request: NextRequest) {
     if (aspectRatioFilter && collectionLabel === 'trending') {
       query = query.eq('aspect_ratio', aspectRatioFilter)
     }
+    
+    // Note: We return ALL collections (active + inactive) so the editor can show
+    // inactive ones and allow replacing/reactivating them
 
     const { data, error } = await query
 
