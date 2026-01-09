@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { 
   ArrowLeft, Upload, Wand2, Loader2, MoreVertical, 
@@ -63,8 +62,6 @@ export default function CollectionsEditor({
   // Edit mode state
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const [menuPosition, setMenuPosition] = useState<{top: number, left: number} | null>(null)
-  const menuButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
   
   // Replace collection state (for when slots are full)
   const [showReplaceModal, setShowReplaceModal] = useState(false)
@@ -332,37 +329,7 @@ export default function CollectionsEditor({
     setCollectionName(collection.name)
     setShowAddForm(true)
     setOpenMenuId(null)
-    setMenuPosition(null)
   }
-
-  const handleMenuToggle = (collectionId: string) => {
-    if (openMenuId === collectionId) {
-      setOpenMenuId(null)
-      setMenuPosition(null)
-    } else {
-      const button = menuButtonRefs.current.get(collectionId)
-      if (button) {
-        const rect = button.getBoundingClientRect()
-        setMenuPosition({
-          top: rect.top,
-          left: rect.left - 192 + rect.width // 192px = w-48 menu width
-        })
-      }
-      setOpenMenuId(collectionId)
-    }
-  }
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (openMenuId && !(e.target as Element).closest('.dropdown-menu')) {
-        setOpenMenuId(null)
-        setMenuPosition(null)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [openMenuId])
 
   const resetForm = () => {
     setShowAddForm(false)
@@ -632,17 +599,42 @@ export default function CollectionsEditor({
                 </div>
                 
                 {/* Menu */}
-                <div className="px-4">
+                <div className="relative px-4">
                   <button
-                    ref={(el) => {
-                      if (el) menuButtonRefs.current.set(collection.id, el)
-                      else menuButtonRefs.current.delete(collection.id)
-                    }}
-                    onClick={() => handleMenuToggle(collection.id)}
+                    onClick={() => setOpenMenuId(openMenuId === collection.id ? null : collection.id)}
                     className="p-2 hover:bg-gray-100 rounded-full"
                   >
                     <MoreVertical className="w-5 h-5 text-gray-500" />
                   </button>
+                  
+                  {openMenuId === collection.id && (
+                    <div className="absolute right-4 bottom-full mb-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                      <button
+                        onClick={() => handleEditImage(collection)}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                        Change Image
+                      </button>
+                      <button
+                        onClick={() => handleToggleVisibility(collection)}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3"
+                      >
+                        {collection.is_active ? (
+                          <><EyeOff className="w-4 h-4" /> Hide</>
+                        ) : (
+                          <><Eye className="w-4 h-4" /> Show</>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCollection(collection)}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3 text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -695,52 +687,6 @@ export default function CollectionsEditor({
               </button>
             </div>
           </div>
-        )}
-
-        {/* Dropdown Menu Portal - renders outside overflow container */}
-        {openMenuId && menuPosition && typeof window !== 'undefined' && createPortal(
-          <div 
-            className="dropdown-menu fixed w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50"
-            style={{
-              top: `${menuPosition.top - 120}px`, // Position above button
-              left: `${menuPosition.left}px`,
-            }}
-          >
-            <button
-              onClick={() => {
-                const collection = collections.find(c => c.id === openMenuId)
-                if (collection) handleEditImage(collection)
-              }}
-              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3"
-            >
-              <ImageIcon className="w-4 h-4" />
-              Change Image
-            </button>
-            <button
-              onClick={() => {
-                const collection = collections.find(c => c.id === openMenuId)
-                if (collection) handleToggleVisibility(collection)
-              }}
-              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3"
-            >
-              {collections.find(c => c.id === openMenuId)?.is_active ? (
-                <><EyeOff className="w-4 h-4" /> Hide</>
-              ) : (
-                <><Eye className="w-4 h-4" /> Show</>
-              )}
-            </button>
-            <button
-              onClick={() => {
-                const collection = collections.find(c => c.id === openMenuId)
-                if (collection) handleDeleteCollection(collection)
-              }}
-              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-3 text-red-600"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete
-            </button>
-          </div>,
-          document.body
         )}
       </div>
     </div>
