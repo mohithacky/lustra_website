@@ -651,33 +651,19 @@ export async function getWebsitePages(userWebsiteId: string): Promise<WebsitePag
 }
 
 // ============================================================================
-// Helper function to fetch footer data for any user (for non-home pages)
+// Helper function to build footer data from pages and config
 // ============================================================================
-export async function getFooterDataForUser(userId: string): Promise<Record<string, string[]>> {
-  // Get user's website
-  const website = await getUserWebsite(userId)
-  if (!website) return {}
-
-  // Get template sections
-  const templateSections = await getTemplateSections(website.template_id)
+async function buildFooterDataFromPages(
+  footerConfig: FooterConfig,
+  userWebsiteId: string
+): Promise<Record<string, string[]>> {
+  // Fetch pages from user_website_pages table
+  const pages = await getWebsitePages(userWebsiteId)
   
-  // Get user sections
-  const userSections = await getUserWebsiteSections(website.id)
+  // Build footer data from pages based on config groups
+  const result: Record<string, string[]> = {}
   
-  // Merge sections
-  const mergedSections = await getMergedSections(templateSections, userSections, userId)
-  
-  // Get footer config
-  const footerConfig = getFooterConfig(mergedSections)
-  
-  // If using new page-based architecture (groups with page_slugs)
   if (footerConfig.groups && footerConfig.groups.length > 0) {
-    // Fetch pages from user_website_pages table
-    const pages = await getWebsitePages(website.id)
-    
-    // Build footer data from pages based on config groups
-    const result: Record<string, string[]> = {}
-    
     for (const group of footerConfig.groups) {
       const groupPages: string[] = []
       
@@ -699,10 +685,47 @@ export async function getFooterDataForUser(userId: string): Promise<Record<strin
         result[group.title] = groupPages
       }
     }
-    
-    return result
+  }
+  
+  return result
+}
+
+// ============================================================================
+// Helper function to fetch footer data from pages (for all pages)
+// ============================================================================
+export async function getFooterDataFromPages(
+  sections: MergedSection[],
+  userWebsiteId: string
+): Promise<Record<string, string[]>> {
+  // Get footer config
+  const footerConfig = getFooterConfig(sections)
+  
+  // If using new page-based architecture (groups with page_slugs)
+  if (footerConfig.groups && footerConfig.groups.length > 0) {
+    return buildFooterDataFromPages(footerConfig, userWebsiteId)
   }
   
   // Fallback to old config-based footer data
-  return getFooterData(mergedSections)
+  return getFooterData(sections)
+}
+
+// ============================================================================
+// Helper function to fetch footer data for any user (for non-home pages)
+// ============================================================================
+export async function getFooterDataForUser(userId: string): Promise<Record<string, string[]>> {
+  // Get user's website
+  const website = await getUserWebsite(userId)
+  if (!website) return {}
+
+  // Get template sections
+  const templateSections = await getTemplateSections(website.template_id)
+  
+  // Get user sections
+  const userSections = await getUserWebsiteSections(website.id)
+  
+  // Merge sections
+  const mergedSections = await getMergedSections(templateSections, userSections, userId)
+  
+  // Use the new page-based footer data fetching
+  return getFooterDataFromPages(mergedSections, website.id)
 }

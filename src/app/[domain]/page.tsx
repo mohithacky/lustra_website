@@ -7,7 +7,7 @@ import {
   getTrendingCollections as getTrendingFromSections,
   getCategoryCollections,
   getBestCollections as getBestFromSections,
-  getFooterData as getFooterFromSections,
+  getFooterDataFromPages,
   isTestimonialsEnabled,
   transformHeroToLegacy,
   transformTrendingToLegacy,
@@ -119,8 +119,10 @@ export default async function StorePage({ params }: PageProps) {
   const trendingCollectionsFromSections = getTrendingFromSections(sections)
   const categoryCollections = getCategoryCollections(sections)
   const bestCollectionsFromSections = getBestFromSections(sections)
-  const footerData = getFooterFromSections(sections)
   const showTestimonials = isTestimonialsEnabled(sections)
+  
+  // Fetch footer data from user_website_pages table
+  const footerData = await getFooterDataFromPages(sections, website.id)
 
   // Transform to legacy format for existing components
   const heroCollections = transformHeroToLegacy(heroCollectionsFromSections)
