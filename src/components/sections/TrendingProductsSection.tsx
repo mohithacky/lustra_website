@@ -16,11 +16,27 @@ interface Product {
 interface TrendingProductsSectionProps {
   products: Product[]
   isDark: boolean
+  title?: string
+  subtitle?: string
+  limit?: number
+  showPrice?: boolean
+  layout?: string
   shopDomain: string
 }
 
-export default function TrendingProductsSection({ products, isDark, shopDomain }: TrendingProductsSectionProps) {
+export default function TrendingProductsSection({ 
+  products, 
+  isDark, 
+  title = "Trending Now",
+  subtitle = "Most popular this week",
+  limit = 10,
+  showPrice = true,
+  layout = "carousel",
+  shopDomain 
+}: TrendingProductsSectionProps) {
   if (!products.length) return null
+
+  const displayProducts = products.slice(0, limit)
 
   return (
     <section className={cn(
@@ -30,17 +46,19 @@ export default function TrendingProductsSection({ products, isDark, shopDomain }
       <div className="max-w-[1100px] mx-auto">
         {/* Section Header - matches Flutter TrendingProductsShowcase */}
         <div className="text-center px-6 mb-6">
-          <span className={cn(
-            'text-xs font-bold tracking-[0.15em] uppercase',
-            isDark ? 'text-white/70' : 'text-gray-500'
-          )}>
-            TRENDING PRODUCTS
-          </span>
+          {subtitle && (
+            <span className={cn(
+              'text-xs font-bold tracking-[0.15em] uppercase',
+              isDark ? 'text-white/70' : 'text-gray-500'
+            )}>
+              {subtitle}
+            </span>
+          )}
           <h2 className={cn(
             'font-display text-2xl font-semibold mt-2',
             isDark ? 'text-white' : 'text-black'
           )}>
-            Discover what shoppers are loving right now
+            {title}
           </h2>
           <div className="flex justify-end mt-2 px-6">
             <Link 
@@ -58,11 +76,12 @@ export default function TrendingProductsSection({ products, isDark, shopDomain }
         {/* Products - horizontal scroll with height 330px like Flutter */}
         <div className="overflow-x-auto pb-4 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <div className="flex gap-4 px-6 min-w-max">
-            {products.slice(0, 10).map((product) => (
+            {displayProducts.map((product) => (
               <TrendingProductCard 
                 key={product.id} 
                 product={product} 
                 isDark={isDark}
+                showPrice={showPrice}
                 shopDomain={shopDomain}
               />
             ))}
@@ -73,9 +92,10 @@ export default function TrendingProductsSection({ products, isDark, shopDomain }
   )
 }
 
-function TrendingProductCard({ product, isDark, shopDomain }: { 
+function TrendingProductCard({ product, isDark, showPrice = true, shopDomain }: { 
   product: Product
   isDark: boolean
+  showPrice?: boolean
   shopDomain: string
 }) {
   const [isHovered, setIsHovered] = useState(false)
@@ -111,9 +131,11 @@ function TrendingProductCard({ product, isDark, shopDomain }: {
           <h3 className="font-semibold text-sm text-black line-clamp-1 mb-1.5">
             {product.name}
           </h3>
-          <p className="font-bold text-black">
-            {formatPrice(product.price)}
-          </p>
+          {showPrice && (
+            <p className="font-bold text-black">
+              {formatPrice(product.price)}
+            </p>
+          )}
         </div>
       </div>
     </Link>

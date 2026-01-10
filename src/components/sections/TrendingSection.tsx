@@ -17,15 +17,32 @@ interface TrendingSectionProps {
   isDark: boolean
   canEdit?: boolean
   shopDomain?: string
+  title?: string
+  subtitle?: string
+  columns?: number
+  showLabels?: boolean
+  maxItems?: number
+  layout?: string
 }
 
-export default function TrendingSection({ collections, isDark, canEdit = false, shopDomain }: TrendingSectionProps) {
+export default function TrendingSection({ 
+  collections, 
+  isDark, 
+  canEdit = false, 
+  shopDomain,
+  title = "Trending Collections",
+  subtitle = "What everyone is loving",
+  columns = 4,
+  showLabels = true,
+  maxItems = 4,
+  layout = "grid"
+}: TrendingSectionProps) {
   const router = useRouter()
   
   if (!collections.length) return null
 
-  // Ensure we have exactly 4 items for the staggered grid like Flutter
-  const displayCollections = collections.slice(0, 4)
+  // Ensure we have exactly maxItems for the staggered grid like Flutter
+  const displayCollections = collections.slice(0, maxItems)
   
   const handleEditSection = () => {
     if (shopDomain) {
@@ -55,18 +72,20 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
         <div className="px-4 md:px-8 lg:px-[150px]">
           {/* Section Header - matches Flutter sectionHeadingStyle */}
           <div className="text-center mb-5">
-            <span className={cn(
-              'text-xs font-bold tracking-[0.15em] uppercase',
-              isDark ? 'text-white/70' : 'text-gray-500'
+            <h2 className={cn(
+              'text-xl md:text-2xl font-bold mb-2',
+              isDark ? 'text-white' : 'text-black'
             )}>
-              TRENDING
-            </span>
-            <p className={cn(
-              'text-sm mt-1.5',
-              isDark ? 'text-white/60' : 'text-gray-500'
-            )}>
-              Discover what shoppers are loving right now
-            </p>
+              {title}
+            </h2>
+            {subtitle && (
+              <p className={cn(
+                'text-sm mt-1.5',
+                isDark ? 'text-white/60' : 'text-gray-500'
+              )}>
+                {subtitle}
+              </p>
+            )}
           </div>
 
           {/* StaggeredGrid.count with crossAxisCount: 2
@@ -84,6 +103,7 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
                   collection={displayCollections[0]}
                   heightRatio={0.8}
                   isDark={isDark}
+                  showLabels={showLabels}
                 />
               )}
               {displayCollections[2] && (
@@ -91,6 +111,7 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
                   collection={displayCollections[2]}
                   heightRatio={1.2}
                   isDark={isDark}
+                  showLabels={showLabels}
                 />
               )}
             </div>
@@ -101,6 +122,7 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
                   collection={displayCollections[1]}
                   heightRatio={1.2}
                   isDark={isDark}
+                  showLabels={showLabels}
                 />
               )}
               {displayCollections[3] && (
@@ -108,6 +130,7 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
                   collection={displayCollections[3]}
                   heightRatio={0.8}
                   isDark={isDark}
+                  showLabels={showLabels}
                 />
               )}
             </div>
@@ -118,10 +141,11 @@ export default function TrendingSection({ collections, isDark, canEdit = false, 
   )
 }
 
-function TrendingBox({ collection, heightRatio, isDark }: { 
+function TrendingBox({ collection, heightRatio, isDark, showLabels = true }: { 
   collection: TrendingCollection
   heightRatio: number
   isDark: boolean
+  showLabels?: boolean
 }) {
   const [isHovered, setIsHovered] = useState(false)
   
@@ -163,11 +187,13 @@ function TrendingBox({ collection, heightRatio, isDark }: {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         
         {/* Label - positioned at bottom left like Flutter */}
-        <div className="absolute bottom-3 left-3 md:bottom-4 md:left-4">
-          <h3 className="text-white text-sm md:text-base lg:text-lg font-bold drop-shadow-lg">
-            {collection.label}
-          </h3>
-        </div>
+        {showLabels && (
+          <div className="absolute bottom-3 left-3 md:bottom-4 md:left-4">
+            <h3 className="text-white text-sm md:text-base lg:text-lg font-bold drop-shadow-lg">
+              {collection.label}
+            </h3>
+          </div>
+        )}
       </div>
     </Link>
   )

@@ -15,13 +15,37 @@ interface HeroCarouselProps {
   isDark: boolean
   canEdit?: boolean
   shopDomain?: string
+  autoplay?: boolean
+  interval?: number
+  showIndicators?: boolean
+  showArrows?: boolean
+  height?: string
+  overlayOpacity?: number
+  textColor?: string
+  ctaText?: string
+  ctaLink?: string
 }
 
-export default function HeroCarousel({ collections, isDark, canEdit = false, shopDomain }: HeroCarouselProps) {
+export default function HeroCarousel({ 
+  collections, 
+  isDark, 
+  canEdit = false, 
+  shopDomain,
+  autoplay = true,
+  interval = 5000,
+  showIndicators = true,
+  showArrows = true,
+  height = "large",
+  overlayOpacity = 0.3,
+  textColor = "#ffffff",
+  ctaText = "Shop Now",
+  ctaLink = "/collections"
+}: HeroCarouselProps) {
   const router = useRouter()
+  const autoplayPlugin = autoplay ? [Autoplay({ delay: interval, stopOnInteraction: false })] : []
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true },
-    [Autoplay({ delay: 5000, stopOnInteraction: false })]
+    autoplayPlugin
   )
   const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -59,22 +83,31 @@ export default function HeroCarousel({ collections, isDark, canEdit = false, sho
                 sizes="100vw"
               />
               {/* Gradient Overlay - matches Flutter */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div 
+                className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" 
+                style={{ opacity: overlayOpacity }}
+              />
               
               {/* Content - positioned at bottom left like Flutter */}
               <div className="absolute inset-0 flex items-end">
                 <div className="p-6 md:p-12 lg:p-16 max-w-lg">
-                  <h2 className="font-display text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2 animate-fade-in">
+                  <h2 
+                    className="font-display text-2xl md:text-4xl lg:text-5xl font-bold mb-2 animate-fade-in"
+                    style={{ color: textColor }}
+                  >
                     {collection.name}
                   </h2>
-                  <p className="text-white/90 text-sm md:text-base mb-4 md:mb-6">
+                  <p 
+                    className="text-sm md:text-base mb-4 md:mb-6"
+                    style={{ color: textColor, opacity: 0.9 }}
+                  >
                     Handcrafted pieces for every moment.
                   </p>
                   <Link 
-                    href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+                    href={ctaLink || `/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
                     className="inline-block bg-gold-500 hover:bg-gold-600 text-white px-5 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold transition-colors"
                   >
-                    Explore Collection
+                    {ctaText}
                   </Link>
                 </div>
               </div>
@@ -84,7 +117,7 @@ export default function HeroCarousel({ collections, isDark, canEdit = false, sho
       </div>
 
       {/* Dots Indicator - matches Flutter's animated indicator */}
-      {collections.length > 1 && (
+      {showIndicators && collections.length > 1 && (
         <div className="flex justify-center gap-2 mt-4">
           {collections.map((_, index) => (
             <button

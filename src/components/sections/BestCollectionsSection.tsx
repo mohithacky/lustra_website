@@ -18,9 +18,24 @@ interface BestCollectionsSectionProps {
   isDark: boolean
   canEdit?: boolean
   shopDomain?: string
+  title?: string
+  subtitle?: string
+  columns?: number
+  showDescription?: boolean
+  layout?: string
 }
 
-export default function BestCollectionsSection({ collections, isDark, canEdit = false, shopDomain }: BestCollectionsSectionProps) {
+export default function BestCollectionsSection({ 
+  collections, 
+  isDark, 
+  canEdit = false, 
+  shopDomain,
+  title = "Best Collections",
+  subtitle = "Curated selections for every occasion",
+  columns = 2,
+  showDescription = true,
+  layout = "stacked"
+}: BestCollectionsSectionProps) {
   const router = useRouter()
   if (!collections.length) return null
 
@@ -44,18 +59,20 @@ export default function BestCollectionsSection({ collections, isDark, canEdit = 
       <div className="max-w-[1100px] mx-auto px-6">
         {/* Section Header - matches Flutter */}
         <div className="text-center mb-10">
-          <span className={cn(
-            'text-xs font-bold tracking-[0.2em] uppercase',
-            isDark ? 'text-white/70' : 'text-gray-500'
-          )}>
-            BEST COLLECTIONS
-          </span>
           <h2 className={cn(
-            'font-display text-2xl font-semibold mt-2',
+            'font-display text-2xl font-semibold mb-2',
             isDark ? 'text-white' : 'text-black'
           )}>
-            Featured Collections
+            {title}
           </h2>
+          {subtitle && (
+            <p className={cn(
+              'text-sm',
+              isDark ? 'text-white/60' : 'text-gray-500'
+            )}>
+              {subtitle}
+            </p>
+          )}
         </div>
 
         {/* Collections - matches Flutter FeaturedCollectionsShowcase layout */}
@@ -66,6 +83,7 @@ export default function BestCollectionsSection({ collections, isDark, canEdit = 
               collection={collection}
               reverse={index % 2 === 1}
               isDark={isDark}
+              showDescription={showDescription}
             />
           ))}
         </div>
@@ -74,10 +92,11 @@ export default function BestCollectionsSection({ collections, isDark, canEdit = 
   )
 }
 
-function FeaturedCollectionRow({ collection, reverse, isDark }: {
+function FeaturedCollectionRow({ collection, reverse, isDark, showDescription = true }: {
   collection: BestCollection
   reverse: boolean
   isDark: boolean
+  showDescription?: boolean
 }) {
   const [isHovered, setIsHovered] = useState(false)
 
@@ -121,7 +140,7 @@ function FeaturedCollectionRow({ collection, reverse, isDark }: {
         )}>
           {collection.name}
         </h3>
-        {collection.description && (
+        {showDescription && collection.description && (
           <p className={cn(
             'text-sm md:text-base leading-relaxed mb-6',
             isDark ? 'text-gray-300' : 'text-gray-700'

@@ -18,9 +18,24 @@ interface CategoriesSectionProps {
   isDark: boolean
   shopDomain: string
   canEdit?: boolean
+  title?: string
+  layout?: string
+  columns?: number
+  showTitle?: boolean
+  imageStyle?: string
 }
 
-export default function CategoriesSection({ categories, isDark, shopDomain, canEdit = false }: CategoriesSectionProps) {
+export default function CategoriesSection({ 
+  categories, 
+  isDark, 
+  shopDomain, 
+  canEdit = false,
+  title = "Shop by Category",
+  layout = "carousel",
+  columns = 4,
+  showTitle = true,
+  imageStyle = "circle"
+}: CategoriesSectionProps) {
   const router = useRouter()
   
   if (!categories.length) return null
@@ -32,27 +47,29 @@ export default function CategoriesSection({ categories, isDark, shopDomain, canE
     )}>
       <div className="mx-auto">
         {/* Section Header - matches Flutter */}
-        <div className="text-center mb-6 relative">
-          <span className={cn(
-            'text-xs font-bold tracking-[0.15em] uppercase',
-            isDark ? 'text-white/70' : 'text-gray-500'
-          )}>
-            SHOP BY CATEGORY
-          </span>
-          {/* Edit button */}
-          {canEdit && (
-            <button
-              onClick={() => router.push(`/editor/categories`)}
-              className={cn(
-                'absolute right-6 top-0 p-2 rounded-full transition-colors',
-                isDark ? 'hover:bg-zinc-800 text-white' : 'hover:bg-gray-100 text-black'
-              )}
-              title="Edit Categories"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
-          )}
-        </div>
+        {showTitle && (
+          <div className="text-center mb-6 relative">
+            <span className={cn(
+              'text-xs font-bold tracking-[0.15em] uppercase',
+              isDark ? 'text-white/70' : 'text-gray-500'
+            )}>
+              {title}
+            </span>
+            {/* Edit button */}
+            {canEdit && (
+              <button
+                onClick={() => router.push(`/editor/categories`)}
+                className={cn(
+                  'absolute right-6 top-0 p-2 rounded-full transition-colors',
+                  isDark ? 'hover:bg-zinc-800 text-white' : 'hover:bg-gray-100 text-black'
+                )}
+                title="Edit Categories"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Categories - horizontal scroll matching Flutter CategoryCarousel */}
         {/* Flutter heights: mobile 130px, tablet 230px, desktop 260px */}
@@ -64,6 +81,7 @@ export default function CategoriesSection({ categories, isDark, shopDomain, canE
                 category={category}
                 isDark={isDark}
                 shopDomain={shopDomain}
+                imageStyle={imageStyle}
               />
             ))}
           </div>
@@ -73,10 +91,11 @@ export default function CategoriesSection({ categories, isDark, shopDomain, canE
   )
 }
 
-function CategoryItem({ category, isDark, shopDomain }: {
+function CategoryItem({ category, isDark, shopDomain, imageStyle = "circle" }: {
   category: Category
   isDark: boolean
   shopDomain: string
+  imageStyle?: string
 }) {
   const [isHovered, setIsHovered] = useState(false)
 
@@ -87,11 +106,12 @@ function CategoryItem({ category, isDark, shopDomain }: {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Circular image - Flutter sizes: mobile 90px, tablet 110px, desktop 220px */}
+      {/* Image - Flutter sizes: mobile 90px, tablet 110px, desktop 220px */}
       <div 
         className={cn(
-          'relative rounded-full overflow-hidden transition-transform duration-200',
+          'relative overflow-hidden transition-transform duration-200',
           'w-[90px] h-[90px] md:w-[110px] md:h-[110px] lg:w-[220px] lg:h-[220px]',
+          imageStyle === 'circle' ? 'rounded-full' : 'rounded-xl',
           isHovered && 'scale-105'
         )}
       >

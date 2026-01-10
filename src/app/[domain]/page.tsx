@@ -13,6 +13,7 @@ import {
   transformTrendingToLegacy,
   transformCategoriesToMap,
   transformBestToLegacy,
+  getSectionConfig,
   Collection,
 } from '@/lib/supabase-new-architecture'
 // Legacy imports for products (still using old tables)
@@ -121,6 +122,16 @@ export default async function StorePage({ params }: PageProps) {
   const bestCollectionsFromSections = getBestFromSections(sections)
   const showTestimonials = isTestimonialsEnabled(sections)
   
+  // Get section configs (merged schema + user customizations)
+  const heroConfig = getSectionConfig(sections, 'hero_carousel')
+  const categoriesConfig = getSectionConfig(sections, 'categories')
+  const productsConfig = getSectionConfig(sections, 'products')
+  const shopByRecipientConfig = getSectionConfig(sections, 'shop_by_recipient')
+  const trendingConfig = getSectionConfig(sections, 'trending')
+  const trendingProductsConfig = getSectionConfig(sections, 'trending_products')
+  const bestCollectionsConfig = getSectionConfig(sections, 'best_collections')
+  const testimonialsConfig = getSectionConfig(sections, 'testimonials')
+  
   // Fetch footer data from user_website_pages table
   const footerData = await getFooterDataFromPages(sections, website.id)
 
@@ -190,6 +201,7 @@ export default async function StorePage({ params }: PageProps) {
           collections={heroCollections} 
           isDark={isDark}
           shopDomain={params.domain}
+          config={heroConfig}
         />
       )}
 
@@ -199,6 +211,7 @@ export default async function StorePage({ params }: PageProps) {
           categories={categoriesArray} 
           isDark={isDark}
           shopDomain={params.domain}
+          config={categoriesConfig}
         />
       )}
 
@@ -209,7 +222,11 @@ export default async function StorePage({ params }: PageProps) {
         <ProductsSection 
           products={products} 
           isDark={isDark}
-          title="New Arrivals"
+          title={productsConfig.title || "New Arrivals"}
+          subtitle={productsConfig.subtitle}
+          limit={productsConfig.limit}
+          columns={productsConfig.columns}
+          showPrice={productsConfig.showPrice}
           shopDomain={params.domain}
         />
       )}
@@ -219,6 +236,7 @@ export default async function StorePage({ params }: PageProps) {
       {/* 4. Shop By Recipient (Him/Her) - matches Flutter ShopByRecipientSection */}
       <ShopByRecipientSection 
         isDark={isDark}
+        config={shopByRecipientConfig}
         shopDomain={params.domain}
       />
 
@@ -230,6 +248,7 @@ export default async function StorePage({ params }: PageProps) {
           collections={trendingCollections} 
           isDark={isDark}
           shopDomain={params.domain}
+          config={trendingConfig}
         />
       )}
 
@@ -240,6 +259,11 @@ export default async function StorePage({ params }: PageProps) {
         <TrendingProductsSection 
           products={trendingProducts} 
           isDark={isDark}
+          title={trendingProductsConfig.title}
+          subtitle={trendingProductsConfig.subtitle}
+          limit={trendingProductsConfig.limit}
+          showPrice={trendingProductsConfig.showPrice}
+          layout={trendingProductsConfig.layout}
           shopDomain={params.domain}
         />
       )}
@@ -252,6 +276,7 @@ export default async function StorePage({ params }: PageProps) {
           collections={bestCollections} 
           isDark={isDark}
           shopDomain={params.domain}
+          config={bestCollectionsConfig}
         />
       )}
 
@@ -260,7 +285,13 @@ export default async function StorePage({ params }: PageProps) {
         <div className="mt-10">
           <TestimonialsSection 
             testimonials={testimonials} 
-            isDark={isDark} 
+            isDark={isDark}
+            title={testimonialsConfig.title}
+            subtitle={testimonialsConfig.subtitle}
+            layout={testimonialsConfig.layout}
+            showRating={testimonialsConfig.showRating}
+            showAvatar={testimonialsConfig.showAvatar}
+            maxItems={testimonialsConfig.maxItems}
           />
         </div>
       )}

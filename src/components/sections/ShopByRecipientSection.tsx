@@ -7,21 +7,42 @@ import { cn } from '@/lib/utils'
 
 interface ShopByRecipientSectionProps {
   isDark: boolean
+  config?: Record<string, any>
   shopDomain: string
 }
 
-const RECIPIENT_DATA = [
-  {
-    title: 'Him',
-    imageUrl: 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/him.jpg',
-  },
-  {
-    title: 'Her',
-    imageUrl: 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/her.jpg',
-  },
-]
+export default function ShopByRecipientSection({ isDark, config = {}, shopDomain }: ShopByRecipientSectionProps) {
+  const showForHim = config.showForHim ?? true
+  const showForHer = config.showForHer ?? true
+  const forHimTitle = config.forHimTitle || 'Him'
+  const forHerTitle = config.forHerTitle || 'Her'
+  const forHimSubtitle = config.forHimSubtitle || 'Curated collection for men'
+  const forHerSubtitle = config.forHerSubtitle || 'Elegant pieces for women'
+  const forHimImage = config.forHimImage || 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/him.jpg'
+  const forHerImage = config.forHerImage || 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/her.jpg'
+  const forHimLink = config.forHimLink || '/gender/him'
+  const forHerLink = config.forHerLink || '/gender/her'
 
-export default function ShopByRecipientSection({ isDark, shopDomain }: ShopByRecipientSectionProps) {
+  const recipients = []
+  if (showForHim) {
+    recipients.push({
+      title: forHimTitle,
+      subtitle: forHimSubtitle,
+      imageUrl: forHimImage,
+      link: forHimLink,
+    })
+  }
+  if (showForHer) {
+    recipients.push({
+      title: forHerTitle,
+      subtitle: forHerSubtitle,
+      imageUrl: forHerImage,
+      link: forHerLink,
+    })
+  }
+
+  if (recipients.length === 0) return null
+
   return (
     <section className={cn(
       'py-8',
@@ -46,11 +67,13 @@ export default function ShopByRecipientSection({ isDark, shopDomain }: ShopByRec
 
         {/* Recipient Cards - centered horizontal layout */}
         <div className="flex justify-center gap-4">
-          {RECIPIENT_DATA.map((recipient) => (
+          {recipients.map((recipient) => (
             <RecipientCard
               key={recipient.title}
               title={recipient.title}
+              subtitle={recipient.subtitle}
               imageUrl={recipient.imageUrl}
+              link={recipient.link}
               isDark={isDark}
               shopDomain={shopDomain}
             />
@@ -61,9 +84,11 @@ export default function ShopByRecipientSection({ isDark, shopDomain }: ShopByRec
   )
 }
 
-function RecipientCard({ title, imageUrl, isDark, shopDomain }: {
+function RecipientCard({ title, subtitle, imageUrl, link, isDark, shopDomain }: {
   title: string
+  subtitle?: string
   imageUrl: string
+  link: string
   isDark: boolean
   shopDomain: string
 }) {
@@ -71,7 +96,7 @@ function RecipientCard({ title, imageUrl, isDark, shopDomain }: {
 
   return (
     <Link
-      href={`/gender/${title.toLowerCase()}`}
+      href={link}
       className="block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

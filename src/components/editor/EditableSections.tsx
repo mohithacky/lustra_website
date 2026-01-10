@@ -51,9 +51,10 @@ interface EditableHeroCarouselProps {
   collections: HeroCollection[]
   isDark: boolean
   shopDomain: string
+  config?: Record<string, any>
 }
 
-export function EditableHeroCarousel({ collections, isDark, shopDomain }: EditableHeroCarouselProps) {
+export function EditableHeroCarousel({ collections, isDark, shopDomain, config = {} }: EditableHeroCarouselProps) {
   const { canEditCollections } = useEditorPermissions()
 
   return (
@@ -62,6 +63,15 @@ export function EditableHeroCarousel({ collections, isDark, shopDomain }: Editab
       isDark={isDark}
       canEdit={canEditCollections}
       shopDomain={shopDomain}
+      autoplay={config.autoplay}
+      interval={config.interval}
+      showIndicators={config.showIndicators}
+      showArrows={config.showArrows}
+      height={config.height}
+      overlayOpacity={config.overlayOpacity}
+      textColor={config.textColor}
+      ctaText={config.ctaText}
+      ctaLink={config.ctaLink}
     />
   )
 }
@@ -70,9 +80,10 @@ interface EditableTrendingSectionProps {
   collections: TrendingCollection[]
   isDark: boolean
   shopDomain: string
+  config?: Record<string, any>
 }
 
-export function EditableTrendingSection({ collections, isDark, shopDomain }: EditableTrendingSectionProps) {
+export function EditableTrendingSection({ collections, isDark, shopDomain, config = {} }: EditableTrendingSectionProps) {
   const { canEditCollections } = useEditorPermissions()
 
   return (
@@ -81,6 +92,12 @@ export function EditableTrendingSection({ collections, isDark, shopDomain }: Edi
       isDark={isDark}
       canEdit={canEditCollections}
       shopDomain={shopDomain}
+      title={config.title}
+      subtitle={config.subtitle}
+      columns={config.columns}
+      showLabels={config.showLabels}
+      maxItems={config.maxItems}
+      layout={config.layout}
     />
   )
 }
@@ -89,9 +106,10 @@ interface EditableBestCollectionsProps {
   collections: BestCollection[]
   isDark: boolean
   shopDomain: string
+  config?: Record<string, any>
 }
 
-export function EditableBestCollections({ collections, isDark, shopDomain }: EditableBestCollectionsProps) {
+export function EditableBestCollections({ collections, isDark, shopDomain, config = {} }: EditableBestCollectionsProps) {
   const { canEditCollections } = useEditorPermissions()
 
   return (
@@ -100,6 +118,11 @@ export function EditableBestCollections({ collections, isDark, shopDomain }: Edi
       isDark={isDark}
       canEdit={canEditCollections}
       shopDomain={shopDomain}
+      title={config.title}
+      subtitle={config.subtitle}
+      columns={config.columns}
+      showDescription={config.showDescription}
+      layout={config.layout}
     />
   )
 }
@@ -108,9 +131,10 @@ interface EditableCategoriesProps {
   categories: Category[]
   isDark: boolean
   shopDomain: string
+  config?: Record<string, any>
 }
 
-export function EditableCategories({ categories, isDark, shopDomain }: EditableCategoriesProps) {
+export function EditableCategories({ categories, isDark, shopDomain, config = {} }: EditableCategoriesProps) {
   const { canEditCollections } = useEditorPermissions()
 
   return (
@@ -119,6 +143,11 @@ export function EditableCategories({ categories, isDark, shopDomain }: EditableC
       isDark={isDark}
       shopDomain={shopDomain}
       canEdit={canEditCollections}
+      title={config.title}
+      layout={config.layout}
+      columns={config.columns}
+      showTitle={config.showTitle}
+      imageStyle={config.imageStyle}
     />
   )
 }

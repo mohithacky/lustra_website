@@ -20,12 +20,28 @@ interface Product {
 interface ProductsSectionProps {
   products: Product[]
   isDark: boolean
-  title: string
+  title?: string
+  subtitle?: string
+  limit?: number
+  columns?: number
+  showPrice?: boolean
   shopDomain: string
 }
 
-export default function ProductsSection({ products, isDark, title, shopDomain }: ProductsSectionProps) {
+export default function ProductsSection({ 
+  products, 
+  isDark, 
+  title = "New Arrivals",
+  subtitle = "Discover our latest collection",
+  limit = 12,
+  columns = 4,
+  showPrice = true,
+  shopDomain 
+}: ProductsSectionProps) {
   if (!products.length) return null
+
+  // Limit products based on config
+  const displayProducts = products.slice(0, limit)
 
   return (
     <section className={cn(
@@ -36,12 +52,14 @@ export default function ProductsSection({ products, isDark, title, shopDomain }:
         {/* Section Header - matches Flutter ProductShowcase */}
         <div className="flex items-center justify-between mb-8">
           <div className="text-center flex-1">
-            <span className={cn(
-              'text-xs font-bold tracking-[0.15em] uppercase',
-              isDark ? 'text-white/70' : 'text-gray-500'
-            )}>
-              NEW ARRIVALS
-            </span>
+            {subtitle && (
+              <span className={cn(
+                'text-xs font-bold tracking-[0.15em] uppercase',
+                isDark ? 'text-white/70' : 'text-gray-500'
+              )}>
+                {subtitle}
+              </span>
+            )}
             <h2 className={cn(
               'font-display text-2xl font-semibold mt-2',
               isDark ? 'text-white' : 'text-black'
@@ -63,11 +81,12 @@ export default function ProductsSection({ products, isDark, title, shopDomain }:
         {/* Products - horizontal scroll like Flutter */}
         <div className="overflow-x-auto pb-4 -mx-6 px-6 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <div className="flex gap-4 min-w-max">
-            {products.slice(0, 10).map((product) => (
+            {displayProducts.map((product) => (
               <ProductCard 
                 key={product.id} 
                 product={product} 
                 isDark={isDark}
+                showPrice={showPrice}
                 shopDomain={shopDomain}
               />
             ))}
@@ -78,9 +97,10 @@ export default function ProductsSection({ products, isDark, title, shopDomain }:
   )
 }
 
-function ProductCard({ product, isDark, shopDomain }: { 
+function ProductCard({ product, isDark, showPrice = true, shopDomain }: { 
   product: Product
   isDark: boolean
+  showPrice?: boolean
   shopDomain: string
 }) {
   const [isHovered, setIsHovered] = useState(false)
@@ -115,9 +135,11 @@ function ProductCard({ product, isDark, shopDomain }: {
           <h3 className="font-semibold text-sm text-black line-clamp-1 mb-1.5">
             {product.name}
           </h3>
-          <p className="font-bold text-black">
-            {formatPrice(product.price)}
-          </p>
+          {showPrice && (
+            <p className="font-bold text-black">
+              {formatPrice(product.price)}
+            </p>
+          )}
         </div>
       </div>
     </Link>

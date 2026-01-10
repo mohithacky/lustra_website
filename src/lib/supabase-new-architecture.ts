@@ -530,6 +530,14 @@ export function getOccasionCollections(sections: MergedSection[]): Collection[] 
   return occasionSection?.collections || []
 }
 
+// ============================================================================
+// Helper to get section config by type
+// ============================================================================
+export function getSectionConfig(sections: MergedSection[], sectionType: string): Record<string, any> {
+  const section = getSectionByType(sections, sectionType)
+  return section?.config || {}
+}
+
 export interface FooterGroup {
   title: string
   page_slugs: string[]
