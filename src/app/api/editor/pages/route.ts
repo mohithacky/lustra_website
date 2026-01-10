@@ -97,21 +97,28 @@ export async function PUT(request: NextRequest) {
 
     if (existingPage) {
       // Update existing page
+      const updateData: { title?: string; content?: string; updated_at: string } = {
+        updated_at: new Date().toISOString(),
+      }
+      
+      if (title !== undefined) updateData.title = title
+      if (content !== undefined) updateData.content = content
+
+      console.log('Updating page:', { existingPageId: existingPage.id, updateData })
+
       const { data: updatedPage, error: updateError } = await supabase
         .from('user_website_pages')
-        .update({
-          title: title || undefined,
-          content: content || undefined,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', existingPage.id)
         .select()
         .single()
 
       if (updateError) {
+        console.error('Update error:', updateError)
         return NextResponse.json({ error: updateError.message }, { status: 500 })
       }
 
+      console.log('Page updated successfully:', updatedPage)
       return NextResponse.json({ page: updatedPage, message: 'Page updated successfully' })
     } else {
       // Create new page

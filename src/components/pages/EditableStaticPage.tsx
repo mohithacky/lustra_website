@@ -50,6 +50,8 @@ export default function EditableStaticPage({
   const handleSave = async () => {
     setIsSaving(true)
     try {
+      console.log('Saving page:', { userId, slug, title: editTitle, contentLength: editContent.length })
+      
       const response = await fetch('/api/editor/pages', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -61,12 +63,15 @@ export default function EditableStaticPage({
         }),
       })
 
+      const data = await response.json()
+      console.log('Save response:', data)
+
       if (response.ok) {
         setTitle(editTitle)
         setContent(editContent)
         setIsEditing(false)
+        alert('Page saved successfully! Refresh to see changes.')
       } else {
-        const data = await response.json()
         alert(`Error saving: ${data.error}`)
       }
     } catch (error) {
