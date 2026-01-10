@@ -6,6 +6,8 @@ import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 import EditableStaticPage from '@/components/pages/EditableStaticPage'
 
+export const revalidate = 0
+
 interface PageProps {
   params: { domain: string }
 }

@@ -6,6 +6,9 @@ import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 import EditableStaticPage from '@/components/pages/EditableStaticPage'
 
+// Disable Next.js caching for this page so edits show immediately
+export const revalidate = 0
+
 interface PageProps {
   params: { domain: string }
 }
