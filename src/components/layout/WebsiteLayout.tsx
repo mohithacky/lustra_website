@@ -7,6 +7,7 @@ import { Menu, X, Search, Heart, ShoppingCart, ChevronDown, LogIn, LogOut, User 
 import { cn, getImageUrl } from '@/lib/utils'
 import { Category, Collection } from '@/types/database'
 import PhoneLoginDialog from '@/components/auth/PhoneLoginDialog'
+import EditorProvider from '@/components/editor/EditorProvider'
 
 interface WebsiteLayoutProps {
   children: React.ReactNode
@@ -84,16 +85,17 @@ export default function WebsiteLayout({
   ]
 
   return (
-    <div className={cn(
-      'min-h-screen',
-      isDark ? 'bg-[#080808] text-white' : 'bg-offwhite text-black'
-    )}>
-      {/* Navigation - matches Flutter SliverAppBar */}
-      <header className={cn(
-        'sticky top-0 z-50',
-        isDark ? 'bg-[#121212]' : 'bg-white'
+    <EditorProvider>
+      <div className={cn(
+        'min-h-screen',
+        isDark ? 'bg-[#080808] text-white' : 'bg-offwhite text-black'
       )}>
-        <nav className="px-4">
+        {/* Navigation - matches Flutter SliverAppBar */}
+        <header className={cn(
+          'sticky top-0 z-50',
+          isDark ? 'bg-[#121212]' : 'bg-white'
+        )}>
+          <nav className="px-4">
           <div className="flex items-center justify-between h-14 md:h-16">
             {/* Left: Menu Button (Mobile) */}
             <button
@@ -366,6 +368,7 @@ export default function WebsiteLayout({
         shopId={user.id}
         isDark={isDark}
       />
-    </div>
+      </div>
+    </EditorProvider>
   )
 }
