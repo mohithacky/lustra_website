@@ -10,10 +10,10 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey || process.env.NEX
  * Helper: Extract default values from JSON Schema format
  * Converts { "field": { "type": "string", "default": "value" } } to { "field": "value" }
  */
-function extractDefaultsFromSchema(schema: Record<string, any>): Record<string, any> {
+function extractDefaultsFromSchema(settings_schema: Record<string, any>): Record<string, any> {
   const defaults: Record<string, any> = {}
   
-  for (const [key, value] of Object.entries(schema)) {
+  for (const [key, value] of Object.entries(settings_schema)) {
     if (value && typeof value === 'object' && 'default' in value) {
       // JSON Schema format: { type, default, label, ... }
       defaults[key] = value.default
@@ -27,13 +27,14 @@ function extractDefaultsFromSchema(schema: Record<string, any>): Record<string, 
 }
 
 /**
- * GET - Fetch user_website_sections with schema and config
+ * GET - Fetch user_website_sections with settings_schema and config
  * 
  * JSON SCHEMA PATTERN:
- * - schema (from website_template_sections): JSON Schema format (form definition)
+ * - settings_schema (from website_template_sections): JSON Schema format (form definition)
  *   { "title": { "type": "string", "default": "New Arrivals", "label": "Section Title" } }
- * - config (in user_website_sections): Flat values (form data)
+ * - config (in user_website_sections): Complete flat values with ALL fields
  *   { "title": "New Arrivals" }
+ * - Website displays data from config ONLY
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -95,28 +96,27 @@ export async function GET(request: NextRequest) {
       if (templateSectionIds.length > 0) {
         const { data: templateSections } = await supabase
           .from('website_template_sections')
-          .select('id, schema, section_label, description')
+          .select('id, settings_schema, section_label, description')
           .in('id', templateSectionIds)
 
         const templateMap = new Map(templateSections?.map(ts => [ts.id, ts]) || [])
 
         sectionsWithSchema = userSections.map(section => {
           const templateSection = templateMap.get(section.template_section_id)
-          // schema = JSON Schema format (form definition)
-          const schema = templateSection?.schema || {}
-          // config = actual values (form data)
+          // settings_schema = JSON Schema format (form definition)
+          const settings_schema = templateSection?.settings_schema || {}
+          // config = complete actual values (ALL fields for display)
           const config = section.config || {}
           
           // Extract defaults for backwards compatibility (if config is empty)
-          const schemaDefaults = extractDefaultsFromSchema(schema)
           const finalConfig = Object.keys(config).length > 0 
-            ? { ...schemaDefaults, ...config } 
-            : schemaDefaults
+            ? config 
+            : extractDefaultsFromSchema(settings_schema)
           
           return {
             ...section,
-            schema: schema,
-            config: finalConfig,
+            settings_schema: settings_schema,
+            config: finalConfig,  // Website uses config ONLY for display
             template_label: templateSection?.section_label,
             description: templateSection?.description,
           }

@@ -10,10 +10,10 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
  * Helper: Extract default values from JSON Schema format
  * Converts { "field": { "type": "string", "default": "value" } } to { "field": "value" }
  */
-function extractDefaultsFromSchema(schema: Record<string, any>): Record<string, any> {
+function extractDefaultsFromSchema(settings_schema: Record<string, any>): Record<string, any> {
   const defaults: Record<string, any> = {}
   
-  for (const [key, value] of Object.entries(schema)) {
+  for (const [key, value] of Object.entries(settings_schema)) {
     if (value && typeof value === 'object' && 'default' in value) {
       // JSON Schema format: { type, default, label, ... }
       defaults[key] = value.default
@@ -30,13 +30,14 @@ function extractDefaultsFromSchema(schema: Record<string, any>): Record<string, 
  * POST - Initialize user_website_sections for a new user
  * 
  * This endpoint creates section entries for a user based on their website's template.
- * Each section gets config populated with default values from schema.
+ * Each section gets config populated with ALL default values from settings_schema.
  * 
  * JSON SCHEMA PATTERN:
- * - schema (from website_template_sections): JSON Schema format (form definition)
+ * - settings_schema (from website_template_sections): JSON Schema format (form definition)
  *   { "title": { "type": "string", "default": "New Arrivals", "label": "Section Title" } }
- * - config (in user_website_sections): Flat values (form data)
+ * - config (in user_website_sections): Complete flat values with ALL fields
  *   { "title": "New Arrivals" }
+ * - Website displays data from config ONLY
  */
 export async function POST(request: NextRequest) {
   try {
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     // Step 2: Get all template sections for this template
     const { data: templateSections, error: sectionsError } = await supabase
       .from('website_template_sections')
-      .select('id, section_type, section_label, is_enabled_by_default, display_order, schema')
+      .select('id, section_type, section_label, is_enabled_by_default, display_order, settings_schema')
       .eq('template_id', website.template_id)
       .order('display_order', { ascending: true })
 
@@ -109,19 +110,19 @@ export async function POST(request: NextRequest) {
 
     const existingSectionIds = new Set(existingSections?.map(s => s.template_section_id) || [])
 
-    // Step 4: Create missing sections with config populated from schema defaults
+    // Step 4: Create missing sections with config populated from ALL settings_schema defaults
     const sectionsToCreate = templateSections
       .filter(ts => !existingSectionIds.has(ts.id))
       .map(ts => {
-        // Extract default values from JSON Schema format
-        const configDefaults = extractDefaultsFromSchema(ts.schema || {})
+        // Extract ALL default values from JSON Schema format
+        const configDefaults = extractDefaultsFromSchema(ts.settings_schema || {})
         
         return {
           user_website_id: website.id,
           template_section_id: ts.id,
           section_type: ts.section_type,
           section_label: ts.section_label,
-          config: configDefaults, // Config populated with schema defaults
+          config: configDefaults, // Config populated with ALL fields from settings_schema
           is_enabled: ts.is_enabled_by_default,
           display_order: ts.display_order,
         }
@@ -152,14 +153,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch sections' }, { status: 500 })
     }
 
-    // Step 6: Fetch template sections for schema (defaults)
+    // Step 6: Fetch template sections for settings_schema
     const templateSectionIds = allUserSections?.map(s => s.template_section_id).filter(Boolean) || []
     
     let templateSectionMap = new Map<string, any>()
     if (templateSectionIds.length > 0) {
       const { data: templateSectionsData } = await supabase
         .from('website_template_sections')
-        .select('id, schema, section_label, description')
+        .select('id, settings_schema, section_label, description')
         .in('id', templateSectionIds)
       
       templateSectionsData?.forEach(ts => {
@@ -167,19 +168,18 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Transform to include schema and config
+    // Transform to include settings_schema and config
     const sectionsWithSchema = allUserSections?.map(section => {
       const templateSection = templateSectionMap.get(section.template_section_id)
-      // schema = JSON Schema format (form definition)
-      const schema = templateSection?.schema || {}
-      // config = actual values (form data)
+      // settings_schema = JSON Schema format (form definition)
+      const settings_schema = templateSection?.settings_schema || {}
+      // config = complete actual values (ALL fields for display)
       const config = section.config || {}
       
       // Extract defaults for backwards compatibility (if config is empty)
-      const schemaDefaults = extractDefaultsFromSchema(schema)
       const finalConfig = Object.keys(config).length > 0 
-        ? { ...schemaDefaults, ...config } 
-        : schemaDefaults
+        ? config 
+        : extractDefaultsFromSchema(settings_schema)
       
       return {
         id: section.id,
@@ -187,8 +187,8 @@ export async function POST(request: NextRequest) {
         section_label: section.section_label || templateSection?.section_label,
         is_enabled: section.is_enabled,
         display_order: section.display_order,
-        schema: schema,
-        config: finalConfig,
+        settings_schema: settings_schema,
+        config: finalConfig,  // Website uses config ONLY for display
         description: templateSection?.description,
       }
     }) || []

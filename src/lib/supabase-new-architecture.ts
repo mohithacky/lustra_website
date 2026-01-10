@@ -66,13 +66,13 @@ export interface WebsiteTemplateSection {
   section_type: string
   section_label: string
   description: string | null
-  default_config: Record<string, any>
-  schema: Record<string, any>
-  variant: string | null
+  settings_schema?: Record<string, any>
   is_required: boolean
   is_enabled_by_default: boolean
   display_order: number
   icon: string | null
+  created_at?: string
+  updated_at?: string
 }
 
 export interface UserWebsite {
@@ -125,8 +125,8 @@ export interface MergedSection {
   section_label: string
   is_enabled: boolean
   display_order: number
-  schema: Record<string, any>        // From template: DEFAULT values (same structure as config)
-  config: Record<string, any>        // Merged: { ...schema, ...user_config }
+  settings_schema: Record<string, any>  // JSON Schema format (form definition)
+  config: Record<string, any>           // Complete flat values (ALL fields for display)
   collections?: Collection[]         // Fetched collections based on section_type
 }
 
@@ -278,10 +278,10 @@ export async function getUserWebsiteSections(userWebsiteId: string): Promise<Use
 // Helper: Extract default values from JSON Schema format
 // Converts { "field": { "type": "string", "default": "value" } } to { "field": "value" }
 // ============================================================================
-function extractDefaultsFromSchema(schema: Record<string, any>): Record<string, any> {
+function extractDefaultsFromSchema(settings_schema: Record<string, any>): Record<string, any> {
   const defaults: Record<string, any> = {}
   
-  for (const [key, value] of Object.entries(schema)) {
+  for (const [key, value] of Object.entries(settings_schema)) {
     if (value && typeof value === 'object' && 'default' in value) {
       // JSON Schema format: { type, default, label, ... }
       defaults[key] = value.default
@@ -295,14 +295,14 @@ function extractDefaultsFromSchema(schema: Record<string, any>): Record<string, 
 }
 
 // ============================================================================
-// Step 5 & 6: Merge configs and fetch collections
+// Step 5 & 6: Get configs and fetch collections
 // 
 // JSON SCHEMA PATTERN (Option A):
-// - schema (from website_template_sections): JSON Schema format defining form fields
+// - settings_schema (from website_template_sections): JSON Schema format defining form fields
 //   { "title": { "type": "string", "default": "New Arrivals", "label": "Section Title" } }
-// - config (in user_website_sections): Flat values matching schema structure
+// - config (in user_website_sections): Complete flat values with ALL fields
 //   { "title": "New Arrivals" }
-// - For new users, config is populated with defaults from schema during initialization
+// - Website displays data from config ONLY (not from settings_schema)
 // - For backwards compatibility, we extract defaults if config is empty
 // ============================================================================
 export async function getMergedSections(
@@ -321,28 +321,24 @@ export async function getMergedSections(
   for (const templateSection of templateSections) {
     const userSection = userSectionMap.get(templateSection.id)
     
-    // schema = JSON Schema format (form definition)
-    const schema = templateSection.schema || {}
+    // settings_schema = JSON Schema format (form definition)
+    const settings_schema = templateSection.settings_schema || {}
     
-    // Extract default values from schema
-    const schemaDefaults = extractDefaultsFromSchema(schema)
+    // config = complete actual values (ALL fields, for display)
+    const config = userSection?.config || {}
     
-    // user config = actual values (should already be populated for new users)
-    const userConfig = userSection?.config || {}
-    
-    // If config is empty, use schema defaults (backwards compatibility)
-    // Otherwise, merge schema defaults with user config (user values take precedence)
-    const mergedConfig = Object.keys(userConfig).length > 0
-      ? { ...schemaDefaults, ...userConfig }
-      : schemaDefaults
+    // For backwards compatibility: if config is empty, extract defaults from settings_schema
+    const finalConfig = Object.keys(config).length > 0
+      ? config
+      : extractDefaultsFromSchema(settings_schema)
 
     mergedSections.push({
       section_type: templateSection.section_type,
       section_label: userSection?.section_label || templateSection.section_label,
       is_enabled: userSection?.is_enabled ?? templateSection.is_enabled_by_default,
       display_order: userSection?.display_order ?? templateSection.display_order,
-      schema: schema,
-      config: mergedConfig,
+      settings_schema: settings_schema,
+      config: finalConfig,  // Website uses config ONLY for display
     })
   }
 
