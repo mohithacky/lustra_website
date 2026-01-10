@@ -10,10 +10,9 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey || process.env.NEX
  * GET - Fetch user_website_sections with schema and merged config
  * 
  * Multi-tenant Pattern:
- * - schema (from website_template_sections): Defines WHAT fields can be configured
- * - default_config (from website_template_sections): Default VALUES for those fields
- * - config (in user_website_sections): User's CUSTOM values (overrides defaults)
- * - merged_config: Combined result (default_config + user config)
+ * - schema (from website_template_sections): DEFAULT values (same structure as config)
+ * - config (in user_website_sections): User's CUSTOM values (overrides schema defaults)
+ * - merged_config: { ...schema, ...user_config }
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -75,23 +74,27 @@ export async function GET(request: NextRequest) {
       if (templateSectionIds.length > 0) {
         const { data: templateSections } = await supabase
           .from('website_template_sections')
-          .select('id, schema, default_config, section_label, description')
+          .select('id, schema, section_label, description')
           .in('id', templateSectionIds)
 
         const templateMap = new Map(templateSections?.map(ts => [ts.id, ts]) || [])
 
         sectionsWithSchema = userSections.map(section => {
           const templateSection = templateMap.get(section.template_section_id)
+          // schema = template defaults (same structure as config)
+          const schema = templateSection?.schema || {}
+          // user config = user's custom overrides
+          const userConfig = section.config || {}
+          
           return {
             ...section,
-            schema: templateSection?.schema || {},
-            default_config: templateSection?.default_config || {},
+            schema: schema,
             template_label: templateSection?.section_label,
             description: templateSection?.description,
-            // Merged config: defaults + user overrides
+            // Merged config: schema defaults + user overrides
             merged_config: {
-              ...(templateSection?.default_config || {}),
-              ...(section.config || {}),
+              ...schema,
+              ...userConfig,
             },
           }
         })

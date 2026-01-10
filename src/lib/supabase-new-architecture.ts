@@ -125,10 +125,8 @@ export interface MergedSection {
   section_label: string
   is_enabled: boolean
   display_order: number
-  schema: Record<string, any>        // From template: defines WHAT can be configured
-  default_config: Record<string, any> // From template: default VALUES
-  user_config: Record<string, any>   // From user: user's CUSTOM overrides
-  config: Record<string, any>        // Merged: default_config + user_config
+  schema: Record<string, any>        // From template: DEFAULT values (same structure as config)
+  config: Record<string, any>        // Merged: { ...schema, ...user_config }
   collections?: Collection[]         // Fetched collections based on section_type
 }
 
@@ -280,10 +278,9 @@ export async function getUserWebsiteSections(userWebsiteId: string): Promise<Use
 // Step 5 & 6: Merge configs and fetch collections
 // 
 // Multi-tenant Pattern:
-// - schema (from website_template_sections): Defines WHAT fields can be configured
-// - default_config (from website_template_sections): Default VALUES for those fields
-// - config (in user_website_sections): User's CUSTOM values (overrides defaults)
-// - merged config: Combined result (default_config + user config)
+// - schema (from website_template_sections): DEFAULT values (same structure as config)
+// - config (in user_website_sections): User's CUSTOM values (overrides schema defaults)
+// - merged config: { ...schema, ...user_config }
 // ============================================================================
 export async function getMergedSections(
   templateSections: WebsiteTemplateSection[],
@@ -301,12 +298,15 @@ export async function getMergedSections(
   for (const templateSection of templateSections) {
     const userSection = userSectionMap.get(templateSection.id)
     
-    // Get user's custom config (empty {} means use all defaults)
+    // schema = template defaults (same structure as config)
+    const schema = templateSection.schema || {}
+    
+    // user config = user's custom overrides (empty {} = use all defaults)
     const userConfig = userSection?.config || {}
     
-    // Merge default_config with user config (user overrides default)
+    // Merge: schema (defaults) + user config (overrides)
     const mergedConfig = {
-      ...templateSection.default_config,
+      ...schema,
       ...userConfig
     }
 
@@ -315,9 +315,7 @@ export async function getMergedSections(
       section_label: userSection?.section_label || templateSection.section_label,
       is_enabled: userSection?.is_enabled ?? templateSection.is_enabled_by_default,
       display_order: userSection?.display_order ?? templateSection.display_order,
-      schema: templateSection.schema || {},
-      default_config: templateSection.default_config || {},
-      user_config: userConfig,
+      schema: schema,
       config: mergedConfig,
     })
   }

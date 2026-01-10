@@ -10,12 +10,12 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
  * POST - Initialize user_website_sections for a new user
  * 
  * This endpoint creates section entries for a user based on their website's template.
- * Each section gets empty config ({}), which means it will use template defaults.
+ * Each section gets empty config ({}), which means it will use schema defaults.
  * 
  * Multi-tenant Pattern:
- * - schema (from website_template_sections): Defines WHAT fields can be configured
- * - default_config (from website_template_sections): Default VALUES for those fields  
- * - config (in user_website_sections): User's CUSTOM values (overrides defaults)
+ * - schema (from website_template_sections): DEFAULT values (same structure as config)
+ * - config (in user_website_sections): User's CUSTOM values (overrides schema defaults)
+ * - merged_config: { ...schema, ...user_config }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     // Step 2: Get all template sections for this template
     const { data: templateSections, error: sectionsError } = await supabase
       .from('website_template_sections')
-      .select('id, section_type, section_label, is_enabled_by_default, display_order, schema, default_config')
+      .select('id, section_type, section_label, is_enabled_by_default, display_order, schema')
       .eq('template_id', website.template_id)
       .order('display_order', { ascending: true })
 
@@ -126,14 +126,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch sections' }, { status: 500 })
     }
 
-    // Step 6: Fetch template sections for schema and default_config
+    // Step 6: Fetch template sections for schema (defaults)
     const templateSectionIds = allUserSections?.map(s => s.template_section_id).filter(Boolean) || []
     
     let templateSectionMap = new Map<string, any>()
     if (templateSectionIds.length > 0) {
       const { data: templateSectionsData } = await supabase
         .from('website_template_sections')
-        .select('id, schema, default_config, section_label, description')
+        .select('id, schema, section_label, description')
         .in('id', templateSectionIds)
       
       templateSectionsData?.forEach(ts => {
@@ -144,19 +144,23 @@ export async function POST(request: NextRequest) {
     // Transform to include schema and merged config
     const sectionsWithSchema = allUserSections?.map(section => {
       const templateSection = templateSectionMap.get(section.template_section_id)
+      // schema = template defaults (same structure as config)
+      const schema = templateSection?.schema || {}
+      // user config = user's custom overrides
+      const userConfig = section.config || {}
+      
       return {
         id: section.id,
         section_type: section.section_type,
         section_label: section.section_label || templateSection?.section_label,
         is_enabled: section.is_enabled,
         display_order: section.display_order,
-        schema: templateSection?.schema || {},
-        default_config: templateSection?.default_config || {},
-        config: section.config || {},
-        // Merged config: defaults + user overrides
+        schema: schema,
+        config: userConfig,
+        // Merged config: schema defaults + user overrides
         merged_config: {
-          ...(templateSection?.default_config || {}),
-          ...(section.config || {}),
+          ...schema,
+          ...userConfig,
         },
         description: templateSection?.description,
       }
