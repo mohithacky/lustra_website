@@ -7,12 +7,33 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const supabase = createClient(supabaseUrl, supabaseServiceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')
 
 /**
- * GET - Fetch user_website_sections with schema and merged config
+ * Helper: Extract default values from JSON Schema format
+ * Converts { "field": { "type": "string", "default": "value" } } to { "field": "value" }
+ */
+function extractDefaultsFromSchema(schema: Record<string, any>): Record<string, any> {
+  const defaults: Record<string, any> = {}
+  
+  for (const [key, value] of Object.entries(schema)) {
+    if (value && typeof value === 'object' && 'default' in value) {
+      // JSON Schema format: { type, default, label, ... }
+      defaults[key] = value.default
+    } else {
+      // Flat format fallback (for backwards compatibility)
+      defaults[key] = value
+    }
+  }
+  
+  return defaults
+}
+
+/**
+ * GET - Fetch user_website_sections with schema and config
  * 
- * Multi-tenant Pattern:
- * - schema (from website_template_sections): DEFAULT values (same structure as config)
- * - config (in user_website_sections): User's CUSTOM values (overrides schema defaults)
- * - merged_config: { ...schema, ...user_config }
+ * JSON SCHEMA PATTERN:
+ * - schema (from website_template_sections): JSON Schema format (form definition)
+ *   { "title": { "type": "string", "default": "New Arrivals", "label": "Section Title" } }
+ * - config (in user_website_sections): Flat values (form data)
+ *   { "title": "New Arrivals" }
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -81,21 +102,23 @@ export async function GET(request: NextRequest) {
 
         sectionsWithSchema = userSections.map(section => {
           const templateSection = templateMap.get(section.template_section_id)
-          // schema = template defaults (same structure as config)
+          // schema = JSON Schema format (form definition)
           const schema = templateSection?.schema || {}
-          // user config = user's custom overrides
-          const userConfig = section.config || {}
+          // config = actual values (form data)
+          const config = section.config || {}
+          
+          // Extract defaults for backwards compatibility (if config is empty)
+          const schemaDefaults = extractDefaultsFromSchema(schema)
+          const finalConfig = Object.keys(config).length > 0 
+            ? { ...schemaDefaults, ...config } 
+            : schemaDefaults
           
           return {
             ...section,
             schema: schema,
+            config: finalConfig,
             template_label: templateSection?.section_label,
             description: templateSection?.description,
-            // Merged config: schema defaults + user overrides
-            merged_config: {
-              ...schema,
-              ...userConfig,
-            },
           }
         })
       }

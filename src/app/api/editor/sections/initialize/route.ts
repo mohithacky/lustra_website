@@ -7,15 +7,36 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 /**
+ * Helper: Extract default values from JSON Schema format
+ * Converts { "field": { "type": "string", "default": "value" } } to { "field": "value" }
+ */
+function extractDefaultsFromSchema(schema: Record<string, any>): Record<string, any> {
+  const defaults: Record<string, any> = {}
+  
+  for (const [key, value] of Object.entries(schema)) {
+    if (value && typeof value === 'object' && 'default' in value) {
+      // JSON Schema format: { type, default, label, ... }
+      defaults[key] = value.default
+    } else {
+      // Flat format fallback (for backwards compatibility)
+      defaults[key] = value
+    }
+  }
+  
+  return defaults
+}
+
+/**
  * POST - Initialize user_website_sections for a new user
  * 
  * This endpoint creates section entries for a user based on their website's template.
- * Each section gets empty config ({}), which means it will use schema defaults.
+ * Each section gets config populated with default values from schema.
  * 
- * Multi-tenant Pattern:
- * - schema (from website_template_sections): DEFAULT values (same structure as config)
- * - config (in user_website_sections): User's CUSTOM values (overrides schema defaults)
- * - merged_config: { ...schema, ...user_config }
+ * JSON SCHEMA PATTERN:
+ * - schema (from website_template_sections): JSON Schema format (form definition)
+ *   { "title": { "type": "string", "default": "New Arrivals", "label": "Section Title" } }
+ * - config (in user_website_sections): Flat values (form data)
+ *   { "title": "New Arrivals" }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -88,18 +109,23 @@ export async function POST(request: NextRequest) {
 
     const existingSectionIds = new Set(existingSections?.map(s => s.template_section_id) || [])
 
-    // Step 4: Create missing sections with empty config (will use template defaults)
+    // Step 4: Create missing sections with config populated from schema defaults
     const sectionsToCreate = templateSections
       .filter(ts => !existingSectionIds.has(ts.id))
-      .map(ts => ({
-        user_website_id: website.id,
-        template_section_id: ts.id,
-        section_type: ts.section_type,
-        section_label: ts.section_label,
-        config: {}, // Empty config = use template defaults
-        is_enabled: ts.is_enabled_by_default,
-        display_order: ts.display_order,
-      }))
+      .map(ts => {
+        // Extract default values from JSON Schema format
+        const configDefaults = extractDefaultsFromSchema(ts.schema || {})
+        
+        return {
+          user_website_id: website.id,
+          template_section_id: ts.id,
+          section_type: ts.section_type,
+          section_label: ts.section_label,
+          config: configDefaults, // Config populated with schema defaults
+          is_enabled: ts.is_enabled_by_default,
+          display_order: ts.display_order,
+        }
+      })
 
     if (sectionsToCreate.length > 0) {
       const { error: insertError } = await supabase
@@ -141,13 +167,19 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Transform to include schema and merged config
+    // Transform to include schema and config
     const sectionsWithSchema = allUserSections?.map(section => {
       const templateSection = templateSectionMap.get(section.template_section_id)
-      // schema = template defaults (same structure as config)
+      // schema = JSON Schema format (form definition)
       const schema = templateSection?.schema || {}
-      // user config = user's custom overrides
-      const userConfig = section.config || {}
+      // config = actual values (form data)
+      const config = section.config || {}
+      
+      // Extract defaults for backwards compatibility (if config is empty)
+      const schemaDefaults = extractDefaultsFromSchema(schema)
+      const finalConfig = Object.keys(config).length > 0 
+        ? { ...schemaDefaults, ...config } 
+        : schemaDefaults
       
       return {
         id: section.id,
@@ -156,12 +188,7 @@ export async function POST(request: NextRequest) {
         is_enabled: section.is_enabled,
         display_order: section.display_order,
         schema: schema,
-        config: userConfig,
-        // Merged config: schema defaults + user overrides
-        merged_config: {
-          ...schema,
-          ...userConfig,
-        },
+        config: finalConfig,
         description: templateSection?.description,
       }
     }) || []
