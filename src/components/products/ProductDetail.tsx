@@ -7,6 +7,7 @@ import { cn, getImageUrl, formatPrice } from '@/lib/utils'
 import { Heart, Share2, ShoppingCart, ShoppingBag, PhoneCall, ChevronLeft, ChevronRight, MessageSquare, Loader2 } from 'lucide-react'
 import { addToCart, addToWishlist, removeFromWishlist, isInWishlist, isInCart } from '@/lib/api'
 import { getSupabaseClient } from '@/lib/supabase-client'
+import ProductReviews from './ProductReviews'
 
 interface Product {
   id: string
@@ -562,6 +563,15 @@ export default function ProductDetail({
               ))}
             </div>
           </div>
+        )}
+
+        {/* Product Reviews Section */}
+        {shopId && (
+          <ProductReviews
+            productId={product.id}
+            shopId={shopId}
+            isDark={isDark}
+          />
         )}
       </div>
 
