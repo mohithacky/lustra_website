@@ -8,6 +8,8 @@ import { cn, getImageUrl } from '@/lib/utils'
 import { Category, Collection } from '@/types/database'
 import PhoneLoginDialog from '@/components/auth/PhoneLoginDialog'
 import EditorProvider from '@/components/editor/EditorProvider'
+import AnnouncementBar from '@/components/sections/AnnouncementBar'
+import { PromotionalAnnouncement } from '@/lib/supabase-new-architecture'
 
 interface WebsiteLayoutProps {
   children: React.ReactNode
@@ -20,6 +22,8 @@ interface WebsiteLayoutProps {
   theme: 'light' | 'dark'
   categories: Category[]
   collections: Collection[]
+  announcements?: PromotionalAnnouncement[]
+  announcementBarConfig?: Record<string, any>
 }
 
 interface CustomerSession {
@@ -34,7 +38,9 @@ export default function WebsiteLayout({
   user, 
   theme,
   categories,
-  collections 
+  collections,
+  announcements = [],
+  announcementBarConfig = {},
 }: WebsiteLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -90,6 +96,15 @@ export default function WebsiteLayout({
         'min-h-screen',
         isDark ? 'bg-[#080808] text-white' : 'bg-offwhite text-black'
       )}>
+        {/* Promotional Announcement Bar - matches Flutter _buildAnnouncementBar */}
+        {announcements.length > 0 && (
+          <AnnouncementBar 
+            announcements={announcements}
+            config={announcementBarConfig}
+            isDark={isDark}
+          />
+        )}
+
         {/* Navigation - matches Flutter SliverAppBar */}
         <header className={cn(
           'sticky top-0 z-50',
@@ -372,3 +387,4 @@ export default function WebsiteLayout({
     </EditorProvider>
   )
 }
+ 

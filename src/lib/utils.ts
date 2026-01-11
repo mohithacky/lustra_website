@@ -40,3 +40,4 @@ export function deslugify(slug: string): string {
     .replace(/-/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase())
 }
+ 

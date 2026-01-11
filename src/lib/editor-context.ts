@@ -150,3 +150,4 @@ export function logEditorContext(): void {
     console.log('[EditorContext] No editor context available')
   }
 }
+ 

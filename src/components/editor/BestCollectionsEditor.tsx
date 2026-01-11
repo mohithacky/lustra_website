@@ -378,3 +378,4 @@ export default function BestCollectionsEditor({ userId, shopDomain }: BestCollec
     </div>
   )
 }
+ 

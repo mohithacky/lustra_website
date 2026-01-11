@@ -218,3 +218,4 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
     </footer>
   )
 }
+ 

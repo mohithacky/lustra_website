@@ -16,6 +16,9 @@ import {
   transformCategoriesToMap,
   transformBestToLegacy,
   getSectionConfig,
+  getActiveAnnouncements,
+  getAnnouncementBarConfig,
+  isAnnouncementBarEnabled,
   Collection,
 } from '@/lib/supabase-new-architecture'
 // Legacy imports for products (still using old tables)
@@ -163,16 +166,22 @@ export default async function StorePage({ params }: PageProps) {
   console.log(`  - Show testimonials: ${showTestimonials}`)
   console.log(`  - Product types: ${productTypes.length > 0 ? productTypes.map(pt => pt.name).join(', ') : 'none'}`)
 
+  // Fetch announcements and check if enabled
+  const announcementBarEnabled = isAnnouncementBarEnabled(sections)
+  const announcementBarConfig = getAnnouncementBarConfig(sections)
+
   // Fetch products using legacy table (still using website_products)
-  const [products, testimonials, trendingProducts] = await Promise.all([
+  const [products, testimonials, trendingProducts, announcements] = await Promise.all([
     getProducts(user.id, { limit: 12 }),
     showTestimonials ? getTestimonials(user.id) : Promise.resolve([]),
     getTrendingProducts(user.id, 10),
+    announcementBarEnabled ? getActiveAnnouncements(user.id) : Promise.resolve([]),
   ])
 
   console.log(`  - Products: ${products.length}`)
   console.log(`  - Testimonials: ${testimonials.length}`)
   console.log(`  - Trending products: ${trendingProducts.length}`)
+  console.log(`  - Announcements: ${announcements.length} (enabled: ${announcementBarEnabled})`)
 
   // Transform categories map to array format for components
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
@@ -208,6 +217,8 @@ export default async function StorePage({ params }: PageProps) {
       theme={theme}
       categories={categoriesArray}
       collections={collectionsArray}
+      announcements={announcements}
+      announcementBarConfig={announcementBarConfig}
     >
       {/* 1. Hero Carousel - matches Flutter order, with editor controls */}
       {heroCollections.length > 0 && (

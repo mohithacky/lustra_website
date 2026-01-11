@@ -107,3 +107,4 @@ function ProductTypeCard({ productType, isDark, shopDomain }: ProductTypeCardPro
     </Link>
   )
 }
+ 

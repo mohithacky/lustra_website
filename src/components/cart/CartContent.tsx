@@ -305,3 +305,4 @@ export default function CartContent({ shopId, shopDomain, isDark }: CartContentP
     </div>
   )
 }
+ 

@@ -215,3 +215,4 @@ export default function WishlistContent({ shopId, shopDomain, isDark }: Wishlist
     </div>
   )
 }
+ 

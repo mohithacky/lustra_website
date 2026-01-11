@@ -135,3 +135,4 @@ function CategoryItem({ category, isDark, shopDomain, imageStyle = "circle" }: {
     </Link>
   )
 }
+ 

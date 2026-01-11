@@ -61,3 +61,4 @@ function extractSubdomain(hostname: string): string | null {
   // For 2-part domains like lustrai.in (main site), no subdomain
   return null
 }
+ 

@@ -181,3 +181,4 @@ export function EditableFooter({ user, template, isDark, shopDomain }: EditableF
     />
   )
 }
+ 

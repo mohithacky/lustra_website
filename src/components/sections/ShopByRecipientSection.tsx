@@ -135,3 +135,4 @@ function RecipientCard({ title, subtitle, imageUrl, link, isDark, shopDomain }: 
     </Link>
   )
 }
+ 

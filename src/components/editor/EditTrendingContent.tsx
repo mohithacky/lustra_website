@@ -428,3 +428,4 @@ export default function EditTrendingContent({ shopId, shopDomain, initialPositio
     </div>
   )
 }
+ 

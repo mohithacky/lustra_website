@@ -266,3 +266,4 @@ export default function FooterEditor({ userId, shopDomain }: FooterEditorProps) 
     </div>
   )
 }
+ 

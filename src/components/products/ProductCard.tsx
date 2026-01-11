@@ -227,3 +227,4 @@ export default function ProductCard({ product, isDark, shopDomain, viewMode = 'g
     </Link>
   )
 }
+ 

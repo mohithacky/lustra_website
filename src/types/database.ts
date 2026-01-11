@@ -216,3 +216,4 @@ export type HeroCollection = Database['public']['Tables']['user_hero_collections
 export type Collection = Database['public']['Tables']['user_collections']['Row']
 export type Category = Database['public']['Tables']['user_categories']['Row']
 export type WebsiteTemplate = Database['public']['Tables']['user_website_templates']['Row']
+ 

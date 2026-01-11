@@ -428,3 +428,4 @@ export async function getProductsByGender(userId: string, gender: string, limit?
 
   return (data as ProductData[]) || []
 }
+ 

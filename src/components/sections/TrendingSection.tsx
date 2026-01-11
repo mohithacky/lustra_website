@@ -198,3 +198,4 @@ function TrendingBox({ collection, heightRatio, isDark, showLabels = true }: {
     </Link>
   )
 }
+ 

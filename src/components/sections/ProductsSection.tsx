@@ -145,3 +145,4 @@ function ProductCard({ product, isDark, showPrice = true, shopDomain }: {
     </Link>
   )
 }
+ 

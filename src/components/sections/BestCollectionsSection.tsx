@@ -161,3 +161,4 @@ function FeaturedCollectionRow({ collection, reverse, isDark, showDescription = 
     </div>
   )
 }
+ 

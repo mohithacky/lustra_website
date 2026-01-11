@@ -141,3 +141,4 @@ function TrendingProductCard({ product, isDark, showPrice = true, shopDomain }: 
     </Link>
   )
 }
+ 

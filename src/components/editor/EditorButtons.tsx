@@ -85,3 +85,4 @@ export default function EditorButtons({ shopDomain, isDark }: EditorButtonsProps
     </div>
   )
 }
+ 

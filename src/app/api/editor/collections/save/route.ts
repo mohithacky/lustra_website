@@ -144,3 +144,4 @@ function getAspectRatioForPosition(position: number): string {
   // Positions 1 and 2 are large boxes (5:6)
   return (position === 0 || position === 3) ? '3:2' : '5:6'
 }
+ 

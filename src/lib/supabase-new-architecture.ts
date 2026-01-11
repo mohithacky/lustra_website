@@ -891,3 +891,62 @@ export async function getFooterDataForUser(userId: string): Promise<Record<strin
   // Use the new page-based footer data fetching
   return getFooterDataFromPages(mergedSections, website.id)
 }
+
+// ============================================================================
+// Promotional Announcements
+// ============================================================================
+export interface PromotionalAnnouncement {
+  id: string
+  user_id: string
+  message: string
+  background_color: string
+  text_color: string
+  is_active: boolean
+  priority: number
+  show_close_button: boolean
+  auto_rotate: boolean
+  created_at: string
+  updated_at: string
+  start_date: string | null
+  end_date: string | null
+}
+
+export async function getActiveAnnouncements(userId: string): Promise<PromotionalAnnouncement[]> {
+  const now = new Date().toISOString()
+  
+  console.log(`[DB] Fetching active announcements for user_id='${userId}'`)
+  
+  const { data, error } = await supabase
+    .from('promotional_announcements')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .or(`start_date.is.null,start_date.lte.${now}`)
+    .or(`end_date.is.null,end_date.gte.${now}`)
+    .order('priority', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('[DB ERROR] Failed to fetch announcements:', error)
+    return []
+  }
+
+  console.log(`[DB SUCCESS] Found ${data?.length || 0} active announcements`)
+  return (data || []) as PromotionalAnnouncement[]
+}
+
+export function getAnnouncementBarConfig(sections: MergedSection[]): Record<string, any> {
+  const announcementSection = getSectionByType(sections, 'promotional_announcement_bar')
+  return announcementSection?.config || {
+    autoRotate: true,
+    rotateInterval: 5000,
+    showCloseButton: true,
+    defaultBackgroundColor: '#D4AF37',
+    defaultTextColor: '#000000',
+  }
+}
+
+export function isAnnouncementBarEnabled(sections: MergedSection[]): boolean {
+  const announcementSection = sections.find(s => s.section_type === 'promotional_announcement_bar')
+  return announcementSection?.is_enabled ?? true
+}
