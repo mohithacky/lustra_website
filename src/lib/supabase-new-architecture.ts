@@ -135,7 +135,6 @@ export interface WebsiteRenderData {
   website: UserWebsite
   template: WebsiteTemplate
   sections: MergedSection[]
-  productTypes: string[]
 }
 
 // ============================================================================
@@ -351,6 +350,7 @@ export async function getMergedSections(
     'categories': 'category',
     'best_collections': 'best',
     'occasion_collections': 'occasion',
+    'shop_by_product_type': 'product_type',
   }
 
   for (const section of mergedSections) {
@@ -474,11 +474,6 @@ export async function getWebsiteRenderData(domain: string): Promise<WebsiteRende
   console.log(`\n[STEP 6] Merging sections and fetching collections for user_id="${user.id}"...`)
   const sections = await getMergedSections(templateSections, userSections, user.id)
   
-  // Step 7: Fetch product types from legacy table
-  console.log(`\n[STEP 7] Fetching product_types for user_id="${user.id}"...`)
-  const productTypes = await getProductTypes(user.id)
-  console.log(`[DB SUCCESS] Found ${productTypes.length} product types: ${productTypes.join(', ') || 'none'}`)
-  
   // ========== SUMMARY ==========
   console.log(`\n================================================================`)
   console.log(`[RENDER SUMMARY] Domain: ${domain}`)
@@ -522,7 +517,6 @@ export async function getWebsiteRenderData(domain: string): Promise<WebsiteRende
     website,
     template,
     sections,
-    productTypes,
   }
 }
 
@@ -557,6 +551,11 @@ export function getBestCollections(sections: MergedSection[]): Collection[] {
 export function getOccasionCollections(sections: MergedSection[]): Collection[] {
   const occasionSection = getSectionByType(sections, 'occasion_collections')
   return occasionSection?.collections || []
+}
+
+export function getProductTypeCollections(sections: MergedSection[]): Collection[] {
+  const productTypeSection = getSectionByType(sections, 'shop_by_product_type')
+  return productTypeSection?.collections || []
 }
 
 // ============================================================================
@@ -700,21 +699,28 @@ export function transformBestToLegacy(collections: Collection[]): Array<{
 }
 
 // ============================================================================
-// Get product types from legacy user_website_templates table
+// Get product types from collections table (collection_label='product_type')
 // ============================================================================
-export async function getProductTypes(userId: string): Promise<string[]> {
+export async function getProductTypes(userId: string): Promise<Collection[]> {
   const { data, error } = await supabase
-    .from('user_website_templates')
-    .select('product_types')
+    .from('collections')
+    .select('*')
     .eq('user_id', userId)
-    .single()
+    .eq('collection_label', 'product_type')
+    .eq('is_active', true)
+    .order('display_order', { ascending: true })
 
-  if (error || !data?.product_types) {
+  if (error) {
+    console.error(`[DB ERROR] Failed to fetch product_types for user ${userId}:`, error)
+    return []
+  }
+
+  if (!data || data.length === 0) {
     console.log(`[DB] No product_types found for user ${userId}`)
     return []
   }
 
-  return data.product_types as string[]
+  return data as Collection[]
 }
 
 // ============================================================================

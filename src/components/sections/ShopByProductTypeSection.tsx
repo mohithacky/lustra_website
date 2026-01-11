@@ -4,30 +4,25 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { cn, getImageUrl } from '@/lib/utils'
 
+interface ProductTypeCollection {
+  id: string
+  user_id: string
+  name: string
+  slug: string | null
+  collection_label: string
+  image_url: string | null
+  display_order: number
+  is_active: boolean
+  created_at?: string
+  updated_at?: string
+}
+
 interface ShopByProductTypeSectionProps {
-  productTypes: string[]
+  productTypes: ProductTypeCollection[]
   isDark: boolean
   shopDomain: string
   title?: string
   subtitle?: string
-}
-
-// Default images for product types (matching Flutter implementation)
-const SUPABASE_BASE = 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories'
-
-function getImageForType(type: string): string {
-  switch (type.toLowerCase()) {
-    case 'gold':
-      return `${SUPABASE_BASE}/gold.jpeg`
-    case 'silver':
-      return `${SUPABASE_BASE}/silver.jpeg`
-    case 'diamond':
-      return `${SUPABASE_BASE}/diamond.jpeg`
-    case 'platinum':
-      return `${SUPABASE_BASE}/platinum.jpeg`
-    default:
-      return `${SUPABASE_BASE}/gold.jpeg`
-  }
 }
 
 export default function ShopByProductTypeSection({
@@ -66,11 +61,10 @@ export default function ShopByProductTypeSection({
 
         {/* Product Types Grid */}
         <div className="flex flex-wrap justify-center gap-6 md:gap-8">
-          {productTypes.map((type) => (
+          {productTypes.map((productType) => (
             <ProductTypeCard
-              key={type}
-              type={type}
-              imageUrl={getImageForType(type)}
+              key={productType.id}
+              productType={productType}
               isDark={isDark}
               shopDomain={shopDomain}
             />
@@ -82,22 +76,21 @@ export default function ShopByProductTypeSection({
 }
 
 interface ProductTypeCardProps {
-  type: string
-  imageUrl: string
+  productType: ProductTypeCollection
   isDark: boolean
   shopDomain: string
 }
 
-function ProductTypeCard({ type, imageUrl, isDark, shopDomain }: ProductTypeCardProps) {
+function ProductTypeCard({ productType, isDark, shopDomain }: ProductTypeCardProps) {
   return (
     <Link
-      href={`/${shopDomain}/product-type/${encodeURIComponent(type.toLowerCase())}`}
+      href={`/${shopDomain}/product-type/${productType.slug || encodeURIComponent(productType.name.toLowerCase())}`}
       className="group flex flex-col items-center"
     >
       <div className="relative w-32 h-32 md:w-48 md:h-48 lg:w-64 lg:h-64 rounded-xl overflow-hidden shadow-lg transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl">
         <Image
-          src={getImageUrl(imageUrl)}
-          alt={type}
+          src={getImageUrl(productType.image_url || '')}
+          alt={productType.name}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           sizes="(max-width: 768px) 128px, (max-width: 1024px) 192px, 256px"
@@ -109,7 +102,7 @@ function ProductTypeCard({ type, imageUrl, isDark, shopDomain }: ProductTypeCard
         'mt-3 text-sm md:text-base font-medium transition-colors duration-200',
         isDark ? 'text-white group-hover:text-gold-400' : 'text-gray-800 group-hover:text-gold-600'
       )}>
-        {type}
+        {productType.name}
       </p>
     </Link>
   )

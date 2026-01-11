@@ -7,6 +7,7 @@ import {
   getTrendingCollections as getTrendingFromSections,
   getCategoryCollections,
   getBestCollections as getBestFromSections,
+  getProductTypeCollections,
   getFooterDataFromPages,
   isTestimonialsEnabled,
   isTestimonialsEnabledLegacy,
@@ -110,7 +111,12 @@ export default async function StorePage({ params }: PageProps) {
     notFound()
   }
 
-  const { user, website, template, sections, productTypes } = renderData
+  const { user, website, template, sections } = renderData
+
+  if (!user || !website || !template || !sections) {
+    console.error('[PAGE] Missing required render data')
+    notFound()
+  }
 
   // Log render data summary
   console.log(`\n[PAGE] Rendering StorePage for domain: ${params.domain}`)
@@ -122,6 +128,7 @@ export default async function StorePage({ params }: PageProps) {
   const trendingCollectionsFromSections = getTrendingFromSections(sections)
   const categoryCollections = getCategoryCollections(sections)
   const bestCollectionsFromSections = getBestFromSections(sections)
+  const productTypes = getProductTypeCollections(sections)
   // Check both new architecture and legacy table for testimonials
   const showTestimonialsFromSections = isTestimonialsEnabled(sections)
   const showTestimonialsFromLegacy = await isTestimonialsEnabledLegacy(user.id)
@@ -154,7 +161,7 @@ export default async function StorePage({ params }: PageProps) {
   console.log(`  - Trending collections: ${trendingCollections.length}`)
   console.log(`  - Best collections: ${bestCollections.length}`)
   console.log(`  - Show testimonials: ${showTestimonials}`)
-  console.log(`  - Product types: ${productTypes.length > 0 ? productTypes.join(', ') : 'none'}`)
+  console.log(`  - Product types: ${productTypes.length > 0 ? productTypes.map(pt => pt.name).join(', ') : 'none'}`)
 
   // Fetch products using legacy table (still using website_products)
   const [products, testimonials, trendingProducts] = await Promise.all([
