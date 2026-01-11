@@ -135,6 +135,7 @@ export interface WebsiteRenderData {
   website: UserWebsite
   template: WebsiteTemplate
   sections: MergedSection[]
+  productTypes: string[]
 }
 
 // ============================================================================
@@ -473,6 +474,11 @@ export async function getWebsiteRenderData(domain: string): Promise<WebsiteRende
   console.log(`\n[STEP 6] Merging sections and fetching collections for user_id="${user.id}"...`)
   const sections = await getMergedSections(templateSections, userSections, user.id)
   
+  // Step 7: Fetch product types from legacy table
+  console.log(`\n[STEP 7] Fetching product_types for user_id="${user.id}"...`)
+  const productTypes = await getProductTypes(user.id)
+  console.log(`[DB SUCCESS] Found ${productTypes.length} product types: ${productTypes.join(', ') || 'none'}`)
+  
   // ========== SUMMARY ==========
   console.log(`\n================================================================`)
   console.log(`[RENDER SUMMARY] Domain: ${domain}`)
@@ -516,6 +522,7 @@ export async function getWebsiteRenderData(domain: string): Promise<WebsiteRende
     website,
     template,
     sections,
+    productTypes,
   }
 }
 
@@ -614,7 +621,24 @@ export function getGoldRateData(sections: MergedSection[]): any {
 
 export function isTestimonialsEnabled(sections: MergedSection[]): boolean {
   const testimonialsSection = getSectionByType(sections, 'testimonials')
+  // Check if testimonials section is enabled in new architecture
+  // If section exists and is enabled, and show_testimonials is not explicitly false
   return Boolean(testimonialsSection?.is_enabled && testimonialsSection?.config?.show_testimonials !== false)
+}
+
+// Also check legacy table for testimonials enabled status
+export async function isTestimonialsEnabledLegacy(userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('user_website_templates')
+    .select('show_testimonials')
+    .eq('user_id', userId)
+    .single()
+
+  if (error || !data) {
+    return false
+  }
+
+  return Boolean(data.show_testimonials)
 }
 
 // ============================================================================
@@ -673,6 +697,24 @@ export function transformBestToLegacy(collections: Collection[]): Array<{
     image: c.image_url || '',
     description: `Discover the ${c.name} collection`,
   }))
+}
+
+// ============================================================================
+// Get product types from legacy user_website_templates table
+// ============================================================================
+export async function getProductTypes(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('user_website_templates')
+    .select('product_types')
+    .eq('user_id', userId)
+    .single()
+
+  if (error || !data?.product_types) {
+    console.log(`[DB] No product_types found for user ${userId}`)
+    return []
+  }
+
+  return data.product_types as string[]
 }
 
 // ============================================================================
@@ -781,8 +823,46 @@ export async function getFooterDataFromPages(
     return buildFooterDataFromPages(footerConfig, userWebsiteId)
   }
   
-  // Fallback to old config-based footer data
-  return getFooterData(sections)
+  // Fallback to old config-based footer data from sections
+  const sectionFooterData = getFooterData(sections)
+  if (Object.keys(sectionFooterData).length > 0) {
+    return sectionFooterData
+  }
+  
+  // Final fallback: get footer from legacy user_website_templates table
+  return getLegacyFooterData(userWebsiteId)
+}
+
+// ============================================================================
+// Get footer data from legacy user_website_templates table
+// ============================================================================
+async function getLegacyFooterData(userWebsiteId: string): Promise<Record<string, string[]>> {
+  // First get user_id from user_websites
+  const { data: websiteData, error: websiteError } = await supabase
+    .from('user_websites')
+    .select('user_id')
+    .eq('id', userWebsiteId)
+    .single()
+
+  if (websiteError || !websiteData) {
+    console.log(`[DB] Could not find user_websites entry for id=${userWebsiteId}`)
+    return {}
+  }
+
+  // Then get footer from user_website_templates
+  const { data, error } = await supabase
+    .from('user_website_templates')
+    .select('footer')
+    .eq('user_id', websiteData.user_id)
+    .single()
+
+  if (error || !data?.footer) {
+    console.log(`[DB] No footer found in user_website_templates for user_id=${websiteData.user_id}`)
+    return {}
+  }
+
+  console.log(`[DB SUCCESS] Found footer data from legacy table:`, Object.keys(data.footer))
+  return data.footer as Record<string, string[]>
 }
 
 // ============================================================================

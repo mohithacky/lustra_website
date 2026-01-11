@@ -9,6 +9,7 @@ import {
   getBestCollections as getBestFromSections,
   getFooterDataFromPages,
   isTestimonialsEnabled,
+  isTestimonialsEnabledLegacy,
   transformHeroToLegacy,
   transformTrendingToLegacy,
   transformCategoriesToMap,
@@ -25,6 +26,7 @@ import {
 } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsSection from '@/components/sections/ProductsSection'
+import ShopByProductTypeSection from '@/components/sections/ShopByProductTypeSection'
 import ShopByRecipientSection from '@/components/sections/ShopByRecipientSection'
 import TrendingProductsSection from '@/components/sections/TrendingProductsSection'
 import TestimonialsSection from '@/components/sections/TestimonialsSection'
@@ -108,7 +110,7 @@ export default async function StorePage({ params }: PageProps) {
     notFound()
   }
 
-  const { user, website, template, sections } = renderData
+  const { user, website, template, sections, productTypes } = renderData
 
   // Log render data summary
   console.log(`\n[PAGE] Rendering StorePage for domain: ${params.domain}`)
@@ -120,7 +122,10 @@ export default async function StorePage({ params }: PageProps) {
   const trendingCollectionsFromSections = getTrendingFromSections(sections)
   const categoryCollections = getCategoryCollections(sections)
   const bestCollectionsFromSections = getBestFromSections(sections)
-  const showTestimonials = isTestimonialsEnabled(sections)
+  // Check both new architecture and legacy table for testimonials
+  const showTestimonialsFromSections = isTestimonialsEnabled(sections)
+  const showTestimonialsFromLegacy = await isTestimonialsEnabledLegacy(user.id)
+  const showTestimonials = showTestimonialsFromSections || showTestimonialsFromLegacy
   
   // Get section configs (merged schema + user customizations)
   const heroConfig = getSectionConfig(sections, 'hero_carousel')
@@ -131,6 +136,7 @@ export default async function StorePage({ params }: PageProps) {
   const trendingProductsConfig = getSectionConfig(sections, 'trending_products')
   const bestCollectionsConfig = getSectionConfig(sections, 'best_collections')
   const testimonialsConfig = getSectionConfig(sections, 'testimonials')
+  const shopByProductTypeConfig = getSectionConfig(sections, 'shop_by_product_type')
   
   // Fetch footer data from user_website_pages table
   const footerData = await getFooterDataFromPages(sections, website.id)
@@ -148,6 +154,7 @@ export default async function StorePage({ params }: PageProps) {
   console.log(`  - Trending collections: ${trendingCollections.length}`)
   console.log(`  - Best collections: ${bestCollections.length}`)
   console.log(`  - Show testimonials: ${showTestimonials}`)
+  console.log(`  - Product types: ${productTypes.length > 0 ? productTypes.join(', ') : 'none'}`)
 
   // Fetch products using legacy table (still using website_products)
   const [products, testimonials, trendingProducts] = await Promise.all([
@@ -212,6 +219,19 @@ export default async function StorePage({ params }: PageProps) {
           isDark={isDark}
           shopDomain={params.domain}
           config={categoriesConfig}
+        />
+      )}
+
+      <div className="h-10" /> {/* Spacing */}
+
+      {/* 3. Shop By Product Type - matches Flutter ShopByProductTypeSection */}
+      {productTypes.length > 1 && (
+        <ShopByProductTypeSection
+          productTypes={productTypes}
+          isDark={isDark}
+          shopDomain={params.domain}
+          title={shopByProductTypeConfig.title || "SHOP BY PRODUCT TYPE"}
+          subtitle={shopByProductTypeConfig.subtitle || "Explore pieces by what you sell most"}
         />
       )}
 

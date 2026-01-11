@@ -381,6 +381,30 @@ export async function getProductById(productId: string): Promise<ProductData | n
   return data as ProductData
 }
 
+// Get products by product type (Gold, Silver, Diamond, etc.)
+export async function getProductsByType(userId: string, productType: string, limit?: number): Promise<ProductData[]> {
+  let query = supabase
+    .from('website_products')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('show_on_website', true)
+    .ilike('type', productType)
+    .order('created_at', { ascending: false })
+
+  if (limit) {
+    query = query.limit(limit)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('Error fetching products by type:', error)
+    return []
+  }
+
+  return (data as ProductData[]) || []
+}
+
 // Get products for gender (Him/Her)
 export async function getProductsByGender(userId: string, gender: string, limit?: number): Promise<ProductData[]> {
   let query = supabase
