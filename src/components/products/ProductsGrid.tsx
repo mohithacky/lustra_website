@@ -14,6 +14,7 @@ interface Product {
   images?: string[] | null
   category?: string | null
   collection?: string | null
+  gender?: string | null
   weight?: string | null
   is_bestseller?: boolean | null
   is_trending?: boolean | null
@@ -104,7 +105,8 @@ export default function ProductsGrid({
     selectedFilters.categories.length > 0 ||
     selectedFilters.collections.length > 0 ||
     selectedFilters.trendingCollections.length > 0 ||
-    selectedFilters.productTypes.length > 0
+    selectedFilters.productTypes.length > 0 ||
+    selectedFilters.genders.length > 0
 
   if (hasActiveFilters) {
     filteredProducts = filteredProducts.filter(product => {
@@ -120,12 +122,17 @@ export default function ProductsGrid({
       const matchesTrendingCollection = selectedFilters.trendingCollections.length === 0 || 
         (product.collection && selectedFilters.trendingCollections.includes(product.collection))
       
-      // Check product types filter (assuming product has a product_type field)
+      // Check product types filter - product types are stored in category field
+      // Only apply this filter if no category filter is active (to avoid conflict)
       const matchesProductType = selectedFilters.productTypes.length === 0 || 
-        (product.category && selectedFilters.productTypes.includes(product.category))
+        (selectedFilters.categories.length === 0 && product.category && selectedFilters.productTypes.includes(product.category))
+      
+      // Check gender filter
+      const matchesGender = selectedFilters.genders.length === 0 || 
+        (product.gender && selectedFilters.genders.includes(product.gender))
       
       // Product must match all active filter types (AND logic between types)
-      return matchesCategory && matchesCollection && matchesTrendingCollection && matchesProductType
+      return matchesCategory && matchesCollection && matchesTrendingCollection && matchesProductType && matchesGender
     })
   }
 
@@ -189,7 +196,8 @@ export default function ProductsGrid({
                 {selectedFilters.categories.length + 
                  selectedFilters.collections.length + 
                  selectedFilters.trendingCollections.length + 
-                 selectedFilters.productTypes.length}
+                 selectedFilters.productTypes.length + 
+                 selectedFilters.genders.length}
               </span>
             )}
           </button>
@@ -331,6 +339,22 @@ export default function ProductsGrid({
                   <button
                     onClick={() => handleFilterChange('productTypes', type)}
                     className="hover:bg-green-600 rounded-full p-0.5"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {selectedFilters.genders.map((gender) => (
+                <span
+                  key={gender}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-sm font-medium bg-pink-500 text-white flex items-center gap-2'
+                  )}
+                >
+                  {gender}
+                  <button
+                    onClick={() => handleFilterChange('genders', gender)}
+                    className="hover:bg-pink-600 rounded-full p-0.5"
                   >
                     ×
                   </button>

@@ -1049,8 +1049,6 @@ export async function getFilterDataForUser(userId: string): Promise<FilterData> 
         if (!categories.includes(name)) categories.push(name)
         break
       case 'hero':
-      case 'best':
-      case 'occasion':
         if (!collections.includes(name)) collections.push(name)
         break
       case 'trending':
