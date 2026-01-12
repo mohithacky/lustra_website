@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database'
-import { DEMO_PRODUCTS, DEMO_CATEGORIES_MAP, DEMO_COLLECTIONS_MAP, DEMO_CATEGORIES, DEMO_COLLECTIONS, DemoProduct } from '@/constants/demo-products'
+import { DEMO_PRODUCTS, DEMO_CATEGORIES_MAP, DEMO_COLLECTIONS_MAP, DEMO_CATEGORIES, DEMO_COLLECTIONS, DEMO_TESTIMONIALS, DEMO_TRENDING_COLLECTIONS, DemoProduct, DemoTestimonial } from '@/constants/demo-products'
 
 // Re-export demo constants for use in other files
-export { DEMO_PRODUCTS, DEMO_CATEGORIES_MAP, DEMO_COLLECTIONS_MAP, DEMO_CATEGORIES, DEMO_COLLECTIONS }
+export { DEMO_PRODUCTS, DEMO_CATEGORIES_MAP, DEMO_COLLECTIONS_MAP, DEMO_CATEGORIES, DEMO_COLLECTIONS, DEMO_TESTIMONIALS, DEMO_TRENDING_COLLECTIONS }
 
 const supabaseUrl = 'https://phlccyxgyftspxnuzttf.supabase.co'
 const supabaseAnonKey = 'sb_publishable_tMc-l2KRHyKOXlR0tODIPw_VhBH-w5R'
@@ -359,6 +359,17 @@ export async function getTestimonials(userId: string): Promise<Array<any>> {
   return d.testimonials as Array<any>
 }
 
+// Get testimonials with demo fallback
+export async function getTestimonialsWithDemoFallback(userId: string): Promise<{ testimonials: Array<any>, isDemo: boolean }> {
+  const realTestimonials = await getTestimonials(userId)
+  
+  if (realTestimonials.length > 0) {
+    return { testimonials: realTestimonials, isDemo: false }
+  }
+  
+  return { testimonials: DEMO_TESTIMONIALS, isDemo: true }
+}
+
 // Legacy: Get user collections from separate table (if used)
 export async function getUserCollections(userId: string) {
   const { data, error } = await supabase
@@ -428,6 +439,29 @@ export async function getTrendingProducts(userId: string, limit: number = 10) {
   return data || []
 }
 
+// Get trending products with demo fallback
+export async function getTrendingProductsWithDemoFallback(userId: string, limit: number = 10): Promise<{ products: ProductData[], isDemo: boolean }> {
+  const realProducts = await getTrendingProducts(userId, limit)
+  
+  if (realProducts.length > 0) {
+    return { products: realProducts as ProductData[], isDemo: false }
+  }
+  
+  // Return demo trending products
+  const demoProducts = DEMO_PRODUCTS
+    .filter(p => p.is_trending || p.is_bestseller)
+    .slice(0, limit)
+    .map(p => ({
+      ...p,
+      user_id: userId,
+      show_on_website: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })) as ProductData[]
+  
+  return { products: demoProducts, isDemo: true }
+}
+
 // Get a single product by ID
 export async function getProductById(productId: string): Promise<ProductData | null> {
   const { data, error } = await supabase
@@ -442,6 +476,31 @@ export async function getProductById(productId: string): Promise<ProductData | n
   }
 
   return data as ProductData
+}
+
+// Get a single product by ID with demo fallback
+export async function getProductByIdWithDemoFallback(productId: string): Promise<{ product: ProductData | null, isDemo: boolean }> {
+  // Check if it's a demo product ID
+  if (productId.startsWith('demo-product-')) {
+    const demoProduct = DEMO_PRODUCTS.find(p => p.id === productId)
+    if (demoProduct) {
+      return { 
+        product: {
+          ...demoProduct,
+          user_id: 'demo',
+          purity: null,
+          show_on_website: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as ProductData, 
+        isDemo: true 
+      }
+    }
+  }
+  
+  // Try to fetch real product
+  const realProduct = await getProductById(productId)
+  return { product: realProduct, isDemo: false }
 }
 
 // Get products by product type (Gold, Silver, Diamond, etc.)

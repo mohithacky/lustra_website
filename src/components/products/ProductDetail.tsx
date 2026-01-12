@@ -34,6 +34,7 @@ interface ProductDetailProps {
   phoneNumber?: string | null
   shopId?: string
   onLoginRequired?: () => void
+  isDemo?: boolean
 }
 
 export default function ProductDetail({
@@ -45,6 +46,7 @@ export default function ProductDetail({
   phoneNumber,
   shopId,
   onLoginRequired,
+  isDemo = false,
 }: ProductDetailProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [showCallbackModal, setShowCallbackModal] = useState(false)

@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getProductsWithDemoFallback, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate, getProductsWithDemoFallback, getCategoriesMapWithDemoFallback, getCollectionsMapWithDemoFallback, DEMO_CATEGORIES, DEMO_COLLECTIONS } from '@/lib/supabase'
 import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsGrid from '@/components/products/ProductsGrid'
@@ -31,19 +31,25 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
     notFound()
   }
 
-  const [template, productsResult, categoriesMap, collectionsMap, footerData] = await Promise.all([
+  const [template, productsResult, categoriesResult, collectionsResult, footerData] = await Promise.all([
     getWebsiteTemplate(user.id),
     getProductsWithDemoFallback(user.id, {
       category: searchParams.category,
       collection: searchParams.collection,
       limit: 50,
     }),
-    getCategoriesMap(user.id),
-    getCollectionsMap(user.id),
+    getCategoriesMapWithDemoFallback(user.id),
+    getCollectionsMapWithDemoFallback(user.id),
     getFooterDataForUser(user.id),
   ])
 
   const { products, isDemo: isDemoProducts } = productsResult
+  const { categories: categoriesMap } = categoriesResult
+  const { collections: collectionsMap } = collectionsResult
+  
+  // Get filter options - use demo data if user has none
+  const filterCategories = Object.keys(categoriesMap).length > 0 ? Object.keys(categoriesMap) : DEMO_CATEGORIES
+  const filterCollections = Object.keys(collectionsMap).length > 0 ? Object.keys(collectionsMap) : DEMO_COLLECTIONS
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
     id: String(index),
@@ -85,8 +91,8 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
         shopDomain={params.domain}
         shopId={user.id}
         title={pageTitle}
-        categories={Object.keys(categoriesMap)}
-        collections={Object.keys(collectionsMap)}
+        categories={filterCategories}
+        collections={filterCollections}
         isDemo={isDemoProducts}
       />
       <Footer 

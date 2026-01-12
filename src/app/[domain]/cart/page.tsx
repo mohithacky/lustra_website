@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMapWithDemoFallback, getCollectionsMapWithDemoFallback } from '@/lib/supabase'
 import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
@@ -22,18 +22,21 @@ export default async function CartPage({ params }: PageProps) {
   const user = await getWebsiteByDomain(params.domain)
   if (!user) notFound()
 
-  const [template, categoriesMap, collectionsMap, footerData] = await Promise.all([
+  const [template, categoriesResult, collectionsResult, footerData] = await Promise.all([
     getWebsiteTemplate(user.id),
-    getCategoriesMap(user.id),
-    getCollectionsMap(user.id),
+    getCategoriesMapWithDemoFallback(user.id),
+    getCollectionsMapWithDemoFallback(user.id),
     getFooterDataForUser(user.id),
   ])
+
+  const { categories: categoriesMap } = categoriesResult
+  const { collections: collectionsMap } = collectionsResult
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
     id: String(index),
     user_id: user.id,
     name,
-    image_url: imageUrl,
+    image_url: imageUrl as string,
     description: null,
     display_order: index,
     created_at: '',
@@ -44,7 +47,7 @@ export default async function CartPage({ params }: PageProps) {
     id: String(index),
     user_id: user.id,
     name,
-    banner_url: bannerUrl,
+    banner_url: bannerUrl as string,
     description: null,
     display_order: index,
     created_at: '',

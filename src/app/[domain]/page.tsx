@@ -25,9 +25,9 @@ import {
 } from '@/lib/supabase-new-architecture'
 // Legacy imports for products (still using old tables)
 import { 
-  getProducts, 
-  getTestimonials,
-  getTrendingProducts,
+  getProductsWithDemoFallback, 
+  getTestimonialsWithDemoFallback,
+  getTrendingProductsWithDemoFallback,
   getWebsiteByDomain as getWebsiteByDomainLegacy,
 } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
@@ -176,18 +176,22 @@ export default async function StorePage({ params }: PageProps) {
   // Check if gold rate section is enabled
   const goldRateSectionEnabled = isGoldRateSectionEnabled(sections)
 
-  // Fetch products using legacy table (still using website_products)
-  const [products, testimonials, trendingProducts, announcements, goldRate] = await Promise.all([
-    getProducts(user.id, { limit: 12 }),
-    showTestimonials ? getTestimonials(user.id) : Promise.resolve([]),
-    getTrendingProducts(user.id, 10),
+  // Fetch products using legacy table (still using website_products) with demo fallback
+  const [productsResult, testimonialsResult, trendingProductsResult, announcements, goldRate] = await Promise.all([
+    getProductsWithDemoFallback(user.id, { limit: 12 }),
+    getTestimonialsWithDemoFallback(user.id),
+    getTrendingProductsWithDemoFallback(user.id, 10),
     announcementBarEnabled ? getActiveAnnouncements(user.id) : Promise.resolve([]),
     goldRateSectionEnabled ? getGoldRate(user.id) : Promise.resolve(null),
   ])
 
-  console.log(`  - Products: ${products.length}`)
+  const { products, isDemo: isDemoProducts } = productsResult
+  const { testimonials } = testimonialsResult
+  const { products: trendingProducts, isDemo: isDemoTrending } = trendingProductsResult
+
+  console.log(`  - Products: ${products.length} (demo: ${isDemoProducts})`)
   console.log(`  - Testimonials: ${testimonials.length}`)
-  console.log(`  - Trending products: ${trendingProducts.length}`)
+  console.log(`  - Trending products: ${trendingProducts.length} (demo: ${isDemoTrending})`)
   console.log(`  - Announcements: ${announcements.length} (enabled: ${announcementBarEnabled})`)
   console.log(`  - Gold rate: ${goldRate ? 'found' : 'not found'} (enabled: ${goldRateSectionEnabled})`)
 

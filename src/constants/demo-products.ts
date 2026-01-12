@@ -253,22 +253,87 @@ export const DEMO_COLLECTIONS: string[] = [
   "Cute and Classy"
 ]
 
-// Default categories map with placeholder images for demo
+// Default categories map with real images
 export const DEMO_CATEGORIES_MAP: Record<string, string> = {
-  'Necklace': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop',
-  'Earrings': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop',
-  'Long Necklace': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop',
-  'Ring': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop',
-  'Choker': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop',
-  'Chain': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop'
+  'Ring': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/ring.png',
+  'Chain': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/chain.png',
+  'Choker': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/choker.png',
+  'Bangles': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/bangles.png',
+  'Pendant': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/pendant.png',
+  'Bracelet': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/bracelet.png',
+  'Earrings': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/earrings.png',
+  'Necklace': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/necklace.png',
+  'Long Necklace': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/long_necklace.png',
 }
 
-// Default collections map with placeholder images for demo  
+// Default collections map with real images
 export const DEMO_COLLECTIONS_MAP: Record<string, string> = {
-  'Luxury': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=400&fit=crop',
-  'Classic': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=400&fit=crop',
-  'Elegant': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=400&fit=crop',
-  'Her': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=400&fit=crop',
-  'New Year 2026': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=400&fit=crop',
-  'Summer': 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=400&fit=crop'
+  'Luxury': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/Luxury.jpg',
+  'Summer': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/collection-banners/05e7b828-84bf-46f3-81d4-f85283e94187/summer.png',
+  'Heritage': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/Heritage.jpg',
+  'New Year 2026': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/collection-banners/05e7b828-84bf-46f3-81d4-f85283e94187/new_year_2026.png',
+  'Makar Sankranti': 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/collection-banners/05e7b828-84bf-46f3-81d4-f85283e94187/makar_sankranti.png',
 }
+
+// Default trending collections
+export const DEMO_TRENDING_COLLECTIONS: Array<{name: string, image: string, label: string}> = [
+  {
+    name: 'Wedding',
+    image: 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/Party_Perfect.jpg',
+    label: 'Wedding'
+  },
+  {
+    name: 'Party Perfect',
+    image: 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/Party_Perfect.jpg',
+    label: 'Party Perfect'
+  },
+  {
+    name: 'Cute and Classy',
+    image: 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/Cute_and_Classy.jpg',
+    label: 'Cute and Classy'
+  },
+]
+
+// Default testimonials
+export interface DemoTestimonial {
+  rating: number
+  review_id: string
+  created_at: string
+  product_id?: string
+  review_text: string
+  product_name?: string
+  customer_name: string
+  product_image?: string
+  is_verified_purchase: boolean
+}
+
+export const DEMO_TESTIMONIALS: DemoTestimonial[] = [
+  {
+    rating: 5,
+    review_id: 'demo-review-1',
+    created_at: '2025-12-23T10:35:46.175748+00:00',
+    review_text: 'It is an awesome product. The quality is excellent and the design is beautiful!',
+    customer_name: 'Mohit Kumar',
+    is_verified_purchase: true
+  },
+  {
+    rating: 4,
+    review_id: 'demo-review-2',
+    created_at: '2025-12-26T16:58:23.457767+00:00',
+    review_text: 'Such an amazing piece of jewelry. I want more details about the collection.',
+    product_name: 'Floral Choker',
+    customer_name: 'Abhishek Kumar',
+    product_image: 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/product-images/05e7b828-84bf-46f3-81d4-f85283e94187/EcommerceStudio_1766239467676.jpg',
+    is_verified_purchase: true
+  },
+  {
+    rating: 5,
+    review_id: 'demo-review-3',
+    created_at: '2026-01-11T11:24:20.891321+00:00',
+    review_text: 'This was awesome! Great craftsmanship and quick delivery.',
+    product_name: 'Necklace',
+    customer_name: 'Priya Sharma',
+    product_image: 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/product-images/05e7b828-84bf-46f3-81d4-f85283e94187/EcommerceStudio_1767599251582.jpg',
+    is_verified_purchase: true
+  }
+]
