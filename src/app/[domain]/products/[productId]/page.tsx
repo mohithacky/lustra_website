@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getProductByIdWithDemoFallback, getCategoriesMapWithDemoFallback, getCollectionsMapWithDemoFallback, getProductsWithDemoFallback } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate, getProductByIdWithDemoFallback, getCategoriesMap, getCollectionsMap, getProductsWithDemoFallback } from '@/lib/supabase'
 import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductDetail from '@/components/products/ProductDetail'
@@ -33,18 +33,16 @@ export default async function ProductDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  const [template, productResult, categoriesResult, collectionsResult, relatedProductsResult, footerData] = await Promise.all([
+  const [template, productResult, categoriesMap, collectionsMap, relatedProductsResult, footerData] = await Promise.all([
     getWebsiteTemplate(user.id),
     getProductByIdWithDemoFallback(params.productId),
-    getCategoriesMapWithDemoFallback(user.id),
-    getCollectionsMapWithDemoFallback(user.id),
+    getCategoriesMap(user.id),
+    getCollectionsMap(user.id),
     getProductsWithDemoFallback(user.id, { limit: 5 }),
     getFooterDataForUser(user.id),
   ])
 
   const { product, isDemo } = productResult
-  const { categories: categoriesMap } = categoriesResult
-  const { collections: collectionsMap } = collectionsResult
   const { products: relatedProducts } = relatedProductsResult
 
   if (!product) {
