@@ -13,7 +13,7 @@ interface Product {
   image_url: string | null
   images?: string[] | null
   category?: string | null
-  collection?: string | null
+  collection?: string | string[] | null
   type?: string | null
   product_type?: string | null
   gender?: string | null
@@ -116,22 +116,35 @@ export default function ProductsGrid({
       const matchesCategory = selectedFilters.categories.length === 0 || 
         (product.category && selectedFilters.categories.includes(product.category))
       
-      // Check collections filter
+      // Check collections filter - collection can be string or array
       const matchesCollection = selectedFilters.collections.length === 0 || 
-        (product.collection && selectedFilters.collections.includes(product.collection))
+        (product.collection && (
+          Array.isArray(product.collection)
+            ? product.collection.some(c => selectedFilters.collections.includes(c))
+            : selectedFilters.collections.includes(product.collection)
+        ))
       
-      // Check trending collections filter
+      // Check trending collections filter - collection can be string or array
       const matchesTrendingCollection = selectedFilters.trendingCollections.length === 0 || 
-        (product.collection && selectedFilters.trendingCollections.includes(product.collection))
+        (product.collection && (
+          Array.isArray(product.collection)
+            ? product.collection.some(c => selectedFilters.trendingCollections.includes(c))
+            : selectedFilters.trendingCollections.includes(product.collection)
+        ))
       
       // Check product types filter - check both type and product_type fields
       const matchesProductType = selectedFilters.productTypes.length === 0 || 
         ((product.type && selectedFilters.productTypes.includes(product.type)) ||
          (product.product_type && selectedFilters.productTypes.includes(product.product_type)))
       
-      // Check gender filter
+      // Check gender filter - gender can be in gender field OR in collection array
       const matchesGender = selectedFilters.genders.length === 0 || 
-        (product.gender && selectedFilters.genders.includes(product.gender))
+        (product.gender && selectedFilters.genders.includes(product.gender)) ||
+        (product.collection && (
+          Array.isArray(product.collection)
+            ? product.collection.some(c => selectedFilters.genders.includes(c))
+            : selectedFilters.genders.includes(product.collection)
+        ))
       
       // Product must match all active filter types (AND logic between types)
       return matchesCategory && matchesCollection && matchesTrendingCollection && matchesProductType && matchesGender

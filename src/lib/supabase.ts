@@ -34,7 +34,7 @@ export interface ProductData {
   image_url: string | null
   images: string[] | null
   category: string | null
-  collection: string | null
+  collection: string | string[] | null
   type: string | null
   product_type: string | null
   weight: string | null
