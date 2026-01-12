@@ -80,6 +80,8 @@ export default async function CollectionPage({ params }: PageProps) {
         title={collectionName}
         categories={Object.keys(categoriesMap)}
         collections={Object.keys(collectionsMap)}
+        trendingCollections={[]}
+        productTypes={[]}
       />
       <Footer 
         user={user}

@@ -81,6 +81,8 @@ export default async function GenderPage({ params }: PageProps) {
         title={`${gender.charAt(0).toUpperCase() + gender.slice(1)} Products`}
         categories={Object.keys(categoriesMap)}
         collections={Object.keys(collectionsMap)}
+        trendingCollections={[]}
+        productTypes={[]}
       />
       <Footer 
         user={user}
