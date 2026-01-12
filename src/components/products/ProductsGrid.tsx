@@ -12,7 +12,7 @@ interface Product {
   image_url: string | null
   images?: string[] | null
   category?: string | null
-  collection?: string | null
+  collection?: string | string[] | null
   weight?: string | null
   is_bestseller?: boolean | null
   is_trending?: boolean | null
@@ -43,13 +43,32 @@ export default function ProductsGrid({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<string>('newest')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
+
+  // Extract unique product types from products
+  const productTypes = Array.from(new Set(
+    products
+      .map(p => p.category)
+      .filter((cat): cat is string => cat !== null && cat !== undefined)
+  ))
 
   // Filter and sort products
   let filteredProducts = [...products]
   
   if (selectedCategory) {
     filteredProducts = filteredProducts.filter(p => p.category === selectedCategory)
+  }
+  
+  if (selectedCollection) {
+    filteredProducts = filteredProducts.filter(p => {
+      if (typeof p.collection === 'string') {
+        return p.collection === selectedCollection
+      } else if (Array.isArray(p.collection)) {
+        return p.collection.includes(selectedCollection)
+      }
+      return false
+    })
   }
 
   // Sort products
@@ -165,36 +184,114 @@ export default function ProductsGrid({
         {/* Filter Panel */}
         {showFilters && (
           <div className={cn(
-            'mb-6 p-4 rounded-xl',
+            'mb-6 p-6 rounded-xl space-y-6',
             isDark ? 'bg-zinc-800' : 'bg-white border border-gray-200'
           )}>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={cn(
-                  'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                  !selectedCategory
-                    ? 'bg-gold-500 text-white'
-                    : isDark ? 'bg-zinc-700 text-white' : 'bg-gray-100 text-black'
-                )}
-              >
-                All
-              </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                    selectedCategory === cat
-                      ? 'bg-gold-500 text-white'
-                      : isDark ? 'bg-zinc-700 text-white' : 'bg-gray-100 text-black'
-                  )}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+            {/* Categories Filter */}
+            {categories.length > 0 && (
+              <div>
+                <h3 className={cn(
+                  'text-sm font-semibold mb-3',
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                )}>
+                  Categories
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                      !selectedCategory
+                        ? 'bg-gold-500 text-white'
+                        : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
+                    )}
+                  >
+                    All
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                        selectedCategory === cat
+                          ? 'bg-gold-500 text-white'
+                          : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Collections Filter */}
+            {collections.length > 0 && (
+              <div>
+                <h3 className={cn(
+                  'text-sm font-semibold mb-3',
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                )}>
+                  Collections
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSelectedCollection(null)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                      !selectedCollection
+                        ? 'bg-gold-500 text-white'
+                        : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
+                    )}
+                  >
+                    All
+                  </button>
+                  {collections.map((col) => (
+                    <button
+                      key={col}
+                      onClick={() => setSelectedCollection(col)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                        selectedCollection === col
+                          ? 'bg-gold-500 text-white'
+                          : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
+                      )}
+                    >
+                      {col}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Product Types Filter (extracted from products) */}
+            {productTypes.length > 0 && (
+              <div>
+                <h3 className={cn(
+                  'text-sm font-semibold mb-3',
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                )}>
+                  Product Types
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {productTypes.map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedCategory(type)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                        selectedCategory === type
+                          ? 'bg-gold-500 text-white'
+                          : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
+                      )}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
