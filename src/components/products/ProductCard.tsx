@@ -26,6 +26,7 @@ interface ProductCardProps {
   shopDomain: string
   viewMode?: 'grid' | 'list'
   shopId?: string
+  isDemo?: boolean
 }
 
 function getCustomer() {
@@ -39,7 +40,7 @@ function getCustomer() {
   }
 }
 
-export default function ProductCard({ product, isDark, shopDomain, viewMode = 'grid', shopId }: ProductCardProps) {
+export default function ProductCard({ product, isDark, shopDomain, viewMode = 'grid', shopId, isDemo = false }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [isCarted, setIsCarted] = useState(false)
@@ -170,15 +171,18 @@ export default function ProductCard({ product, isDark, shopDomain, viewMode = 'g
           />
           
           {/* Badges */}
-          {(product.is_bestseller || product.is_trending) && (
-            <div className="absolute top-2 left-2">
-              {product.is_bestseller && (
-                <span className="bg-gold-500 text-white text-xs px-2 py-1 rounded-full">
-                  Bestseller
-                </span>
-              )}
-            </div>
-          )}
+          <div className="absolute top-2 left-2 flex flex-col gap-1">
+            {isDemo && (
+              <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                Demo
+              </span>
+            )}
+            {product.is_bestseller && !isDemo && (
+              <span className="bg-gold-500 text-white text-xs px-2 py-1 rounded-full">
+                Bestseller
+              </span>
+            )}
+          </div>
 
           {/* Wishlist Button - Top Right */}
           <button

@@ -1,5 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database'
+import { DEMO_PRODUCTS, DEMO_CATEGORIES_MAP, DEMO_COLLECTIONS_MAP, DEMO_CATEGORIES, DEMO_COLLECTIONS, DemoProduct } from '@/constants/demo-products'
+
+// Re-export demo constants for use in other files
+export { DEMO_PRODUCTS, DEMO_CATEGORIES_MAP, DEMO_COLLECTIONS_MAP, DEMO_CATEGORIES, DEMO_COLLECTIONS }
 
 const supabaseUrl = 'https://phlccyxgyftspxnuzttf.supabase.co'
 const supabaseAnonKey = 'sb_publishable_tMc-l2KRHyKOXlR0tODIPw_VhBH-w5R'
@@ -39,6 +43,27 @@ export interface ProductData {
   show_on_website: boolean | null
   created_at: string
   updated_at: string
+  is_demo?: boolean
+}
+
+export interface WebsiteTemplate {
+  id: string
+  user_id: string
+  theme: 'light' | 'dark'
+  website_type: string | null
+  website_url: string | null
+  categories: Record<string, string> | null
+  collections: Record<string, string> | null
+  trending_collections: Array<{name?: string, label?: string, image?: string}> | null
+  best_collections: Array<{name?: string, image?: string, description?: string}> | null
+  occasion_collections: Array<{name?: string, imageUrl?: string}> | null
+  footer: Record<string, string[]> | null
+  testimonials: Array<any> | null
+  show_testimonials: boolean | null
+  gold_rate: any | null
+  product_types: string[] | null
+  created_at: string
+  updated_at: string
 }
 
 export async function getWebsiteByDomain(domain: string): Promise<UserData | null> {
@@ -63,26 +88,6 @@ export async function getWebsiteByDomain(domain: string): Promise<UserData | nul
   }
 
   return data as UserData
-}
-
-export interface WebsiteTemplate {
-  id: string
-  user_id: string
-  theme: 'light' | 'dark'
-  website_type: string | null
-  website_url: string | null
-  categories: Record<string, string> | null
-  collections: Record<string, string> | null
-  trending_collections: Array<{name?: string, label?: string, image?: string}> | null
-  best_collections: Array<{name?: string, image?: string, description?: string}> | null
-  occasion_collections: Array<{name?: string, imageUrl?: string}> | null
-  footer: Record<string, string[]> | null
-  testimonials: Array<any> | null
-  show_testimonials: boolean | null
-  gold_rate: any | null
-  product_types: string[] | null
-  created_at: string
-  updated_at: string
 }
 
 export async function getWebsiteTemplate(userId: string): Promise<WebsiteTemplate | null> {
@@ -180,6 +185,42 @@ export async function getProducts(userId: string, options?: {
   return (data as ProductData[]) || []
 }
 
+// Get products with demo fallback - returns demo products if user has no real products
+export async function getProductsWithDemoFallback(userId: string, options?: {
+  category?: string
+  collection?: string
+  gender?: string
+  limit?: number
+  offset?: number
+  showOnWebsite?: boolean
+}): Promise<{ products: ProductData[], isDemo: boolean }> {
+  const realProducts = await getProducts(userId, options)
+  
+  if (realProducts.length > 0) {
+    return { products: realProducts, isDemo: false }
+  }
+  
+  // Return demo products for new users
+  let demoProducts = DEMO_PRODUCTS.map(p => ({
+    ...p,
+    user_id: userId,
+    show_on_website: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  })) as ProductData[]
+  
+  // Apply filters to demo products
+  if (options?.category) {
+    demoProducts = demoProducts.filter(p => p.category === options.category)
+  }
+  
+  if (options?.limit) {
+    demoProducts = demoProducts.slice(0, options.limit)
+  }
+  
+  return { products: demoProducts, isDemo: true }
+}
+
 export async function getProductsByIds(productIds: string[]) {
   if (!productIds.length) return []
 
@@ -211,6 +252,17 @@ export async function getCollectionsMap(userId: string): Promise<Record<string, 
   return (data as any).collections as Record<string, string>
 }
 
+// Get collections with demo fallback
+export async function getCollectionsMapWithDemoFallback(userId: string): Promise<{ collections: Record<string, string>, isDemo: boolean }> {
+  const realCollections = await getCollectionsMap(userId)
+  
+  if (Object.keys(realCollections).length > 0) {
+    return { collections: realCollections, isDemo: false }
+  }
+  
+  return { collections: DEMO_COLLECTIONS_MAP, isDemo: true }
+}
+
 // Get categories from user_website_templates (map of name -> imageUrl)
 export async function getCategoriesMap(userId: string): Promise<Record<string, string>> {
   const { data, error } = await supabase
@@ -224,6 +276,17 @@ export async function getCategoriesMap(userId: string): Promise<Record<string, s
   }
 
   return (data as any).categories as Record<string, string>
+}
+
+// Get categories with demo fallback
+export async function getCategoriesMapWithDemoFallback(userId: string): Promise<{ categories: Record<string, string>, isDemo: boolean }> {
+  const realCategories = await getCategoriesMap(userId)
+  
+  if (Object.keys(realCategories).length > 0) {
+    return { categories: realCategories, isDemo: false }
+  }
+  
+  return { categories: DEMO_CATEGORIES_MAP, isDemo: true }
 }
 
 // Get trending collections from user_website_templates

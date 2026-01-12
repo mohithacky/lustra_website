@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getProducts, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate, getProductsWithDemoFallback, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
 import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsGrid from '@/components/products/ProductsGrid'
@@ -31,9 +31,9 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
     notFound()
   }
 
-  const [template, products, categoriesMap, collectionsMap, footerData] = await Promise.all([
+  const [template, productsResult, categoriesMap, collectionsMap, footerData] = await Promise.all([
     getWebsiteTemplate(user.id),
-    getProducts(user.id, {
+    getProductsWithDemoFallback(user.id, {
       category: searchParams.category,
       collection: searchParams.collection,
       limit: 50,
@@ -43,11 +43,13 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
     getFooterDataForUser(user.id),
   ])
 
+  const { products, isDemo: isDemoProducts } = productsResult
+
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
     id: String(index),
     user_id: user.id,
     name,
-    image_url: imageUrl,
+    image_url: imageUrl as string,
     description: null,
     display_order: index,
     created_at: '',
@@ -58,7 +60,7 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
     id: String(index),
     user_id: user.id,
     name,
-    banner_url: bannerUrl,
+    banner_url: bannerUrl as string,
     description: null,
     display_order: index,
     created_at: '',
@@ -85,6 +87,7 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
         title={pageTitle}
         categories={Object.keys(categoriesMap)}
         collections={Object.keys(collectionsMap)}
+        isDemo={isDemoProducts}
       />
       <Footer 
         user={user}

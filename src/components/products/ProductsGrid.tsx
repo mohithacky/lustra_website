@@ -16,6 +16,7 @@ interface Product {
   weight?: string | null
   is_bestseller?: boolean | null
   is_trending?: boolean | null
+  is_demo?: boolean
 }
 
 interface ProductsGridProps {
@@ -26,6 +27,7 @@ interface ProductsGridProps {
   title: string
   categories: string[]
   collections: string[]
+  isDemo?: boolean
 }
 
 export default function ProductsGrid({ 
@@ -35,7 +37,8 @@ export default function ProductsGrid({
   shopId,
   title,
   categories,
-  collections 
+  collections,
+  isDemo = false
 }: ProductsGridProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<string>('newest')
@@ -210,6 +213,7 @@ export default function ProductsGrid({
                 shopDomain={shopDomain}
                 viewMode={viewMode}
                 shopId={shopId}
+                isDemo={isDemo || product.is_demo}
               />
             ))}
           </div>
