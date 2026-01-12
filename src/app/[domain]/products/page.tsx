@@ -1,80 +1,113 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getProductsWithDemoFallback, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
-import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
+import { getProductsWithDemoFallback } from '@/lib/supabase'
+import {
+  getWebsiteRenderData,
+  getTrendingCollections as getTrendingFromSections,
+  getCategoryCollections,
+  getProductTypeCollections,
+  getFooterDataFromPages,
+  transformCategoriesToMap,
+  Collection,
+} from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsGrid from '@/components/products/ProductsGrid'
 import Footer from '@/components/sections/Footer'
 
 interface PageProps {
   params: { domain: string }
-  searchParams: { category?: string; collection?: string; filter?: string }
+  searchParams: { category?: string; collection?: string; filter?: string; productType?: string; trending?: string }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const user = await getWebsiteByDomain(params.domain)
+  const renderData = await getWebsiteRenderData(params.domain)
   
-  if (!user) {
+  if (!renderData) {
     return { title: 'Products Not Found' }
   }
 
   return {
-    title: `Products - ${user.shop_name || 'Jewelry Store'}`,
-    description: `Browse our collection of beautiful jewelry at ${user.shop_name}`,
+    title: `Products - ${renderData.user.shop_name || 'Jewelry Store'}`,
+    description: `Browse our collection of beautiful jewelry at ${renderData.user.shop_name}`,
   }
 }
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function ProductsPage({ params, searchParams }: PageProps) {
-  const user = await getWebsiteByDomain(params.domain)
+  // Use new architecture to get website render data (same as home page)
+  const renderData = await getWebsiteRenderData(params.domain)
   
-  if (!user) {
+  if (!renderData) {
     notFound()
   }
 
-  const [template, productsResult, categoriesMap, collectionsMap, footerData] = await Promise.all([
-    getWebsiteTemplate(user.id),
-    getProductsWithDemoFallback(user.id, {
-      category: searchParams.category,
-      collection: searchParams.collection,
-      limit: 50,
-    }),
-    getCategoriesMap(user.id),
-    getCollectionsMap(user.id),
-    getFooterDataForUser(user.id),
-  ])
+  const { user, website, template, sections } = renderData
+
+  if (!user || !website || !template || !sections) {
+    notFound()
+  }
+
+  // Get collections from sections (same as home page)
+  const trendingCollections = getTrendingFromSections(sections)
+  const categoryCollections = getCategoryCollections(sections)
+  const productTypeCollections = getProductTypeCollections(sections)
+  
+  // Get all collections for the mega menu (combining different types)
+  // For mega menu, we use category collections as the main "collections"
+  const allCollections = categoryCollections
+
+  // Fetch footer data
+  const footerData = await getFooterDataFromPages(sections, website.id)
+
+  // Fetch products
+  const productsResult = await getProductsWithDemoFallback(user.id, {
+    category: searchParams.category,
+    collection: searchParams.collection,
+    limit: 50,
+  })
 
   const { products, isDemo: isDemoProducts } = productsResult
-  
-  // Get filter options from user's actual data
-  const filterCategories = Object.keys(categoriesMap)
-  const filterCollections = Object.keys(collectionsMap)
 
-  const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
-    id: String(index),
+  // Transform categories to map for legacy compatibility
+  const categoriesMap = transformCategoriesToMap(categoryCollections)
+
+  // Build filter data from new architecture collections
+  const filterCategories = categoryCollections.map(c => c.name)
+  const filterCollections = allCollections.map(c => c.name)
+  const filterProductTypes = productTypeCollections.map(c => c.name)
+  const filterTrendingCollections = trendingCollections.map(c => c.name)
+
+  // Build categories array for mega menu (from category collections)
+  const categoriesArray = categoryCollections.map((collection, index) => ({
+    id: collection.id,
     user_id: user.id,
-    name,
-    image_url: imageUrl as string,
+    name: collection.name,
+    image_url: collection.image_url || '',
     description: null,
-    display_order: index,
+    display_order: collection.display_order || index,
     created_at: '',
     updated_at: '',
   }))
 
-  const collectionsArray = Object.entries(collectionsMap).map(([name, bannerUrl], index) => ({
-    id: String(index),
+  // Build collections array for mega menu (use trending + best for variety)
+  const collectionsArray = [...trendingCollections, ...categoryCollections].slice(0, 10).map((collection, index) => ({
+    id: collection.id,
     user_id: user.id,
-    name,
-    banner_url: bannerUrl as string,
+    name: collection.name,
+    banner_url: collection.image_url || '',
     description: null,
-    display_order: index,
+    display_order: collection.display_order || index,
     created_at: '',
     updated_at: '',
   }))
 
-  const theme = template?.theme || 'light'
+  const theme = website?.theme || 'light'
   const isDark = theme === 'dark'
 
-  const pageTitle = searchParams.category || searchParams.collection || searchParams.filter || 'All Products'
+  const pageTitle = searchParams.category || searchParams.collection || searchParams.productType || searchParams.trending || searchParams.filter || 'All Products'
 
   return (
     <WebsiteLayout 
@@ -91,6 +124,8 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
         title={pageTitle}
         categories={filterCategories}
         collections={filterCollections}
+        productTypes={filterProductTypes}
+        trendingCollections={filterTrendingCollections}
         isDemo={isDemoProducts}
       />
       <Footer 

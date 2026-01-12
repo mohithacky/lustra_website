@@ -1,7 +1,12 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getProductByIdWithDemoFallback, getCategoriesMap, getCollectionsMap, getProductsWithDemoFallback } from '@/lib/supabase'
-import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
+import { getProductByIdWithDemoFallback, getProductsWithDemoFallback } from '@/lib/supabase'
+import {
+  getWebsiteRenderData,
+  getTrendingCollections as getTrendingFromSections,
+  getCategoryCollections,
+  getFooterDataFromPages,
+} from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductDetail from '@/components/products/ProductDetail'
 import Footer from '@/components/sections/Footer'
@@ -26,20 +31,35 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function ProductDetailPage({ params }: PageProps) {
-  const user = await getWebsiteByDomain(params.domain)
+  // Use new architecture to get website render data (same as home page)
+  const renderData = await getWebsiteRenderData(params.domain)
   
-  if (!user) {
+  if (!renderData) {
     notFound()
   }
 
-  const [template, productResult, categoriesMap, collectionsMap, relatedProductsResult, footerData] = await Promise.all([
-    getWebsiteTemplate(user.id),
+  const { user, website, template, sections } = renderData
+
+  if (!user || !website || !template || !sections) {
+    notFound()
+  }
+
+  // Get collections from sections (same as home page)
+  const trendingCollections = getTrendingFromSections(sections)
+  const categoryCollections = getCategoryCollections(sections)
+
+  // Fetch footer data
+  const footerData = await getFooterDataFromPages(sections, website.id)
+
+  // Fetch product and related products
+  const [productResult, relatedProductsResult] = await Promise.all([
     getProductByIdWithDemoFallback(params.productId),
-    getCategoriesMap(user.id),
-    getCollectionsMap(user.id),
     getProductsWithDemoFallback(user.id, { limit: 5 }),
-    getFooterDataForUser(user.id),
   ])
 
   const { product, isDemo } = productResult
@@ -49,29 +69,31 @@ export default async function ProductDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
-    id: String(index),
+  // Build categories array for mega menu (from category collections)
+  const categoriesArray = categoryCollections.map((collection, index) => ({
+    id: collection.id,
     user_id: user.id,
-    name,
-    image_url: imageUrl as string,
+    name: collection.name,
+    image_url: collection.image_url || '',
     description: null,
-    display_order: index,
+    display_order: collection.display_order || index,
     created_at: '',
     updated_at: '',
   }))
 
-  const collectionsArray = Object.entries(collectionsMap).map(([name, bannerUrl], index) => ({
-    id: String(index),
+  // Build collections array for mega menu (use trending + category for variety)
+  const collectionsArray = [...trendingCollections, ...categoryCollections].slice(0, 10).map((collection, index) => ({
+    id: collection.id,
     user_id: user.id,
-    name,
-    banner_url: bannerUrl as string,
+    name: collection.name,
+    banner_url: collection.image_url || '',
     description: null,
-    display_order: index,
+    display_order: collection.display_order || index,
     created_at: '',
     updated_at: '',
   }))
 
-  const theme = template?.theme || 'light'
+  const theme = website?.theme || 'light'
   const isDark = theme === 'dark'
 
   return (
