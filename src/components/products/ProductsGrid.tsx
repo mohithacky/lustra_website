@@ -14,6 +14,8 @@ interface Product {
   images?: string[] | null
   category?: string | null
   collection?: string | null
+  type?: string | null
+  product_type?: string | null
   gender?: string | null
   weight?: string | null
   is_bestseller?: boolean | null
@@ -122,10 +124,10 @@ export default function ProductsGrid({
       const matchesTrendingCollection = selectedFilters.trendingCollections.length === 0 || 
         (product.collection && selectedFilters.trendingCollections.includes(product.collection))
       
-      // Check product types filter - product types are stored in category field
-      // Only apply this filter if no category filter is active (to avoid conflict)
+      // Check product types filter - check both type and product_type fields
       const matchesProductType = selectedFilters.productTypes.length === 0 || 
-        (selectedFilters.categories.length === 0 && product.category && selectedFilters.productTypes.includes(product.category))
+        ((product.type && selectedFilters.productTypes.includes(product.type)) ||
+         (product.product_type && selectedFilters.productTypes.includes(product.product_type)))
       
       // Check gender filter
       const matchesGender = selectedFilters.genders.length === 0 || 

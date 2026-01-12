@@ -35,6 +35,8 @@ export interface ProductData {
   images: string[] | null
   category: string | null
   collection: string | null
+  type: string | null
+  product_type: string | null
   weight: string | null
   purity: string | null
   gender: string | null
