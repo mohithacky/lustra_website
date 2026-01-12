@@ -1,12 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getProductByIdWithDemoFallback, getProductsWithDemoFallback } from '@/lib/supabase'
-import {
-  getWebsiteRenderData,
-  getTrendingCollections as getTrendingFromSections,
-  getCategoryCollections,
-  getFooterDataFromPages,
-} from '@/lib/supabase-new-architecture'
+import { getWebsiteByDomain, getWebsiteTemplate, getProductByIdWithDemoFallback, getCategoriesMapWithDemoFallback, getCollectionsMapWithDemoFallback, getProductsWithDemoFallback } from '@/lib/supabase'
+import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductDetail from '@/components/products/ProductDetail'
 import Footer from '@/components/sections/Footer'
@@ -31,69 +26,54 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
-
 export default async function ProductDetailPage({ params }: PageProps) {
-  // Use new architecture to get website render data (same as home page)
-  const renderData = await getWebsiteRenderData(params.domain)
+  const user = await getWebsiteByDomain(params.domain)
   
-  if (!renderData) {
+  if (!user) {
     notFound()
   }
 
-  const { user, website, template, sections } = renderData
-
-  if (!user || !website || !template || !sections) {
-    notFound()
-  }
-
-  // Get collections from sections (same as home page)
-  const trendingCollections = getTrendingFromSections(sections)
-  const categoryCollections = getCategoryCollections(sections)
-
-  // Fetch footer data
-  const footerData = await getFooterDataFromPages(sections, website.id)
-
-  // Fetch product and related products
-  const [productResult, relatedProductsResult] = await Promise.all([
+  const [template, productResult, categoriesResult, collectionsResult, relatedProductsResult, footerData] = await Promise.all([
+    getWebsiteTemplate(user.id),
     getProductByIdWithDemoFallback(params.productId),
+    getCategoriesMapWithDemoFallback(user.id),
+    getCollectionsMapWithDemoFallback(user.id),
     getProductsWithDemoFallback(user.id, { limit: 5 }),
+    getFooterDataForUser(user.id),
   ])
 
   const { product, isDemo } = productResult
+  const { categories: categoriesMap } = categoriesResult
+  const { collections: collectionsMap } = collectionsResult
   const { products: relatedProducts } = relatedProductsResult
 
   if (!product) {
     notFound()
   }
 
-  // Build categories array for mega menu (from category collections)
-  const categoriesArray = categoryCollections.map((collection, index) => ({
-    id: collection.id,
+  const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
+    id: String(index),
     user_id: user.id,
-    name: collection.name,
-    image_url: collection.image_url || '',
+    name,
+    image_url: imageUrl as string,
     description: null,
-    display_order: collection.display_order || index,
+    display_order: index,
     created_at: '',
     updated_at: '',
   }))
 
-  // Build collections array for mega menu (use trending + category for variety)
-  const collectionsArray = [...trendingCollections, ...categoryCollections].slice(0, 10).map((collection, index) => ({
-    id: collection.id,
+  const collectionsArray = Object.entries(collectionsMap).map(([name, bannerUrl], index) => ({
+    id: String(index),
     user_id: user.id,
-    name: collection.name,
-    banner_url: collection.image_url || '',
+    name,
+    banner_url: bannerUrl as string,
     description: null,
-    display_order: collection.display_order || index,
+    display_order: index,
     created_at: '',
     updated_at: '',
   }))
 
-  const theme = website?.theme || 'light'
+  const theme = template?.theme || 'light'
   const isDark = theme === 'dark'
 
   return (

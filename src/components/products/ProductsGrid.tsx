@@ -12,7 +12,7 @@ interface Product {
   image_url: string | null
   images?: string[] | null
   category?: string | null
-  collection?: string | string[] | null
+  collection?: string | null
   weight?: string | null
   is_bestseller?: boolean | null
   is_trending?: boolean | null
@@ -27,8 +27,6 @@ interface ProductsGridProps {
   title: string
   categories: string[]
   collections: string[]
-  productTypes?: string[]
-  trendingCollections?: string[]
   isDemo?: boolean
 }
 
@@ -40,60 +38,18 @@ export default function ProductsGrid({
   title,
   categories,
   collections,
-  productTypes = [],
-  trendingCollections = [],
   isDemo = false
 }: ProductsGridProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<string>('newest')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
-  const [selectedProductType, setSelectedProductType] = useState<string | null>(null)
-  const [selectedTrending, setSelectedTrending] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
-
-  // Count active filters
-  const activeFilterCount = [selectedCategory, selectedCollection, selectedProductType, selectedTrending].filter(Boolean).length
 
   // Filter and sort products
   let filteredProducts = [...products]
   
   if (selectedCategory) {
     filteredProducts = filteredProducts.filter(p => p.category === selectedCategory)
-  }
-  
-  if (selectedCollection) {
-    filteredProducts = filteredProducts.filter(p => {
-      if (typeof p.collection === 'string') {
-        return p.collection === selectedCollection
-      } else if (Array.isArray(p.collection)) {
-        return p.collection.includes(selectedCollection)
-      }
-      return false
-    })
-  }
-
-  if (selectedProductType) {
-    filteredProducts = filteredProducts.filter(p => p.category === selectedProductType)
-  }
-
-  if (selectedTrending) {
-    filteredProducts = filteredProducts.filter(p => {
-      if (typeof p.collection === 'string') {
-        return p.collection === selectedTrending
-      } else if (Array.isArray(p.collection)) {
-        return p.collection.includes(selectedTrending)
-      }
-      return false
-    })
-  }
-
-  // Clear all filters function
-  const clearAllFilters = () => {
-    setSelectedCategory(null)
-    setSelectedCollection(null)
-    setSelectedProductType(null)
-    setSelectedTrending(null)
   }
 
   // Sort products
@@ -139,36 +95,18 @@ export default function ProductsGrid({
           isDark ? 'border-zinc-800' : 'border-gray-200'
         )}>
           {/* Filter Toggle */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                isDark 
-                  ? 'bg-zinc-800 text-white hover:bg-zinc-700' 
-                  : 'bg-white text-black hover:bg-gray-50 border border-gray-200'
-              )}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="bg-gold-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={clearAllFilters}
-                className={cn(
-                  'text-sm font-medium transition-colors',
-                  isDark ? 'text-gold-400 hover:text-gold-300' : 'text-gold-600 hover:text-gold-700'
-                )}
-              >
-                Clear all
-              </button>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+              isDark 
+                ? 'bg-zinc-800 text-white hover:bg-zinc-700' 
+                : 'bg-white text-black hover:bg-gray-50 border border-gray-200'
             )}
-          </div>
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Filters
+          </button>
 
           <div className="flex items-center gap-4">
             {/* Sort Dropdown */}
@@ -227,164 +165,36 @@ export default function ProductsGrid({
         {/* Filter Panel */}
         {showFilters && (
           <div className={cn(
-            'mb-6 p-6 rounded-xl space-y-6',
+            'mb-6 p-4 rounded-xl',
             isDark ? 'bg-zinc-800' : 'bg-white border border-gray-200'
           )}>
-            {/* Categories Filter */}
-            {categories.length > 0 && (
-              <div>
-                <h3 className={cn(
-                  'text-sm font-semibold mb-3',
-                  isDark ? 'text-gray-300' : 'text-gray-700'
-                )}>
-                  Categories
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSelectedCategory(null)}
-                    className={cn(
-                      'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                      !selectedCategory
-                        ? 'bg-gold-500 text-white'
-                        : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
-                    )}
-                  >
-                    All
-                  </button>
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={cn(
-                        'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                        selectedCategory === cat
-                          ? 'bg-gold-500 text-white'
-                          : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
-                      )}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Collections Filter */}
-            {collections.length > 0 && (
-              <div>
-                <h3 className={cn(
-                  'text-sm font-semibold mb-3',
-                  isDark ? 'text-gray-300' : 'text-gray-700'
-                )}>
-                  Collections
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSelectedCollection(null)}
-                    className={cn(
-                      'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                      !selectedCollection
-                        ? 'bg-gold-500 text-white'
-                        : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
-                    )}
-                  >
-                    All
-                  </button>
-                  {collections.map((col) => (
-                    <button
-                      key={col}
-                      onClick={() => setSelectedCollection(col)}
-                      className={cn(
-                        'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                        selectedCollection === col
-                          ? 'bg-gold-500 text-white'
-                          : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
-                      )}
-                    >
-                      {col}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Product Types Filter */}
-            {productTypes.length > 0 && (
-              <div>
-                <h3 className={cn(
-                  'text-sm font-semibold mb-3',
-                  isDark ? 'text-gray-300' : 'text-gray-700'
-                )}>
-                  Product Types
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSelectedProductType(null)}
-                    className={cn(
-                      'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                      !selectedProductType
-                        ? 'bg-gold-500 text-white'
-                        : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
-                    )}
-                  >
-                    All
-                  </button>
-                  {productTypes.map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setSelectedProductType(type)}
-                      className={cn(
-                        'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                        selectedProductType === type
-                          ? 'bg-gold-500 text-white'
-                          : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
-                      )}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Trending Collections Filter */}
-            {trendingCollections.length > 0 && (
-              <div>
-                <h3 className={cn(
-                  'text-sm font-semibold mb-3',
-                  isDark ? 'text-gray-300' : 'text-gray-700'
-                )}>
-                  Trending Collections
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSelectedTrending(null)}
-                    className={cn(
-                      'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                      !selectedTrending
-                        ? 'bg-gold-500 text-white'
-                        : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
-                    )}
-                  >
-                    All
-                  </button>
-                  {trendingCollections.map((trending) => (
-                    <button
-                      key={trending}
-                      onClick={() => setSelectedTrending(trending)}
-                      className={cn(
-                        'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                        selectedTrending === trending
-                          ? 'bg-gold-500 text-white'
-                          : isDark ? 'bg-zinc-700 text-white hover:bg-zinc-600' : 'bg-gray-100 text-black hover:bg-gray-200'
-                      )}
-                    >
-                      {trending}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                  !selectedCategory
+                    ? 'bg-gold-500 text-white'
+                    : isDark ? 'bg-zinc-700 text-white' : 'bg-gray-100 text-black'
+                )}
+              >
+                All
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                    selectedCategory === cat
+                      ? 'bg-gold-500 text-white'
+                      : isDark ? 'bg-zinc-700 text-white' : 'bg-gray-100 text-black'
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
