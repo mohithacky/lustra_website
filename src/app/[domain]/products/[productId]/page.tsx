@@ -1,10 +1,17 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getProductByIdWithDemoFallback, getCategoriesMapWithDemoFallback, getCollectionsMapWithDemoFallback, getProductsWithDemoFallback } from '@/lib/supabase'
-import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
+import { getProductByIdWithDemoFallback, getProductsWithDemoFallback } from '@/lib/supabase'
+import { 
+  getWebsiteRenderData,
+  getHeroCollections,
+  getCategoryCollections,
+  getFooterDataFromPages,
+  transformCategoriesToMap,
+  Collection,
+} from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductDetail from '@/components/products/ProductDetail'
-import Footer from '@/components/sections/Footer'
+import { EditableFooter } from '@/components/editor/EditableSections'
 
 interface PageProps {
   params: { domain: string; productId: string }
@@ -27,30 +34,41 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
-  const user = await getWebsiteByDomain(params.domain)
+  const renderData = await getWebsiteRenderData(params.domain)
   
-  if (!user) {
+  if (!renderData) {
     notFound()
   }
 
-  const [template, productResult, categoriesResult, collectionsResult, relatedProductsResult, footerData] = await Promise.all([
-    getWebsiteTemplate(user.id),
+  const { user, website, template, sections } = renderData
+
+  if (!user || !website || !template || !sections) {
+    console.error('[PRODUCT DETAIL PAGE] Missing required render data')
+    notFound()
+  }
+
+  // Get collections from merged sections
+  const heroCollectionsFromSections = getHeroCollections(sections)
+  const categoryCollections = getCategoryCollections(sections)
+
+  // Transform to legacy format for layout
+  const categoriesMap = transformCategoriesToMap(categoryCollections)
+
+  // Fetch footer data, product, and related products
+  const [footerData, productResult, relatedProductsResult] = await Promise.all([
+    getFooterDataFromPages(sections, website.id),
     getProductByIdWithDemoFallback(params.productId),
-    getCategoriesMapWithDemoFallback(user.id),
-    getCollectionsMapWithDemoFallback(user.id),
     getProductsWithDemoFallback(user.id, { limit: 5 }),
-    getFooterDataForUser(user.id),
   ])
 
   const { product, isDemo } = productResult
-  const { categories: categoriesMap } = categoriesResult
-  const { collections: collectionsMap } = collectionsResult
   const { products: relatedProducts } = relatedProductsResult
 
   if (!product) {
     notFound()
   }
 
+  // Transform categories and collections to arrays for layout
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
     id: String(index),
     user_id: user.id,
@@ -62,18 +80,18 @@ export default async function ProductDetailPage({ params }: PageProps) {
     updated_at: '',
   }))
 
-  const collectionsArray = Object.entries(collectionsMap).map(([name, bannerUrl], index) => ({
-    id: String(index),
-    user_id: user.id,
-    name,
-    banner_url: bannerUrl as string,
-    description: null,
-    display_order: index,
-    created_at: '',
-    updated_at: '',
+  const collectionsArray = heroCollectionsFromSections.map((col: Collection, index: number) => ({
+    id: col.id,
+    user_id: col.user_id,
+    name: col.name,
+    banner_url: (col.image_url || '') as string,
+    description: null as string | null,
+    display_order: col.display_order,
+    created_at: col.created_at || '',
+    updated_at: col.updated_at || '',
   }))
 
-  const theme = template?.theme || 'light'
+  const theme = website.theme || 'light'
   const isDark = theme === 'dark'
 
   return (
@@ -93,10 +111,20 @@ export default async function ProductDetailPage({ params }: PageProps) {
         phoneNumber={user.phone_number}
         shopId={user.id}
       />
-      <Footer 
+      <EditableFooter 
         user={user}
-        template={template ? { ...template, footer: footerData } : null}
+        template={{ 
+          id: website.id,
+          user_id: user.id,
+          theme: website.theme,
+          website_type: website.website_type,
+          website_url: website.website_url,
+          footer: footerData,
+          created_at: website.created_at,
+          updated_at: website.updated_at,
+        } as any}
         isDark={isDark}
+        shopDomain={params.domain}
       />
     </WebsiteLayout>
   )

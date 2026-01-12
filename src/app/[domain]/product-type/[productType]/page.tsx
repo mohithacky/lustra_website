@@ -82,6 +82,8 @@ export default async function ProductTypePage({ params }: PageProps) {
         title={`${capitalizedType} Jewelry`}
         categories={Object.keys(categoriesMap)}
         collections={Object.keys(collectionsMap)}
+        trendingCollections={[]}
+        productTypes={[]}
       />
       <Footer 
         user={user}

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Grid, List, SlidersHorizontal, ChevronDown } from 'lucide-react'
 import ProductCard from '@/components/products/ProductCard'
+import FilterDrawer from '@/components/products/FilterDrawer'
 
 interface Product {
   id: string
@@ -27,6 +28,8 @@ interface ProductsGridProps {
   title: string
   categories: string[]
   collections: string[]
+  trendingCollections: string[]
+  productTypes: string[]
   isDemo?: boolean
 }
 
@@ -38,18 +41,80 @@ export default function ProductsGrid({
   title,
   categories,
   collections,
+  trendingCollections,
+  productTypes,
   isDemo = false
 }: ProductsGridProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<string>('newest')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
+  const [showFilterDrawer, setShowFilterDrawer] = useState(false)
+  const [selectedFilters, setSelectedFilters] = useState<{
+    categories: string[]
+    collections: string[]
+    trendingCollections: string[]
+    productTypes: string[]
+  }>({
+    categories: [],
+    collections: [],
+    trendingCollections: [],
+    productTypes: [],
+  })
 
-  // Filter and sort products
+  // Handle filter changes
+  const handleFilterChange = (filterType: string, value: string) => {
+    setSelectedFilters(prev => {
+      const currentFilters = prev[filterType as keyof typeof prev]
+      const isSelected = currentFilters.includes(value)
+      
+      return {
+        ...prev,
+        [filterType]: isSelected
+          ? currentFilters.filter(v => v !== value)
+          : [...currentFilters, value],
+      }
+    })
+  }
+
+  const handleClearAllFilters = () => {
+    setSelectedFilters({
+      categories: [],
+      collections: [],
+      trendingCollections: [],
+      productTypes: [],
+    })
+  }
+
+  // Filter and sort products with mixed filtering logic
   let filteredProducts = [...products]
   
-  if (selectedCategory) {
-    filteredProducts = filteredProducts.filter(p => p.category === selectedCategory)
+  // Apply mixed filters - product must match at least one filter from each active filter type
+  const hasActiveFilters = 
+    selectedFilters.categories.length > 0 ||
+    selectedFilters.collections.length > 0 ||
+    selectedFilters.trendingCollections.length > 0 ||
+    selectedFilters.productTypes.length > 0
+
+  if (hasActiveFilters) {
+    filteredProducts = filteredProducts.filter(product => {
+      // Check categories filter
+      const matchesCategory = selectedFilters.categories.length === 0 || 
+        (product.category && selectedFilters.categories.includes(product.category))
+      
+      // Check collections filter
+      const matchesCollection = selectedFilters.collections.length === 0 || 
+        (product.collection && selectedFilters.collections.includes(product.collection))
+      
+      // Check trending collections filter
+      const matchesTrendingCollection = selectedFilters.trendingCollections.length === 0 || 
+        (product.collection && selectedFilters.trendingCollections.includes(product.collection))
+      
+      // Check product types filter (assuming product has a product_type field)
+      const matchesProductType = selectedFilters.productTypes.length === 0 || 
+        (product.category && selectedFilters.productTypes.includes(product.category))
+      
+      // Product must match all active filter types (AND logic between types)
+      return matchesCategory && matchesCollection && matchesTrendingCollection && matchesProductType
+    })
   }
 
   // Sort products
@@ -96,9 +161,10 @@ export default function ProductsGrid({
         )}>
           {/* Filter Toggle */}
           <button
-            onClick={() => setShowFilters(!showFilters)}
+            onClick={() => setShowFilterDrawer(true)}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+              hasActiveFilters && 'ring-2 ring-gold-500',
               isDark 
                 ? 'bg-zinc-800 text-white hover:bg-zinc-700' 
                 : 'bg-white text-black hover:bg-gray-50 border border-gray-200'
@@ -106,6 +172,14 @@ export default function ProductsGrid({
           >
             <SlidersHorizontal className="w-4 h-4" />
             Filters
+            {hasActiveFilters && (
+              <span className="ml-1 px-2 py-0.5 bg-gold-500 text-white text-xs rounded-full">
+                {selectedFilters.categories.length + 
+                 selectedFilters.collections.length + 
+                 selectedFilters.trendingCollections.length + 
+                 selectedFilters.productTypes.length}
+              </span>
+            )}
           </button>
 
           <div className="flex items-center gap-4">
@@ -162,37 +236,93 @@ export default function ProductsGrid({
           </div>
         </div>
 
-        {/* Filter Panel */}
-        {showFilters && (
+        {/* Active Filters Display */}
+        {hasActiveFilters && (
           <div className={cn(
             'mb-6 p-4 rounded-xl',
             isDark ? 'bg-zinc-800' : 'bg-white border border-gray-200'
           )}>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={cn(
+                'text-sm font-semibold',
+                isDark ? 'text-white' : 'text-black'
+              )}>
+                Active Filters
+              </h3>
               <button
-                onClick={() => setSelectedCategory(null)}
+                onClick={handleClearAllFilters}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                  !selectedCategory
-                    ? 'bg-gold-500 text-white'
-                    : isDark ? 'bg-zinc-700 text-white' : 'bg-gray-100 text-black'
+                  'text-xs font-medium transition-colors',
+                  isDark ? 'text-gold-400 hover:text-gold-300' : 'text-gold-600 hover:text-gold-700'
                 )}
               >
-                All
+                Clear All
               </button>
-              {categories.map((cat) => (
-                <button
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {selectedFilters.categories.map((cat) => (
+                <span
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
                   className={cn(
-                    'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                    selectedCategory === cat
-                      ? 'bg-gold-500 text-white'
-                      : isDark ? 'bg-zinc-700 text-white' : 'bg-gray-100 text-black'
+                    'px-3 py-1.5 rounded-full text-sm font-medium bg-gold-500 text-white flex items-center gap-2'
                   )}
                 >
                   {cat}
-                </button>
+                  <button
+                    onClick={() => handleFilterChange('categories', cat)}
+                    className="hover:bg-gold-600 rounded-full p-0.5"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {selectedFilters.collections.map((col) => (
+                <span
+                  key={col}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-sm font-medium bg-blue-500 text-white flex items-center gap-2'
+                  )}
+                >
+                  {col}
+                  <button
+                    onClick={() => handleFilterChange('collections', col)}
+                    className="hover:bg-blue-600 rounded-full p-0.5"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {selectedFilters.trendingCollections.map((col) => (
+                <span
+                  key={col}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-sm font-medium bg-purple-500 text-white flex items-center gap-2'
+                  )}
+                >
+                  {col}
+                  <button
+                    onClick={() => handleFilterChange('trendingCollections', col)}
+                    className="hover:bg-purple-600 rounded-full p-0.5"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {selectedFilters.productTypes.map((type) => (
+                <span
+                  key={type}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-sm font-medium bg-green-500 text-white flex items-center gap-2'
+                  )}
+                >
+                  {type}
+                  <button
+                    onClick={() => handleFilterChange('productTypes', type)}
+                    className="hover:bg-green-600 rounded-full p-0.5"
+                  >
+                    ×
+                  </button>
+                </span>
               ))}
             </div>
           </div>
@@ -228,8 +358,20 @@ export default function ProductsGrid({
           </div>
         )}
       </div>
+
+      {/* Filter Drawer */}
+      <FilterDrawer
+        isOpen={showFilterDrawer}
+        onClose={() => setShowFilterDrawer(false)}
+        isDark={isDark}
+        categories={categories}
+        collections={collections}
+        trendingCollections={trendingCollections}
+        productTypes={productTypes}
+        selectedFilters={selectedFilters}
+        onFilterChange={handleFilterChange}
+        onClearAll={handleClearAllFilters}
+      />
     </div>
   )
 }
-
- 
