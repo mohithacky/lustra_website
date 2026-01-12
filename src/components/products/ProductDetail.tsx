@@ -17,7 +17,7 @@ interface Product {
   image_url: string | null
   images?: string[] | null
   category?: string | null
-  collection?: string | null
+  collection?: string | string[] | null
   weight?: string | null
   purity?: string | null
   gender?: string | null
