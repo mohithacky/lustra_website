@@ -194,13 +194,16 @@ export async function getProductsWithDemoFallback(userId: string, options?: {
   offset?: number
   showOnWebsite?: boolean
 }): Promise<{ products: ProductData[], isDemo: boolean }> {
-  const realProducts = await getProducts(userId, options)
+  // First check if user has ANY products at all (without filters)
+  const allUserProducts = await getProducts(userId, { showOnWebsite: options?.showOnWebsite })
   
-  if (realProducts.length > 0) {
-    return { products: realProducts, isDemo: false }
+  // If user has any real products, never show demo products
+  if (allUserProducts.length > 0) {
+    const filteredProducts = await getProducts(userId, options)
+    return { products: filteredProducts, isDemo: false }
   }
   
-  // Return demo products for new users
+  // Return demo products only for users with no products at all
   let demoProducts = DEMO_PRODUCTS.map(p => ({
     ...p,
     user_id: userId,
@@ -212,6 +215,14 @@ export async function getProductsWithDemoFallback(userId: string, options?: {
   // Apply filters to demo products
   if (options?.category) {
     demoProducts = demoProducts.filter(p => p.category === options.category)
+  }
+  
+  if (options?.collection) {
+    demoProducts = demoProducts.filter(p => p.collection === options.collection)
+  }
+  
+  if (options?.gender) {
+    demoProducts = demoProducts.filter(p => p.gender === options.gender)
   }
   
   if (options?.limit) {
