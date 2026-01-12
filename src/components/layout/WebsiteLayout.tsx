@@ -86,8 +86,8 @@ export default function WebsiteLayout({
 
   // Navigation items matching Flutter AppBar
   const navItems = [
-    { label: 'Collections', key: 'collections', items: collections.map(c => ({ name: c.name, href: `/collections/${c.name.toLowerCase().replace(/\s+/g, '-')}` })) },
-    { label: 'Categories', key: 'categories', items: categories.map(c => ({ name: c.name, href: `/categories/${c.name.toLowerCase().replace(/\s+/g, '-')}` })) },
+    { label: 'Collections', key: 'collections', items: collections.map(c => ({ name: c.name, href: `/products?collection=${encodeURIComponent(c.name)}` })) },
+    { label: 'Categories', key: 'categories', items: categories.map(c => ({ name: c.name, href: `/products?category=${encodeURIComponent(c.name)}` })) },
   ]
 
   return (
@@ -317,7 +317,7 @@ export default function WebsiteLayout({
                     {collections.slice(0, 8).map((collection) => (
                       <Link
                         key={collection.id}
-                        href={`/collections/${collection.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        href={`/products?collection=${encodeURIComponent(collection.name)}`}
                         className={cn(
                           'block py-2 text-sm',
                           isDark ? 'text-gray-300' : 'text-gray-600'
@@ -342,7 +342,7 @@ export default function WebsiteLayout({
                     {categories.slice(0, 8).map((category) => (
                       <Link
                         key={category.id}
-                        href={`/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                        href={`/products?category=${encodeURIComponent(category.name)}`}
                         className={cn(
                           'block py-2 text-sm',
                           isDark ? 'text-gray-300' : 'text-gray-600'

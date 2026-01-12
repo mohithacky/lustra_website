@@ -84,7 +84,7 @@ interface ProductTypeCardProps {
 function ProductTypeCard({ productType, isDark, shopDomain }: ProductTypeCardProps) {
   return (
     <Link
-      href={`/product-type/${productType.slug || encodeURIComponent(productType.name.toLowerCase())}`}
+      href={`/products?productType=${encodeURIComponent(productType.name)}`}
       className="group flex flex-col items-center"
     >
       <div className="relative w-32 h-32 md:w-48 md:h-48 lg:w-64 lg:h-64 rounded-xl overflow-hidden shadow-lg transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl">

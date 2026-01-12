@@ -157,7 +157,7 @@ function TrendingBox({ collection, heightRatio, isDark, showLabels = true }: {
 
   return (
     <Link
-      href={`/collections/${collection.label.replace(/\s+/g, '-')}`}
+      href={`/products?collection=${encodeURIComponent(collection.label)}`}
       className="block"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

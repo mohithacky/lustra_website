@@ -11,6 +11,7 @@ import {
   transformHeroToLegacy,
   transformTrendingToLegacy,
   transformCategoriesToMap,
+  getFilterDataForUser,
   Collection,
 } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
@@ -19,7 +20,13 @@ import { EditableFooter } from '@/components/editor/EditableSections'
 
 interface PageProps {
   params: { domain: string }
-  searchParams: { category?: string; collection?: string; filter?: string }
+  searchParams: { 
+    category?: string
+    collection?: string
+    gender?: string
+    productType?: string
+    filter?: string 
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -51,24 +58,24 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
     notFound()
   }
 
-  // Get collections from merged sections
+  // Get collections from merged sections for layout
   const heroCollectionsFromSections = getHeroCollections(sections)
-  const trendingCollectionsFromSections = getTrendingCollections(sections)
   const categoryCollections = getCategoryCollections(sections)
-  const productTypes = getProductTypeCollections(sections)
 
   // Transform to legacy format for layout
-  const heroCollections = transformHeroToLegacy(heroCollectionsFromSections)
-  const trendingCollections = transformTrendingToLegacy(trendingCollectionsFromSections)
   const categoriesMap = transformCategoriesToMap(categoryCollections)
 
-  // Fetch footer data
-  const footerData = await getFooterDataFromPages(sections, website.id)
+  // Fetch footer data and filter data in parallel
+  const [footerData, filterData] = await Promise.all([
+    getFooterDataFromPages(sections, website.id),
+    getFilterDataForUser(user.id),
+  ])
 
-  // Fetch products
+  // Fetch products with all filter options
   const productsResult = await getProductsWithDemoFallback(user.id, {
     category: searchParams.category,
     collection: searchParams.collection,
+    gender: searchParams.gender,
     limit: 50,
   })
 
@@ -97,16 +104,14 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
     updated_at: col.updated_at || '',
   }))
 
-  // Extract filter data from real collections
-  const filterCategories = categoryCollections.map(c => c.name)
-  const filterCollections = heroCollectionsFromSections.map(c => c.name)
-  const filterTrendingCollections = trendingCollectionsFromSections.map(c => c.name)
-  const filterProductTypes = productTypes.map(pt => pt.name)
-
   const theme = website.theme || 'light'
   const isDark = theme === 'dark'
 
-  const pageTitle = searchParams.category || searchParams.collection || searchParams.filter || 'All Products'
+  // Build page title from active filters
+  const activeFilter = searchParams.category || searchParams.collection || searchParams.gender || searchParams.productType
+  const pageTitle = activeFilter 
+    ? activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1).replace(/-/g, ' ')
+    : 'All Products'
 
   return (
     <WebsiteLayout 
@@ -121,11 +126,18 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
         shopDomain={params.domain}
         shopId={user.id}
         title={pageTitle}
-        categories={filterCategories}
-        collections={filterCollections}
-        trendingCollections={filterTrendingCollections}
-        productTypes={filterProductTypes}
+        categories={filterData.categories}
+        collections={filterData.collections}
+        trendingCollections={filterData.trendingCollections}
+        productTypes={filterData.productTypes}
+        genders={filterData.genders}
         isDemo={isDemoProducts}
+        initialFilters={{
+          category: searchParams.category,
+          collection: searchParams.collection,
+          gender: searchParams.gender,
+          productType: searchParams.productType,
+        }}
       />
       <EditableFooter 
         user={user}

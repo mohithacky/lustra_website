@@ -12,11 +12,13 @@ interface FilterDrawerProps {
   collections: string[]
   trendingCollections: string[]
   productTypes: string[]
+  genders: string[]
   selectedFilters: {
     categories: string[]
     collections: string[]
     trendingCollections: string[]
     productTypes: string[]
+    genders: string[]
   }
   onFilterChange: (filterType: string, value: string) => void
   onClearAll: () => void
@@ -30,6 +32,7 @@ export default function FilterDrawer({
   collections,
   trendingCollections,
   productTypes,
+  genders,
   selectedFilters,
   onFilterChange,
   onClearAll,
@@ -39,6 +42,7 @@ export default function FilterDrawer({
     trendingCollections: true,
     categories: true,
     productTypes: true,
+    genders: true,
   })
 
   const toggleSection = (section: string) => {
@@ -52,7 +56,8 @@ export default function FilterDrawer({
     selectedFilters.categories.length > 0 ||
     selectedFilters.collections.length > 0 ||
     selectedFilters.trendingCollections.length > 0 ||
-    selectedFilters.productTypes.length > 0
+    selectedFilters.productTypes.length > 0 ||
+    selectedFilters.genders.length > 0
 
   if (!isOpen) return null
 
@@ -294,6 +299,54 @@ export default function FilterDrawer({
                         isDark ? 'text-gray-300' : 'text-gray-700'
                       )}>
                         {type}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Gender Section */}
+          {genders.length > 0 && (
+            <div>
+              <button
+                onClick={() => toggleSection('genders')}
+                className={cn(
+                  'w-full flex items-center justify-between mb-3',
+                  isDark ? 'text-white' : 'text-black'
+                )}
+              >
+                <h3 className="font-semibold text-sm uppercase tracking-wide">
+                  Shop For
+                </h3>
+                {expandedSections.genders ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
+              {expandedSections.genders && (
+                <div className="space-y-2">
+                  {genders.map((gender) => (
+                    <label
+                      key={gender}
+                      className={cn(
+                        'flex items-center gap-2 cursor-pointer p-2 rounded-lg transition-colors',
+                        isDark ? 'hover:bg-zinc-800' : 'hover:bg-gray-50'
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedFilters.genders.includes(gender)}
+                        onChange={() => onFilterChange('genders', gender)}
+                        className="w-4 h-4 rounded border-gray-300 text-gold-500 focus:ring-gold-500"
+                      />
+                      <span className={cn(
+                        'text-sm',
+                        isDark ? 'text-gray-300' : 'text-gray-700'
+                      )}>
+                        {gender}
                       </span>
                     </label>
                   ))}

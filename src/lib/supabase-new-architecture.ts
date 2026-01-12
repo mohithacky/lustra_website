@@ -1002,3 +1002,73 @@ export function getGoldRateConfig(sections: MergedSection[]): Record<string, any
     update_frequency: 'daily',
   }
 }
+
+// ============================================================================
+// Filter Data Fetching - Direct from collections table
+// ============================================================================
+export interface FilterData {
+  categories: string[]
+  collections: string[]
+  trendingCollections: string[]
+  productTypes: string[]
+  genders: string[]
+}
+
+export async function getFilterDataForUser(userId: string): Promise<FilterData> {
+  console.log(`[DB] Fetching all filter data for user_id='${userId}'`)
+  
+  // Fetch all collections for this user
+  const { data, error } = await supabase
+    .from('collections')
+    .select('name, collection_label')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .order('display_order', { ascending: true })
+
+  if (error) {
+    console.error('[DB ERROR] Failed to fetch collections for filters:', error)
+    return {
+      categories: [],
+      collections: [],
+      trendingCollections: [],
+      productTypes: [],
+      genders: ['Her', 'Him'],
+    }
+  }
+
+  // Group by collection_label
+  const categories: string[] = []
+  const collections: string[] = []
+  const trendingCollections: string[] = []
+  const productTypes: string[] = []
+
+  for (const item of data || []) {
+    const name = item.name
+    switch (item.collection_label) {
+      case 'category':
+        if (!categories.includes(name)) categories.push(name)
+        break
+      case 'hero':
+      case 'best':
+      case 'occasion':
+        if (!collections.includes(name)) collections.push(name)
+        break
+      case 'trending':
+        if (!trendingCollections.includes(name)) trendingCollections.push(name)
+        break
+      case 'product_type':
+        if (!productTypes.includes(name)) productTypes.push(name)
+        break
+    }
+  }
+
+  console.log(`[DB SUCCESS] Filter data: ${categories.length} categories, ${collections.length} collections, ${trendingCollections.length} trending, ${productTypes.length} product types`)
+
+  return {
+    categories,
+    collections,
+    trendingCollections,
+    productTypes,
+    genders: ['Her', 'Him'],
+  }
+}

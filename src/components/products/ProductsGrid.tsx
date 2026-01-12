@@ -30,7 +30,14 @@ interface ProductsGridProps {
   collections: string[]
   trendingCollections: string[]
   productTypes: string[]
+  genders?: string[]
   isDemo?: boolean
+  initialFilters?: {
+    category?: string
+    collection?: string
+    gender?: string
+    productType?: string
+  }
 }
 
 export default function ProductsGrid({ 
@@ -43,7 +50,9 @@ export default function ProductsGrid({
   collections,
   trendingCollections,
   productTypes,
-  isDemo = false
+  genders = ['Her', 'Him'],
+  isDemo = false,
+  initialFilters = {},
 }: ProductsGridProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<string>('newest')
@@ -53,11 +62,13 @@ export default function ProductsGrid({
     collections: string[]
     trendingCollections: string[]
     productTypes: string[]
+    genders: string[]
   }>({
-    categories: [],
-    collections: [],
+    categories: initialFilters.category ? [initialFilters.category] : [],
+    collections: initialFilters.collection ? [initialFilters.collection] : [],
     trendingCollections: [],
-    productTypes: [],
+    productTypes: initialFilters.productType ? [initialFilters.productType] : [],
+    genders: initialFilters.gender ? [initialFilters.gender] : [],
   })
 
   // Handle filter changes
@@ -81,6 +92,7 @@ export default function ProductsGrid({
       collections: [],
       trendingCollections: [],
       productTypes: [],
+      genders: [],
     })
   }
 
@@ -368,6 +380,7 @@ export default function ProductsGrid({
         collections={collections}
         trendingCollections={trendingCollections}
         productTypes={productTypes}
+        genders={genders}
         selectedFilters={selectedFilters}
         onFilterChange={handleFilterChange}
         onClearAll={handleClearAllFilters}

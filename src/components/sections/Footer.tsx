@@ -45,8 +45,8 @@ function getFooterLinkHref(linkText: string): string {
   if (lowerLink.includes('refund') || lowerLink.includes('return')) return '/refund'
   if (lowerLink.includes('about')) return '/about'
   
-  // Shop section - links to categories
-  return `/categories/${lowerLink.replace(/\s+/g, '-')}`
+  // Shop section - links to products with category filter
+  return `/products?category=${encodeURIComponent(linkText)}`
 }
 
 export default function Footer({ user, template, isDark, canEdit = false, shopDomain }: FooterProps) {
