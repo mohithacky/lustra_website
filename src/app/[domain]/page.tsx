@@ -19,6 +19,8 @@ import {
   getActiveAnnouncements,
   getAnnouncementBarConfig,
   isAnnouncementBarEnabled,
+  getGoldRate,
+  isGoldRateSectionEnabled,
   Collection,
 } from '@/lib/supabase-new-architecture'
 // Legacy imports for products (still using old tables)
@@ -34,6 +36,7 @@ import ShopByProductTypeSection from '@/components/sections/ShopByProductTypeSec
 import ShopByRecipientSection from '@/components/sections/ShopByRecipientSection'
 import TrendingProductsSection from '@/components/sections/TrendingProductsSection'
 import TestimonialsSection from '@/components/sections/TestimonialsSection'
+import GoldRateBanner from '@/components/sections/GoldRateBanner'
 import { 
   EditableHeroCarousel, 
   EditableTrendingSection, 
@@ -170,18 +173,23 @@ export default async function StorePage({ params }: PageProps) {
   const announcementBarEnabled = isAnnouncementBarEnabled(sections)
   const announcementBarConfig = getAnnouncementBarConfig(sections)
 
+  // Check if gold rate section is enabled
+  const goldRateSectionEnabled = isGoldRateSectionEnabled(sections)
+
   // Fetch products using legacy table (still using website_products)
-  const [products, testimonials, trendingProducts, announcements] = await Promise.all([
+  const [products, testimonials, trendingProducts, announcements, goldRate] = await Promise.all([
     getProducts(user.id, { limit: 12 }),
     showTestimonials ? getTestimonials(user.id) : Promise.resolve([]),
     getTrendingProducts(user.id, 10),
     announcementBarEnabled ? getActiveAnnouncements(user.id) : Promise.resolve([]),
+    goldRateSectionEnabled ? getGoldRate(user.id) : Promise.resolve(null),
   ])
 
   console.log(`  - Products: ${products.length}`)
   console.log(`  - Testimonials: ${testimonials.length}`)
   console.log(`  - Trending products: ${trendingProducts.length}`)
   console.log(`  - Announcements: ${announcements.length} (enabled: ${announcementBarEnabled})`)
+  console.log(`  - Gold rate: ${goldRate ? 'found' : 'not found'} (enabled: ${goldRateSectionEnabled})`)
 
   // Transform categories map to array format for components
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
@@ -227,6 +235,14 @@ export default async function StorePage({ params }: PageProps) {
           isDark={isDark}
           shopDomain={params.domain}
           config={heroConfig}
+        />
+      )}
+
+      {/* Gold Rate Banner - matches Flutter gold rate section */}
+      {goldRateSectionEnabled && goldRate && (
+        <GoldRateBanner 
+          goldRate={goldRate}
+          isDark={isDark}
         />
       )}
 

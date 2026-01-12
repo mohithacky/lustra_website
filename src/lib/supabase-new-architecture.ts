@@ -950,3 +950,55 @@ export function isAnnouncementBarEnabled(sections: MergedSection[]): boolean {
   const announcementSection = sections.find(s => s.section_type === 'promotional_announcement_bar')
   return announcementSection?.is_enabled ?? true
 }
+
+// ============================================================================
+// Gold Rates
+// ============================================================================
+export interface GoldRateData {
+  id: string
+  user_id: string
+  rate_24k: number | null
+  rate_22k: number | null
+  rate_18k: number | null
+  rate_14k: number | null
+  trend_up: boolean
+  change_text: string | null
+  created_at: string
+  updated_at: string
+}
+
+export async function getGoldRate(userId: string): Promise<GoldRateData | null> {
+  console.log(`[DB] Fetching gold rate for user_id='${userId}'`)
+  
+  const { data, error } = await supabase
+    .from('gold_rates')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('[DB ERROR] Failed to fetch gold rate:', error)
+    return null
+  }
+
+  if (!data) {
+    console.log('[DB] No gold rate found for user')
+    return null
+  }
+
+  console.log(`[DB SUCCESS] Found gold rate for user`)
+  return data as GoldRateData
+}
+
+export function isGoldRateSectionEnabled(sections: MergedSection[]): boolean {
+  const goldRateSection = sections.find(s => s.section_type === 'gold_rate')
+  return goldRateSection?.is_enabled ?? false
+}
+
+export function getGoldRateConfig(sections: MergedSection[]): Record<string, any> {
+  const goldRateSection = getSectionByType(sections, 'gold_rate')
+  return goldRateSection?.config || {
+    show_trend: true,
+    update_frequency: 'daily',
+  }
+}
