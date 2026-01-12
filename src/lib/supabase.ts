@@ -149,7 +149,9 @@ export async function getProducts(userId: string, options?: {
     .select('*')
     .eq('user_id', userId)
 
-  if (options?.showOnWebsite !== false) {
+  // Only filter by show_on_website if explicitly set to true in options
+  // If not specified or set to false, show all products
+  if (options?.showOnWebsite === true) {
     query = query.eq('show_on_website', true)
   }
 
@@ -178,11 +180,25 @@ export async function getProducts(userId: string, options?: {
   const { data, error } = await query
 
   if (error) {
-    console.error('Error fetching products:', error)
+    console.error('[getProducts] Error fetching products:', error)
     return []
   }
 
-  return (data as ProductData[]) || []
+  const products = (data as ProductData[]) || []
+
+  console.log(`[getProducts] Found ${products.length} products for user ${userId}`, {
+    filters: options,
+    sampleProduct: products[0] ? {
+      id: products[0].id,
+      name: products[0].name,
+      show_on_website: products[0].show_on_website,
+      category: products[0].category,
+      collection: products[0].collection,
+      gender: products[0].gender
+    } : null
+  })
+
+  return products
 }
 
 // Get products with demo fallback - returns demo products if user has no real products
@@ -194,11 +210,19 @@ export async function getProductsWithDemoFallback(userId: string, options?: {
   offset?: number
   showOnWebsite?: boolean
 }): Promise<{ products: ProductData[], isDemo: boolean }> {
-  // First check if user has ANY products at all (without filters)
-  const allUserProducts = await getProducts(userId, { showOnWebsite: options?.showOnWebsite })
+  // First check if user has ANY products at all (ignoring show_on_website flag)
+  const { data: allProducts, error: checkError } = await supabase
+    .from('website_products')
+    .select('id')
+    .eq('user_id', userId)
+    .limit(1)
+  
+  if (checkError) {
+    console.error('Error checking for products:', checkError)
+  }
   
   // If user has any real products, never show demo products
-  if (allUserProducts.length > 0) {
+  if (allProducts && allProducts.length > 0) {
     const filteredProducts = await getProducts(userId, options)
     return { products: filteredProducts, isDemo: false }
   }
