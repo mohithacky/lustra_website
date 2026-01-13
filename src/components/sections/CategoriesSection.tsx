@@ -101,7 +101,7 @@ function CategoryItem({ category, isDark, shopDomain, imageStyle = "circle" }: {
 
   return (
     <Link
-      href={`/products?category=${encodeURIComponent(category.name)}`}
+      href={`/products?category=${encodeURIComponent(category.name)}&source=category`}
       className="flex flex-col items-center justify-center mx-1.5"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

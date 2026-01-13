@@ -107,7 +107,7 @@ function FeaturedCollectionRow({ collection, reverse, isDark, showDescription = 
     )}>
       {/* Image Card - matches Flutter _ImageCard */}
       <Link
-        href={`/products?collection=${encodeURIComponent(collection.name)}`}
+        href={`/products?collection=${encodeURIComponent(collection.name)}&source=hero-collection`}
         className="flex-1"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -149,7 +149,7 @@ function FeaturedCollectionRow({ collection, reverse, isDark, showDescription = 
           </p>
         )}
         <Link
-          href={`/products?collection=${encodeURIComponent(collection.name)}`}
+          href={`/products?collection=${encodeURIComponent(collection.name)}&source=hero-collection`}
           className="inline-flex items-center text-gold-500 font-bold text-sm hover:text-gold-600 transition-colors"
         >
           Explore Collection

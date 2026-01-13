@@ -8,6 +8,7 @@ interface FilterDrawerProps {
   isOpen: boolean
   onClose: () => void
   isDark: boolean
+  source?: string
   categories: string[]
   collections: string[]
   trendingCollections: string[]
@@ -28,6 +29,7 @@ export default function FilterDrawer({
   isOpen,
   onClose,
   isDark,
+  source,
   categories,
   collections,
   trendingCollections,
@@ -37,6 +39,20 @@ export default function FilterDrawer({
   onFilterChange,
   onClearAll,
 }: FilterDrawerProps) {
+  // Determine which sections to show based on source
+  // Hero Collection: categories, productTypes, genders
+  // Trending Collection: categories, productTypes, genders
+  // Product Type: categories, collections, trendingCollections, genders
+  // Category: collections, trendingCollections, productTypes, genders
+  // Recipient (gender): categories, collections, trendingCollections, productTypes
+  const shouldShowSection = {
+    collections: source !== 'hero-collection' && source !== 'trending-collection',
+    trendingCollections: source !== 'hero-collection' && source !== 'trending-collection',
+    categories: source !== 'recipient',
+    productTypes: source !== 'recipient',
+    genders: true, // Always show
+  }
+
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     collections: true,
     trendingCollections: true,
@@ -116,7 +132,7 @@ export default function FilterDrawer({
         {/* Filter Sections */}
         <div className="p-4 space-y-6">
           {/* Collections Section */}
-          {collections.length > 0 && (
+          {shouldShowSection.collections && collections.length > 0 && (
             <div>
               <button
                 onClick={() => toggleSection('collections')}
@@ -164,7 +180,7 @@ export default function FilterDrawer({
           )}
 
           {/* Trending Collections Section */}
-          {trendingCollections.length > 0 && (
+          {shouldShowSection.trendingCollections && trendingCollections.length > 0 && (
             <div>
               <button
                 onClick={() => toggleSection('trendingCollections')}
@@ -212,7 +228,7 @@ export default function FilterDrawer({
           )}
 
           {/* Categories Section */}
-          {categories.length > 0 && (
+          {shouldShowSection.categories && categories.length > 0 && (
             <div>
               <button
                 onClick={() => toggleSection('categories')}
@@ -260,7 +276,7 @@ export default function FilterDrawer({
           )}
 
           {/* Product Types Section */}
-          {productTypes.length > 0 && (
+          {shouldShowSection.productTypes && productTypes.length > 0 && (
             <div>
               <button
                 onClick={() => toggleSection('productTypes')}

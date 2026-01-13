@@ -25,7 +25,8 @@ interface PageProps {
     collection?: string
     gender?: string
     productType?: string
-    filter?: string 
+    filter?: string
+    source?: string
   }
 }
 
@@ -132,6 +133,7 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
         productTypes={filterData.productTypes}
         genders={filterData.genders}
         isDemo={isDemoProducts}
+        source={searchParams.source}
         initialFilters={{
           category: searchParams.category,
           collection: searchParams.collection,

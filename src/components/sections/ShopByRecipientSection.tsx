@@ -20,8 +20,8 @@ export default function ShopByRecipientSection({ isDark, config = {}, shopDomain
   const forHerSubtitle = config.forHerSubtitle || 'Elegant pieces for women'
   const forHimImage = config.forHimImage || 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/him.jpg'
   const forHerImage = config.forHerImage || 'https://phlccyxgyftspxnuzttf.supabase.co/storage/v1/object/public/default-categories/her.jpg'
-  const forHimLink = config.forHimLink || '/products?gender=Him'
-  const forHerLink = config.forHerLink || '/products?gender=Her'
+  const forHimLink = config.forHimLink || '/products?gender=Him&source=recipient'
+  const forHerLink = config.forHerLink || '/products?gender=Her&source=recipient'
 
   const recipients = []
   if (showForHim) {

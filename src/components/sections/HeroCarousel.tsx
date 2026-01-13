@@ -104,7 +104,7 @@ export default function HeroCarousel({
                     Handcrafted pieces for every moment.
                   </p>
                   <Link 
-                    href={`/products?collection=${encodeURIComponent(collection.name)}`}
+                    href={`/products?collection=${encodeURIComponent(collection.name)}&source=hero-collection`}
                     className="inline-block bg-gold-500 hover:bg-gold-600 text-white px-5 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-bold transition-colors"
                   >
                     {ctaText}

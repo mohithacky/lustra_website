@@ -35,6 +35,7 @@ interface ProductsGridProps {
   productTypes: string[]
   genders?: string[]
   isDemo?: boolean
+  source?: string
   initialFilters?: {
     category?: string
     collection?: string
@@ -55,6 +56,7 @@ export default function ProductsGrid({
   productTypes,
   genders = ['Her', 'Him'],
   isDemo = false,
+  source,
   initialFilters = {},
 }: ProductsGridProps) {
   // Debug: Log available filters
@@ -427,6 +429,7 @@ export default function ProductsGrid({
         isOpen={showFilterDrawer}
         onClose={() => setShowFilterDrawer(false)}
         isDark={isDark}
+        source={source}
         categories={categories}
         collections={collections}
         trendingCollections={trendingCollections}
