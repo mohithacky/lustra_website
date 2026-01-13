@@ -54,6 +54,7 @@ export default function ProductDetail({
   const [callbackMessage, setCallbackMessage] = useState('')
   const [callbackSubmitting, setCallbackSubmitting] = useState(false)
   const [callbackSubmitted, setCallbackSubmitted] = useState(false)
+  const [callbackStatus, setCallbackStatus] = useState<string | null>(null)
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [isCarted, setIsCarted] = useState(false)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
@@ -73,7 +74,7 @@ export default function ProductDetail({
     return null
   }
 
-  // Check wishlist and cart status on mount
+  // Check wishlist, cart, and callback status on mount
   useEffect(() => {
     const checkStatus = async () => {
       const customer = getCustomer()
@@ -86,6 +87,9 @@ export default function ProductDetail({
       setIsWishlisted(wishlisted)
       setIsCarted(carted)
 
+      // Check callback request status
+      await checkCallbackStatus()
+
       // Pre-fill phone from customer data
       if (customer.phone) {
         setCallbackPhone(customer.phone.replace('+91', ''))
@@ -93,7 +97,35 @@ export default function ProductDetail({
     }
     checkStatus()
   }, [shopId, product.id])
-  
+
+  // Check if there's an existing callback request for this product
+  const checkCallbackStatus = async () => {
+    const customer = getCustomer()
+    if (!customer || !shopId) return
+
+    try {
+      const supabase = getSupabaseClient()
+      if (!supabase) return
+
+      const { data, error } = await supabase
+        .from('customer_callback_requests')
+        .select('status')
+        .eq('shop_id', shopId)
+        .eq('product_id', product.id)
+        .eq('customer_id', customer.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (data && !error) {
+        setCallbackStatus(data.status)
+      }
+    } catch (e) {
+      // No callback request found or error - that's okay
+      console.log('No callback request found')
+    }
+  }
+
   // Combine main image with additional images
   const allImages: string[] = []
   if (product.image_url) allImages.push(product.image_url)
@@ -222,7 +254,7 @@ export default function ProductDetail({
     if (!shopId) return
 
     setCallbackSubmitting(true)
-    
+
     try {
       const customer = getCustomer()
       const productImage = product.image_url || (product.images && product.images[0]) || null
@@ -258,6 +290,7 @@ export default function ProductDetail({
       }
 
       setCallbackSubmitted(true)
+      setCallbackStatus('pending')
       setTimeout(() => {
         setShowCallbackModal(false)
         setCallbackSubmitted(false)
@@ -490,19 +523,37 @@ export default function ProductDetail({
                 Add to Cart
               </button>
 
-              {/* Request a Callback Button */}
-              <button
-                onClick={() => setShowCallbackModal(true)}
-                className={cn(
-                  'w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold transition-colors border',
-                  isDark 
-                    ? 'border-zinc-700 text-white hover:bg-zinc-800' 
-                    : 'border-gray-300 text-black hover:bg-gray-50'
-                )}
-              >
-                <PhoneCall className="w-5 h-5" />
-                Request a Callback
-              </button>
+              {/* Request a Callback Button or Status Display */}
+              {callbackStatus ? (
+                <div
+                  className={cn(
+                    'w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold border',
+                    callbackStatus === 'pending' && 'border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-500/10',
+                    callbackStatus === 'contacted' && 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10',
+                    callbackStatus === 'completed' && 'border-green-500 bg-green-50 text-green-700 dark:bg-green-500/10',
+                    callbackStatus === 'cancelled' && 'border-red-500 bg-red-50 text-red-700 dark:bg-red-500/10'
+                  )}
+                >
+                  <PhoneCall className="w-5 h-5" />
+                  {callbackStatus === 'pending' && 'Callback Requested - Pending'}
+                  {callbackStatus === 'contacted' && 'We\'ve Contacted You'}
+                  {callbackStatus === 'completed' && 'Callback Completed'}
+                  {callbackStatus === 'cancelled' && 'Callback Cancelled'}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowCallbackModal(true)}
+                  className={cn(
+                    'w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold transition-colors border',
+                    isDark 
+                      ? 'border-zinc-700 text-white hover:bg-zinc-800' 
+                      : 'border-gray-300 text-black hover:bg-gray-50'
+                  )}
+                >
+                  <PhoneCall className="w-5 h-5" />
+                  Request a Callback
+                </button>
+              )}
 
               {/* Wishlist and Share */}
               <div className="flex gap-3 pt-2">
