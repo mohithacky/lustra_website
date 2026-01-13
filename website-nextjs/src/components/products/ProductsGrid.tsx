@@ -57,15 +57,6 @@ export default function ProductsGrid({
   isDemo = false,
   initialFilters = {},
 }: ProductsGridProps) {
-  // Debug: Log available filters
-  console.log('[ProductsGrid] Available filters:', {
-    collections,
-    trendingCollections,
-    categories,
-    productTypes,
-    genders
-  })
-  
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<string>('newest')
   const [showFilterDrawer, setShowFilterDrawer] = useState(false)
@@ -126,23 +117,20 @@ export default function ProductsGrid({
         (product.category && selectedFilters.categories.includes(product.category))
       
       // Check collections filter - collection can be string or array
-      const productCollections = Array.isArray(product.collection) ? product.collection : (product.collection ? [product.collection] : [])
       const matchesCollection = selectedFilters.collections.length === 0 || 
-        productCollections.some(c => selectedFilters.collections.includes(c))
+        (product.collection && (
+          Array.isArray(product.collection)
+            ? product.collection.some(c => selectedFilters.collections.includes(c))
+            : selectedFilters.collections.includes(product.collection)
+        ))
       
       // Check trending collections filter - collection can be string or array
       const matchesTrendingCollection = selectedFilters.trendingCollections.length === 0 || 
-        productCollections.some(c => selectedFilters.trendingCollections.includes(c))
-      
-      // Debug logging for first product
-      if (product.id && selectedFilters.collections.length > 0 && productCollections.length > 0) {
-        console.log('[Filter Debug]', {
-          productName: product.name,
-          productCollections,
-          selectedCollections: selectedFilters.collections,
-          matchesCollection
-        })
-      }
+        (product.collection && (
+          Array.isArray(product.collection)
+            ? product.collection.some(c => selectedFilters.trendingCollections.includes(c))
+            : selectedFilters.trendingCollections.includes(product.collection)
+        ))
       
       // Check product types filter - check both type and product_type fields
       const matchesProductType = selectedFilters.productTypes.length === 0 || 
