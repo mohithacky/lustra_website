@@ -245,7 +245,15 @@ export default function ProductDetail({
         status: 'pending',
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        throw error
+      }
 
       setCallbackSubmitted(true)
       setTimeout(() => {
@@ -254,8 +262,14 @@ export default function ProductDetail({
         setCallbackPhone('')
         setCallbackMessage('')
       }, 2000)
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error submitting callback request:', e)
+      console.error('Error details:', {
+        message: e?.message,
+        details: e?.details,
+        hint: e?.hint,
+        code: e?.code
+      })
       alert('Failed to submit request. Please try again.')
     } finally {
       setCallbackSubmitting(false)
