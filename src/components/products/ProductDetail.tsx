@@ -198,7 +198,7 @@ export default function ProductDetail({
       console.log('[AddToCart] Result:', success)
       if (success) {
         setIsCarted(true)
-        alert('Added to cart!')
+        window.location.href = `/${shopDomain}/cart`
       } else {
         console.error('[AddToCart] Failed - API returned false')
         alert('Failed to add to cart. Please try again.')
@@ -208,6 +208,26 @@ export default function ProductDetail({
       alert('Failed to add to cart. Please try again.')
     } finally {
       setIsAddingToCart(false)
+    }
+  }
+
+  const handleShare = async () => {
+    const shareData = {
+      title: product.name,
+      text: `Check out ${product.name} - ${formatPrice(product.price)}`,
+      url: window.location.href,
+    }
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(window.location.href)
+        alert('Product link copied to clipboard!')
+      }
+    } catch (err) {
+      console.error('Error sharing:', err)
     }
   }
 
@@ -502,25 +522,43 @@ export default function ProductDetail({
             <div className="space-y-3">
               {/* Buy Now Button */}
               <button
-                onClick={handleBuyNow}
-                className="w-full flex items-center justify-center gap-2 bg-gold-500 hover:bg-gold-600 text-white py-3.5 rounded-xl font-semibold transition-colors"
+                disabled
+                className="w-full flex items-center justify-center gap-2 bg-gray-400 text-white py-3.5 rounded-xl font-semibold cursor-not-allowed opacity-60"
               >
                 <ShoppingBag className="w-5 h-5" />
-                Buy Now
+                Coming Soon
               </button>
               
               {/* Add to Cart Button */}
               <button
                 onClick={handleAddToCart}
+                disabled={isCarted || isAddingToCart}
                 className={cn(
                   'w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold transition-colors border-2',
-                  isDark 
-                    ? 'border-gold-500 text-gold-400 hover:bg-gold-500/10' 
-                    : 'border-gold-500 text-gold-600 hover:bg-gold-50'
+                  isCarted
+                    ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-500/10 cursor-default'
+                    : isDark 
+                      ? 'border-gold-500 text-gold-400 hover:bg-gold-500/10' 
+                      : 'border-gold-500 text-gold-600 hover:bg-gold-50',
+                  isAddingToCart && 'opacity-60 cursor-wait'
                 )}
               >
-                <ShoppingCart className="w-5 h-5" />
-                Add to Cart
+                {isAddingToCart ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Adding...
+                  </>
+                ) : isCarted ? (
+                  <>
+                    <ShoppingCart className="w-5 h-5 fill-current" />
+                    Added to Cart
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-5 h-5" />
+                    Add to Cart
+                  </>
+                )}
               </button>
 
               {/* Request a Callback Button or Status Display */}
@@ -576,12 +614,15 @@ export default function ProductDetail({
                   )}
                   {isWishlisted ? 'Wishlisted' : 'Wishlist'}
                 </button>
-                <button className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors border',
-                  isDark 
-                    ? 'border-zinc-700 text-white hover:bg-zinc-800' 
-                    : 'border-gray-300 text-black hover:bg-gray-50'
-                )}>
+                <button 
+                  onClick={handleShare}
+                  className={cn(
+                    'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-colors border',
+                    isDark 
+                      ? 'border-zinc-700 text-white hover:bg-zinc-800' 
+                      : 'border-gray-300 text-black hover:bg-gray-50'
+                  )}
+                >
                   <Share2 className="w-5 h-5" />
                   Share
                 </button>
