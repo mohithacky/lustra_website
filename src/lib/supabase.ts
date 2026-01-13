@@ -380,30 +380,38 @@ export async function getFooterData(userId: string): Promise<Record<string, stri
   return (data as any).footer as Record<string, string[]>
 }
 
-// Get testimonials from user_website_templates
-export async function getTestimonials(userId: string): Promise<Array<any>> {
+// Get testimonials from customer_reviews table
+export async function getTestimonials(userId: string): Promise<{ testimonials: Array<any>, hasData: boolean }> {
+  // Fetch featured testimonials from customer_reviews
   const { data, error } = await supabase
-    .from('user_website_templates')
-    .select('testimonials, show_testimonials')
-    .eq('user_id', userId)
-    .single()
+    .from('customer_reviews')
+    .select('id, customer_name, rating, review_text, created_at, product_id, is_verified_purchase')
+    .eq('shop_id', userId)
+    .eq('is_approved', true)
+    .eq('is_featured_testimonial', true)
+    .order('created_at', { ascending: false })
 
-  const d = data as any
-  if (error || !d?.testimonials || !d?.show_testimonials) {
-    return []
+  if (error) {
+    console.error('[getTestimonials] Error fetching testimonials:', error)
+    return { testimonials: [], hasData: false }
   }
-
-  return d.testimonials as Array<any>
+  
+  // If we got data (even if empty array), user has configured testimonials
+  // Empty array means user has the feature set up but hasn't marked any reviews as testimonials yet
+  const testimonials = data || []
+  return { testimonials, hasData: true }
 }
 
 // Get testimonials with demo fallback
 export async function getTestimonialsWithDemoFallback(userId: string): Promise<{ testimonials: Array<any>, isDemo: boolean }> {
-  const realTestimonials = await getTestimonials(userId)
+  const { testimonials, hasData } = await getTestimonials(userId)
   
-  if (realTestimonials.length > 0) {
-    return { testimonials: realTestimonials, isDemo: false }
+  // If user has configured testimonials (even if empty), use their data
+  if (hasData) {
+    return { testimonials, isDemo: false }
   }
   
+  // Only show demo testimonials if user hasn't configured testimonials at all
   return { testimonials: DEMO_TESTIMONIALS, isDemo: true }
 }
 
