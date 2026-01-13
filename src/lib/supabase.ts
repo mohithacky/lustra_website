@@ -162,7 +162,7 @@ export async function getProducts(userId: string, options?: {
   }
 
   if (options?.collection) {
-    query = query.eq('collection', options.collection)
+    query = query.contains('collection', [options.collection])
   }
 
   if (options?.gender) {
@@ -244,7 +244,12 @@ export async function getProductsWithDemoFallback(userId: string, options?: {
   }
   
   if (options?.collection) {
-    demoProducts = demoProducts.filter(p => p.collection === options.collection)
+    demoProducts = demoProducts.filter(p => {
+      if (Array.isArray(p.collection)) {
+        return p.collection.includes(options.collection!)
+      }
+      return p.collection === options.collection
+    })
   }
   
   if (options?.gender) {
