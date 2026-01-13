@@ -246,7 +246,9 @@ export default function ProductDetail({
       })
 
       if (error) {
-        console.error('Supabase error details:', {
+        console.error('Supabase error (stringified):', JSON.stringify(error, null, 2))
+        console.error('Supabase error (raw):', error)
+        console.error('Error properties:', {
           message: error.message,
           details: error.details,
           hint: error.hint,
@@ -263,13 +265,10 @@ export default function ProductDetail({
         setCallbackMessage('')
       }, 2000)
     } catch (e: any) {
-      console.error('Error submitting callback request:', e)
-      console.error('Error details:', {
-        message: e?.message,
-        details: e?.details,
-        hint: e?.hint,
-        code: e?.code
-      })
+      console.error('Error submitting callback request (stringified):', JSON.stringify(e, null, 2))
+      console.error('Error submitting callback request (raw):', e)
+      console.error('Error type:', typeof e)
+      console.error('Error keys:', Object.keys(e || {}))
       alert('Failed to submit request. Please try again.')
     } finally {
       setCallbackSubmitting(false)
