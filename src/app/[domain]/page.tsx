@@ -37,6 +37,7 @@ import ShopByRecipientSection from '@/components/sections/ShopByRecipientSection
 import TrendingProductsSection from '@/components/sections/TrendingProductsSection'
 import TestimonialsSection from '@/components/sections/TestimonialsSection'
 import GoldRateBanner from '@/components/sections/GoldRateBanner'
+import SearchBar from '@/components/sections/SearchBar'
 import { 
   EditableHeroCarousel, 
   EditableTrendingSection, 
@@ -232,6 +233,9 @@ export default async function StorePage({ params }: PageProps) {
       announcements={announcements}
       announcementBarConfig={announcementBarConfig}
     >
+      {/* Search Bar - matches Flutter website search bar above hero carousel */}
+      <SearchBar isDark={isDark} shopDomain={params.domain} />
+
       {/* 1. Hero Carousel - matches Flutter order, with editor controls */}
       {heroCollections.length > 0 && (
         <EditableHeroCarousel 

@@ -59,16 +59,18 @@ export default function ShopByProductTypeSection({
           </h2>
         </div>
 
-        {/* Product Types Grid */}
-        <div className="flex flex-wrap justify-center gap-6 md:gap-8">
-          {productTypes.map((productType) => (
-            <ProductTypeCard
-              key={productType.id}
-              productType={productType}
-              isDark={isDark}
-              shopDomain={shopDomain}
-            />
-          ))}
+        {/* Product Types - Mobile: horizontal scroll, Desktop: flex-wrap */}
+        <div className="md:flex md:flex-wrap md:justify-center md:gap-6 lg:gap-8 overflow-x-auto md:overflow-x-visible scrollbar-hide px-4 md:px-0">
+          <div className="flex gap-4 md:contents">
+            {productTypes.map((productType) => (
+              <ProductTypeCard
+                key={productType.id}
+                productType={productType}
+                isDark={isDark}
+                shopDomain={shopDomain}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>

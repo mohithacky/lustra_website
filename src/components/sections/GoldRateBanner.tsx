@@ -45,51 +45,54 @@ export default function GoldRateBanner({ goldRate, isDark = false }: GoldRateBan
   return (
     <div className="w-full flex justify-center py-3">
       <div className="max-w-[1100px] px-6 w-full">
-        <div className="flex flex-wrap justify-center gap-3">
-          {rates.map((rate, index) => (
-            <div
-              key={rate.karat}
-              className={cn(
-                'inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-colors',
-                isDark 
-                  ? 'bg-[#181818] border-gold-500/35' 
-                  : 'bg-offwhite border-gold-500/35'
-              )}
-            >
-              {/* Karat Label */}
-              <span className={cn(
-                'text-sm font-medium',
-                isDark ? 'text-white/70' : 'text-black'
-              )}>
-                {rate.karat}
-              </span>
+        {/* Desktop: flex-wrap, Mobile: horizontal scroll */}
+        <div className="md:flex md:flex-wrap md:justify-center md:gap-3 overflow-x-auto md:overflow-x-visible scrollbar-hide">
+          <div className="flex gap-3 md:contents">
+            {rates.map((rate, index) => (
+              <div
+                key={rate.karat}
+                className={cn(
+                  'inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border transition-colors flex-shrink-0',
+                  isDark 
+                    ? 'bg-[#181818] border-gold-500/35' 
+                    : 'bg-offwhite border-gold-500/35'
+                )}
+              >
+                {/* Karat Label */}
+                <span className={cn(
+                  'text-sm font-medium',
+                  isDark ? 'text-white/70' : 'text-black'
+                )}>
+                  {rate.karat}
+                </span>
 
-              {/* Rate Value */}
-              <span className={cn(
-                'text-base font-bold',
-                isDark ? 'text-gold-400' : 'text-black'
-              )}>
-                ₹{rate.value.toLocaleString('en-IN', { maximumFractionDigits: 0 })} / g
-              </span>
+                {/* Rate Value */}
+                <span className={cn(
+                  'text-base font-bold',
+                  isDark ? 'text-gold-400' : 'text-black'
+                )}>
+                  ₹{rate.value.toLocaleString('en-IN', { maximumFractionDigits: 0 })} / g
+                </span>
 
-              {/* Trend Indicator (only show on first rate if change text exists) */}
-              {index === 0 && changeText && (
-                <>
-                  {trendUp ? (
-                    <TrendingUp className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-red-500" />
-                  )}
-                  <span className={cn(
-                    'text-xs font-medium',
-                    trendUp ? 'text-green-500' : 'text-red-500'
-                  )}>
-                    {changeText}
-                  </span>
-                </>
-              )}
-            </div>
-          ))}
+                {/* Trend Indicator (only show on first rate if change text exists) */}
+                {index === 0 && changeText && (
+                  <>
+                    {trendUp ? (
+                      <TrendingUp className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4 text-red-500" />
+                    )}
+                    <span className={cn(
+                      'text-xs font-medium',
+                      trendUp ? 'text-green-500' : 'text-red-500'
+                    )}>
+                      {changeText}
+                    </span>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
