@@ -75,6 +75,7 @@ function getWhiteBackgroundImagePath(collectionType: string, aspectRatio: string
       return { filename: '1to1.jpg', mimeType: 'image/jpeg' }
     
     case 'hero':
+      return { filename: '16to9.jpg', mimeType: 'image/jpeg' }
     case 'best':
     default:
       // From Flutter: add_collection_screen.dart _getAssetForAspectRatio() for hero mode
