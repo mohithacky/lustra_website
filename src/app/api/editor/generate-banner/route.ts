@@ -79,7 +79,8 @@ function getWhiteBackgroundImagePath(collectionType: string, aspectRatio: string
     default:
       // From Flutter: add_collection_screen.dart _getAssetForAspectRatio() for hero mode
       // Hero, Best, and default use 16:9 landscape
-      return { filename: '16to9.avif', mimeType: 'image/avif' }
+      // Note: Using JPG instead of AVIF because Gemini API doesn't support AVIF
+      return { filename: '16to9.jpg', mimeType: 'image/jpeg' }
   }
 }
 
