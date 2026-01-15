@@ -35,7 +35,7 @@ export interface Database {
           updated_at: string
         }
       }
-      website_products: {
+      products: {
         Row: {
           id: string
           user_id: string
@@ -206,12 +206,12 @@ export interface WebsiteData {
   }
   template: Database['public']['Tables']['user_website_templates']['Row'] | null
   heroCollections: Database['public']['Tables']['user_hero_collections']['Row'][]
-  products: Database['public']['Tables']['website_products']['Row'][]
+  products: Database['public']['Tables']['products']['Row'][]
   collections: Database['public']['Tables']['user_collections']['Row'][]
   categories: Database['public']['Tables']['user_categories']['Row'][]
 }
 
-export type Product = Database['public']['Tables']['website_products']['Row']
+export type Product = Database['public']['Tables']['products']['Row']
 export type HeroCollection = Database['public']['Tables']['user_hero_collections']['Row']
 export type Collection = Database['public']['Tables']['user_collections']['Row']
 export type Category = Database['public']['Tables']['user_categories']['Row']

@@ -147,7 +147,7 @@ export async function getProducts(userId: string, options?: {
   showOnWebsite?: boolean
 }): Promise<ProductData[]> {
   let query = supabase
-    .from('website_products')
+    .from('products')
     .select('*')
     .eq('user_id', userId)
 
@@ -214,7 +214,7 @@ export async function getProductsWithDemoFallback(userId: string, options?: {
 }): Promise<{ products: ProductData[], isDemo: boolean }> {
   // First check if user has ANY products at all (ignoring show_on_website flag)
   const { data: allProducts, error: checkError } = await supabase
-    .from('website_products')
+    .from('products')
     .select('id')
     .eq('user_id', userId)
     .limit(1)
@@ -267,7 +267,7 @@ export async function getProductsByIds(productIds: string[]) {
   if (!productIds.length) return []
 
   const { data, error } = await supabase
-    .from('website_products')
+    .from('products')
     .select('*')
     .in('id', productIds)
 
@@ -473,7 +473,7 @@ export async function trackVisitor(userId: string, visitorData: {
 // Get trending products (products marked as trending or bestseller)
 export async function getTrendingProducts(userId: string, limit: number = 10) {
   const { data, error } = await supabase
-    .from('website_products')
+    .from('products')
     .select('*')
     .eq('user_id', userId)
     .eq('show_on_website', true)
@@ -515,7 +515,7 @@ export async function getTrendingProductsWithDemoFallback(userId: string, limit:
 // Get a single product by ID
 export async function getProductById(productId: string): Promise<ProductData | null> {
   const { data, error } = await supabase
-    .from('website_products')
+    .from('products')
     .select('*')
     .eq('id', productId)
     .single()
@@ -556,7 +556,7 @@ export async function getProductByIdWithDemoFallback(productId: string): Promise
 // Get products by product type (Gold, Silver, Diamond, etc.)
 export async function getProductsByType(userId: string, productType: string, limit?: number): Promise<ProductData[]> {
   let query = supabase
-    .from('website_products')
+    .from('products')
     .select('*')
     .eq('user_id', userId)
     .eq('show_on_website', true)
@@ -580,7 +580,7 @@ export async function getProductsByType(userId: string, productType: string, lim
 // Get products for gender (Him/Her)
 export async function getProductsByGender(userId: string, gender: string, limit?: number): Promise<ProductData[]> {
   let query = supabase
-    .from('website_products')
+    .from('products')
     .select('*')
     .eq('user_id', userId)
     .eq('show_on_website', true)

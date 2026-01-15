@@ -176,7 +176,7 @@ export default async function StorePage({ params }: PageProps) {
   // Check if gold rate section is enabled
   const goldRateSectionEnabled = isGoldRateSectionEnabled(sections)
 
-  // Fetch products using legacy table (still using website_products) with demo fallback
+  // Fetch products from products table with demo fallback
   const [productsResult, testimonialsResult, trendingProductsResult, announcements, goldRate] = await Promise.all([
     getProductsWithDemoFallback(user.id, { limit: 12 }),
     getTestimonialsWithDemoFallback(user.id),
