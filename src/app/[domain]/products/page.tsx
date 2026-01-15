@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getProductsWithDemoFallback } from '@/lib/supabase'
+import { getProductsWithDemoFallback, searchProductsByText } from '@/lib/supabase'
 import { 
   getWebsiteRenderData,
   getHeroCollections,
@@ -27,6 +27,7 @@ interface PageProps {
     productType?: string
     filter?: string
     source?: string
+    search?: string
   }
 }
 
@@ -72,15 +73,24 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
     getFilterDataForUser(user.id),
   ])
 
-  // Fetch products with all filter options
-  const productsResult = await getProductsWithDemoFallback(user.id, {
-    category: searchParams.category,
-    collection: searchParams.collection,
-    gender: searchParams.gender,
-    limit: 50,
-  })
-
-  const { products, isDemo: isDemoProducts } = productsResult
+  // Fetch products - either search results or filtered products
+  let products: any[]
+  let isDemoProducts = false
+  
+  if (searchParams.search) {
+    // Search mode - use text search
+    products = await searchProductsByText(user.id, searchParams.search)
+  } else {
+    // Filter mode - use regular filters
+    const productsResult = await getProductsWithDemoFallback(user.id, {
+      category: searchParams.category,
+      collection: searchParams.collection,
+      gender: searchParams.gender,
+      limit: 50,
+    })
+    products = productsResult.products
+    isDemoProducts = productsResult.isDemo
+  }
 
   // Transform categories and collections to arrays for layout
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
@@ -108,11 +118,16 @@ export default async function ProductsPage({ params, searchParams }: PageProps) 
   const theme = website.theme || 'light'
   const isDark = theme === 'dark'
 
-  // Build page title from active filters
-  const activeFilter = searchParams.category || searchParams.collection || searchParams.gender || searchParams.productType
-  const pageTitle = activeFilter 
-    ? activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1).replace(/-/g, ' ')
-    : 'All Products'
+  // Build page title from active filters or search query
+  let pageTitle = 'All Products'
+  if (searchParams.search) {
+    pageTitle = `Search: ${searchParams.search}`
+  } else {
+    const activeFilter = searchParams.category || searchParams.collection || searchParams.gender || searchParams.productType
+    if (activeFilter) {
+      pageTitle = activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1).replace(/-/g, ' ')
+    }
+  }
 
   return (
     <WebsiteLayout 

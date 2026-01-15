@@ -21,14 +21,8 @@ export default function SearchBar({ isDark = false, shopDomain }: SearchBarProps
     const query = searchQuery.trim()
     if (!query) return
 
-    setIsSearching(true)
-    
-    try {
-      // Navigate to products page with search query
-      router.push(`/products?search=${encodeURIComponent(query)}`)
-    } finally {
-      setIsSearching(false)
-    }
+    // Navigate to products page with search query
+    router.push(`/products?search=${encodeURIComponent(query)}`)
   }
 
   return (

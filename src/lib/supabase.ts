@@ -366,7 +366,7 @@ export async function getBestCollections(userId: string): Promise<Array<{name: s
   return best.map(item => ({
     name: item.name || '',
     image: item.image || '',
-    description: item.description || `Discover the ${item.name} collection`
+    description: item.description || `Discover the ${item.name} collection - a curated selection of handcrafted pieces designed to blend everyday wearability with timeless elegance. Each design tells its own story, perfect for celebrating your most cherished moments.`
   }))
 }
 
@@ -600,4 +600,40 @@ export async function getProductsByGender(userId: string, gender: string, limit?
 
   return (data as ProductData[]) || []
 }
- 
+
+// Search products by text (name, category, subcategory, collection)
+export async function searchProductsByText(userId: string, query: string): Promise<ProductData[]> {
+  const trimmed = query.trim()
+  if (!trimmed) return []
+
+  const lowerQuery = trimmed.toLowerCase()
+
+  // Fetch all products for the user
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('show_on_website', true)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error searching products:', error)
+    return []
+  }
+
+  const allProducts = (data as ProductData[]) || []
+
+  // Filter products client-side to match name, category, subcategory, or collection
+  return allProducts.filter((product) => {
+    const matches = (value: any): boolean => {
+      if (!value) return false
+      return value.toString().toLowerCase().includes(lowerQuery)
+    }
+
+    return (
+      matches(product.name) ||
+      matches(product.category) ||
+      matches(product.collection)
+    )
+  })
+}
