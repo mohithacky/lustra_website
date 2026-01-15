@@ -93,15 +93,25 @@ async function getBackgroundImageBase64(collectionType: string, aspectRatio: str
     const publicDir = path.join(process.cwd(), 'public', 'white')
     const imagePath = path.join(publicDir, filename)
     
+    console.log(`[getBackgroundImageBase64] Attempting to load: ${imagePath}`)
+    console.log(`[getBackgroundImageBase64] Collection type: ${collectionType}, Aspect ratio: ${aspectRatio}`)
+    console.log(`[getBackgroundImageBase64] Expected filename: ${filename}, mimeType: ${mimeType}`)
+    
     const imageBuffer = await readFile(imagePath)
     const base64 = imageBuffer.toString('base64')
     
-    console.log(`Loaded white background image: ${filename} (${mimeType}), size: ${imageBuffer.length} bytes`)
+    console.log(`✅ Loaded white background image: ${filename} (${mimeType}), size: ${imageBuffer.length} bytes`)
     
     return { base64, mimeType }
   } catch (error) {
-    console.error(`Failed to load white background image ${filename}:`, error)
+    console.error(`❌ Failed to load white background image ${filename}:`, error)
+    console.error(`Error details:`, {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      code: (error as any)?.code,
+      path: (error as any)?.path
+    })
     // Fallback to a minimal white pixel PNG if file not found
+    console.log('⚠️ Using fallback 1x1 PNG pixel')
     return {
       base64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
       mimeType: 'image/png'
