@@ -66,8 +66,8 @@ export default function HeroCarousel({
   if (!collections.length) return null
 
   return (
-    <section className="relative w-full px-4 md:px-[120px] pt-4 pb-10">
-      <div className="embla overflow-hidden rounded-xl md:rounded-2xl" ref={emblaRef}>
+    <section className="relative w-full md:px-[120px] md:pt-4 pb-10">
+      <div className="embla overflow-hidden md:rounded-2xl" ref={emblaRef}>
         <div className="embla__container">
           {collections.map((collection, index) => (
             <div 
