@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { readFile } from 'fs/promises'
+import path from 'path'
 
 // Backend URL for AI generation (same as Flutter uses)
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api-5sqqk2n6ra-uc.a.run.app'
@@ -8,66 +10,103 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://phlccyxgyft
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
 // Get the prompt for image generation based on collection type
+// These prompts match exactly what Flutter uses in add_collection_screen.dart and collections_screen.dart
 function getImageGenerationPrompt(collectionName: string, aspectRatio: string, collectionType: string): string {
-  const basePrompt = `Generate a poster image for a collection named "${collectionName}" on the background I have provided in the image. This image will be shown on an ecommerce website for jewelleries.`
-  
   switch (collectionType) {
-    case 'hero':
-      return `${basePrompt} The poster should contain an elegant Indian model wearing jewellery. Cover the full white background with a luxurious setting. It's not compulsory that you keep the background just white - use warm gold or cream tones.
-
-No Text on the image.
-The jewellery the model will be wearing must be either gold or diamond.
-The model should be prominently featured with elegant pose.
-No flowers texture in the background.
-The image should be in 16:9 landscape aspect ratio for hero carousel display.`
-
     case 'trending':
+      // From Flutter: add_collection_screen.dart _getImageGenerationPrompt()
       const isSmallBox = aspectRatio === '3:2'
-      return `${basePrompt} The poster should contain an Indian model wearing jewellery. Cover the full white background. It's not compulsory that you keep the background just white. The theme should be light pink and the background theme should be light pink.
+      return `Generate a poster image for a collection named ${collectionName} on the background I have provided in the image. This image will be shown on a ecommerce website for jewelleries. The poster should contain Indian model. Cover the full white background. It's not compulsory that you keep the background just white. The theme should be light pink and the background theme should be light pink.
 
 No Text on the image.
+
 The jewellery the model will be wearing must be either gold or diamond.
-No separate product showcase just the model with jewelleries wearing.
+No seperate product showcase just the model with jewelleries wearing.
 No flowers texture in the background.
 ${isSmallBox ? 'The image should be in landscape orientation (3:2 aspect ratio).' : 'The image should be in portrait orientation (5:6 aspect ratio).'}`
 
-    case 'category':
-      return `${basePrompt} Create a circular-friendly image showcasing ${collectionName} jewellery category. The image should feature elegant jewellery pieces or a model wearing the jewellery.
+    case 'occasion':
+      // From Flutter: collections_screen.dart EditOccasionCollectionScreen _generateImage()
+      return `Generate a thumbnail image of a occasional collection named ${collectionName} for a jewellery ecommerce website on the given white background in the image.
+The image should contain Indian looking model.
+The theme should be green and the background theme should be light green.
+No textures or flowers in the background.
+No text on the image.
+The jewellery which model will be wearing must be of diamond or gold.`
 
-No Text on the image.
+    case 'category':
+      // Category uses 1:1 square - custom prompt for circular display
+      return `Generate a thumbnail image for a jewellery category named ${collectionName} for an ecommerce website on the given white background in the image.
+The image should contain Indian looking model wearing jewellery.
 The image should work well when cropped to a circle.
 Use a clean, elegant background - light cream or soft pink tones.
-Focus on the jewellery as the main subject.
+No text on the image.
+The jewellery which model will be wearing must be of diamond or gold.
 The image should be in 1:1 square aspect ratio.`
 
+    case 'hero':
     case 'best':
-      return `${basePrompt} The poster should feature a stunning collection display or model wearing premium jewellery. Use luxurious gold and cream tones.
-
-No Text on the image.
-The jewellery should be either gold or diamond, showcased elegantly.
-Create a premium, high-end aesthetic.
-The image should be in 16:9 landscape aspect ratio.`
-
-    case 'occasion':
-      return `${basePrompt} Create an image that represents the "${collectionName}" occasion with appropriate jewellery styling and mood.
-
-No Text on the image.
-Feature jewellery appropriate for the occasion.
-Use colors and styling that evoke the occasion's mood.
-The image should be in 16:9 landscape aspect ratio.`
-
     default:
-      return `${basePrompt} The poster should contain a model wearing jewellery. Cover the full white background. The image should be in 16:9 landscape aspect ratio.
-
-No Text on the image.`
+      // From Flutter: add_collection_screen.dart _getImageGenerationPrompt() for hero mode
+      return `Generate a poster image for a collection named ${collectionName} on the background I have provided in the image. This image will be shown on a ecommerce website for jewelleries. The poster should contain model. Cover the full white background. It's not compulsory that you keep the background just white. The image should be in 16:9 landscape aspect ratio.`
   }
 }
 
-// Get base64 encoded white background image for the aspect ratio
-function getBackgroundImageBase64(aspectRatio: string): string {
-  // Create a simple white PNG as base64
-  // This is a minimal 1x1 white pixel PNG that the AI will expand
-  return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
+// Get the white background image file path based on collection type and aspect ratio
+// This matches Flutter's _getAssetForAspectRatio() function in add_collection_screen.dart
+function getWhiteBackgroundImagePath(collectionType: string, aspectRatio: string): { filename: string; mimeType: string } {
+  switch (collectionType) {
+    case 'trending':
+      // From Flutter: add_collection_screen.dart _getAssetForAspectRatio()
+      // Trending uses 32.jpg for 3:2 (small boxes at position 0,3) and 56.jpg for 5:6 (large boxes at position 1,2)
+      if (aspectRatio === '3:2') {
+        return { filename: '32.jpg', mimeType: 'image/jpeg' }
+      } else {
+        return { filename: '56.jpg', mimeType: 'image/jpeg' }
+      }
+    
+    case 'occasion':
+      // From Flutter: collections_screen.dart EditOccasionCollectionScreen _generateImage()
+      // Occasion collections use 11to14.jpg (11:14 aspect ratio)
+      return { filename: '11to14.jpg', mimeType: 'image/jpeg' }
+    
+    case 'category':
+      // Categories use 1:1 square images
+      return { filename: '1to1.jpg', mimeType: 'image/jpeg' }
+    
+    case 'hero':
+    case 'best':
+    default:
+      // From Flutter: add_collection_screen.dart _getAssetForAspectRatio() for hero mode
+      // Hero, Best, and default use 16:9 landscape
+      return { filename: '16to9.avif', mimeType: 'image/avif' }
+  }
+}
+
+// Fetch white background image and convert to base64
+async function getBackgroundImageBase64(collectionType: string, aspectRatio: string): Promise<{ base64: string; mimeType: string }> {
+  const { filename, mimeType } = getWhiteBackgroundImagePath(collectionType, aspectRatio)
+  
+  try {
+    // In Next.js, public folder files are served from the root
+    // For server-side, we need to read from the filesystem
+    const publicDir = path.join(process.cwd(), 'public', 'white')
+    const imagePath = path.join(publicDir, filename)
+    
+    const imageBuffer = await readFile(imagePath)
+    const base64 = imageBuffer.toString('base64')
+    
+    console.log(`Loaded white background image: ${filename} (${mimeType}), size: ${imageBuffer.length} bytes`)
+    
+    return { base64, mimeType }
+  } catch (error) {
+    console.error(`Failed to load white background image ${filename}:`, error)
+    // Fallback to a minimal white pixel PNG if file not found
+    return {
+      base64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+      mimeType: 'image/png'
+    }
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -94,9 +133,10 @@ export async function POST(request: NextRequest) {
     // The backend will validate the editor token and use the userId from it
     
     const prompt = getImageGenerationPrompt(collectionName, aspectRatio, collectionType)
-    const backgroundBase64 = getBackgroundImageBase64(aspectRatio)
+    const { base64: backgroundBase64, mimeType: backgroundMimeType } = await getBackgroundImageBase64(collectionType, aspectRatio)
 
-    console.log('Calling /upload endpoint with prompt:', prompt.substring(0, 100) + '...')
+    console.log(`Calling /upload endpoint with prompt: ${prompt.substring(0, 100)}...`)
+    console.log(`Using white background for collectionType: ${collectionType}, aspectRatio: ${aspectRatio}`)
 
     // Call the existing /upload endpoint (same as Flutter uses)
     // We need to pass a valid Supabase token - we'll use a workaround by calling via the editor session
@@ -111,7 +151,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         prompt,
         imgBase64: [backgroundBase64],
-        mimeType: 'image/png'
+        mimeType: backgroundMimeType
       }),
     })
 
