@@ -121,18 +121,23 @@ export default function WebsiteLayout({
             </button>
 
             {/* Center: Logo + Shop Name - matches Flutter centerTitle */}
-            <Link href={`/`} className="flex items-center gap-2 mx-auto md:mx-0">
+            <Link href={`/`} className="flex items-center gap-2 mx-auto md:mx-0 max-w-[60%] md:max-w-none">
               {user.logo_url && (
-                <Image
-                  src={getImageUrl(user.logo_url)}
-                  alt={user.shop_name || 'Store'}
-                  width={32}
-                  height={32}
-                  className="rounded-full object-cover"
-                />
+                <div className="relative flex-shrink-0">
+                  <Image
+                    src={getImageUrl(user.logo_url)}
+                    alt={user.shop_name || 'Store'}
+                    width={40}
+                    height={40}
+                    className={cn(
+                      "rounded-full object-cover ring-2",
+                      isDark ? "ring-zinc-700" : "ring-gray-200"
+                    )}
+                  />
+                </div>
               )}
               <span className={cn(
-                'font-display text-lg md:text-xl font-bold tracking-wide',
+                'font-display text-base sm:text-lg md:text-xl font-bold tracking-wide truncate',
                 isDark ? 'text-white' : 'text-black'
               )}>
                 {user.shop_name || 'YOUR BRAND'}
@@ -150,12 +155,12 @@ export default function WebsiteLayout({
                 >
                   <button
                     className={cn(
-                      'flex items-center gap-1 px-3 py-2 text-sm font-semibold transition-colors',
+                      'flex items-center gap-1 px-2 lg:px-3 py-2 text-xs lg:text-sm font-semibold transition-colors whitespace-nowrap',
                       isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
                     )}
                   >
                     {item.label}
-                    <ChevronDown className="w-4 h-4 opacity-60" />
+                    <ChevronDown className="w-3 lg:w-4 h-3 lg:h-4 opacity-60" />
                   </button>
 
                   {/* Dropdown Menu - matches Flutter mega menu */}
@@ -183,9 +188,9 @@ export default function WebsiteLayout({
 
               {/* Login/Logout Button - matches Flutter canShowCustomerLogin */}
               {customer ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 lg:gap-2">
                   <span className={cn(
-                    'text-sm font-medium',
+                    'text-xs lg:text-sm font-medium hidden lg:inline',
                     isDark ? 'text-gray-300' : 'text-gray-600'
                   )}>
                     <User className="w-4 h-4 inline mr-1" />
@@ -194,24 +199,24 @@ export default function WebsiteLayout({
                   <button 
                     onClick={handleLogout}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors',
+                      'flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-2 text-xs lg:text-sm font-semibold transition-colors',
                       isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
                     )}
                   >
-                    <LogOut className="w-5 h-5" />
-                    <span>Logout</span>
+                    <LogOut className="w-4 lg:w-5 h-4 lg:h-5" />
+                    <span className="hidden lg:inline">Logout</span>
                   </button>
                 </div>
               ) : (
                 <button 
                   onClick={() => setShowLoginDialog(true)}
                   className={cn(
-                    'flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors',
+                    'flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-2 text-xs lg:text-sm font-semibold transition-colors',
                     isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
                   )}
                 >
-                  <LogIn className="w-5 h-5" />
-                  <span>Login</span>
+                  <LogIn className="w-4 lg:w-5 h-4 lg:h-5" />
+                  <span className="hidden lg:inline">Login</span>
                 </button>
               )}
             </div>
@@ -277,15 +282,20 @@ export default function WebsiteLayout({
               )}>
                 <div className="flex items-center gap-2">
                   {user.logo_url && (
-                    <Image
-                      src={getImageUrl(user.logo_url)}
-                      alt={user.shop_name || 'Store'}
-                      width={32}
-                      height={32}
-                      className="rounded-full object-cover"
-                    />
+                    <div className="relative flex-shrink-0">
+                      <Image
+                        src={getImageUrl(user.logo_url)}
+                        alt={user.shop_name || 'Store'}
+                        width={40}
+                        height={40}
+                        className={cn(
+                          "rounded-full object-cover ring-2",
+                          isDark ? "ring-zinc-700" : "ring-gray-200"
+                        )}
+                      />
+                    </div>
                   )}
-                  <span className="font-display text-lg font-bold">
+                  <span className="font-display text-lg font-bold truncate">
                     {user.shop_name || 'Store'}
                   </span>
                 </div>
