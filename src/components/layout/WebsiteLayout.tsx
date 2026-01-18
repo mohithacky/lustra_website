@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Search, Heart, ShoppingCart, ChevronDown, LogIn, LogOut, User } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
@@ -47,75 +48,9 @@ export default function WebsiteLayout({
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
   const [customer, setCustomer] = useState<CustomerSession | null>(null)
-  const [generatedLogo, setGeneratedLogo] = useState<string | null>(null)
-  const [isLoadingLogo, setIsLoadingLogo] = useState(false)
   const pathname = usePathname()
 
   const isDark = theme === 'dark'
-  const shopDomain = user.shop_domain || ''
-
-  // Generate AI logo from user's uploaded logo
-  useEffect(() => {
-    const generateLogo = async () => {
-      if (!user.logo_url) return
-      
-      // Check if we already have a cached logo for this user
-      const cacheKey = `generated_logo_${user.id}`
-      const cachedLogo = localStorage.getItem(cacheKey)
-      if (cachedLogo) {
-        setGeneratedLogo(cachedLogo)
-        return
-      }
-
-      setIsLoadingLogo(true)
-      try {
-        // Fetch the user's logo image and convert to base64
-        const logoUrl = getImageUrl(user.logo_url)
-        const response = await fetch(logoUrl)
-        const blob = await response.blob()
-        
-        // Convert blob to base64
-        const reader = new FileReader()
-        reader.onloadend = async () => {
-          const base64data = reader.result as string
-          // Remove data URL prefix to get raw base64
-          const base64Only = base64data.split(',')[1]
-          
-          try {
-            // Call the generate-logo API
-            const apiResponse = await fetch('https://us-central1-lustra-4552b.cloudfunctions.net/api/generate-logo', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ logoImageBase64: base64Only }),
-            })
-            
-            if (apiResponse.ok) {
-              const data = await apiResponse.json()
-              if (data.generatedLogo) {
-                setGeneratedLogo(data.generatedLogo)
-                // Cache the generated logo
-                localStorage.setItem(cacheKey, data.generatedLogo)
-              }
-            } else {
-              console.error('Failed to generate logo:', await apiResponse.text())
-            }
-          } catch (apiError) {
-            console.error('Error calling generate-logo API:', apiError)
-          } finally {
-            setIsLoadingLogo(false)
-          }
-        }
-        reader.readAsDataURL(blob)
-      } catch (error) {
-        console.error('Error fetching logo for generation:', error)
-        setIsLoadingLogo(false)
-      }
-    }
-
-    generateLogo()
-  }, [user.id, user.logo_url])
 
   // Load customer from localStorage on mount
   useEffect(() => {
@@ -184,13 +119,12 @@ export default function WebsiteLayout({
             {/* Left: Spacer for mobile */}
             <div className="w-10 h-10 md:hidden" />
 
-            {/* Center: AI-Generated Logo + Shop Name */}
+            {/* Center: Logo + Shop Name */}
             <Link href={`/`} className="flex items-center gap-2 mx-auto md:mx-0 max-w-[60%] md:max-w-none">
-              {generatedLogo ? (
+              {user.logo_url && (
                 <div className="relative flex-shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`data:image/jpeg;base64,${generatedLogo}`}
+                  <Image
+                    src={getImageUrl(user.logo_url)}
                     alt={user.shop_name || 'Store'}
                     width={40}
                     height={40}
@@ -200,12 +134,7 @@ export default function WebsiteLayout({
                     )}
                   />
                 </div>
-              ) : isLoadingLogo ? (
-                <div className={cn(
-                  "w-10 h-10 rounded-full animate-pulse",
-                  isDark ? "bg-zinc-700" : "bg-gray-200"
-                )} />
-              ) : null}
+              )}
               <span className={cn(
                 'font-display text-base sm:text-lg md:text-xl font-bold tracking-wide truncate',
                 isDark ? 'text-white' : 'text-black'
