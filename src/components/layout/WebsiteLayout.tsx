@@ -126,9 +126,11 @@ export default function WebsiteLayout({
                   <Image
                     src={getImageUrl(user.logo_url)}
                     alt={user.shop_name || 'Store'}
-                    width={56}
-                    height={56}
+                    width={256}
+                    height={256}
+                    quality={100}
                     className="object-contain w-full h-full"
+                    priority
                   />
                 </div>
               )}
