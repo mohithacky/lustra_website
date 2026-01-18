@@ -45,18 +45,20 @@ export default function ShopByProductTypeSection({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-8">
-          <p className={cn(
-            'text-xs tracking-[0.2em] uppercase mb-2',
-            isDark ? 'text-gray-400' : 'text-gray-500'
+          <h2 className={cn(
+            'text-xl md:text-2xl font-bold mb-2',
+            isDark ? 'text-white' : 'text-black'
           )}>
             {title}
-          </p>
-          <h2 className={cn(
-            'font-display text-2xl md:text-3xl font-semibold',
-            isDark ? 'text-white' : 'text-gray-900'
-          )}>
-            {subtitle}
           </h2>
+          {subtitle && (
+            <p className={cn(
+              'text-sm mt-1.5',
+              isDark ? 'text-white/60' : 'text-gray-500'
+            )}>
+              {subtitle}
+            </p>
+          )}
         </div>
 
         {/* Product Types - Mobile: horizontal scroll, Desktop: flex-wrap */}

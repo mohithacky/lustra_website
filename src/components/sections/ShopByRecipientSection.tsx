@@ -51,18 +51,18 @@ export default function ShopByRecipientSection({ isDark, config = {}, shopDomain
       <div className="max-w-[1100px] mx-auto px-6">
         {/* Section Header - matches Flutter */}
         <div className="text-center mb-6">
-          <span className={cn(
-            'text-xs font-bold tracking-[0.15em] uppercase',
-            isDark ? 'text-white/70' : 'text-gray-500'
-          )}>
-            SHOP BY RECIPIENT
-          </span>
           <h2 className={cn(
-            'font-display text-xl md:text-2xl font-semibold mt-2',
+            'text-xl md:text-2xl font-bold mb-2',
             isDark ? 'text-white' : 'text-black'
           )}>
-            Thoughtful pieces for every story
+            Shop By Recipient
           </h2>
+          <p className={cn(
+            'text-sm mt-1.5',
+            isDark ? 'text-white/60' : 'text-gray-500'
+          )}>
+            Thoughtful pieces for every story
+          </p>
         </div>
 
         {/* Recipient Cards - centered horizontal layout */}
