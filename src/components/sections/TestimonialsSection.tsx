@@ -45,7 +45,7 @@ export default function TestimonialsSection({
         {/* Section Header - matches Flutter's JewelleryTestimonialSection */}
         <div className="text-center mb-10">
           <h2 className={cn(
-            'font-display text-3xl font-bold mb-2',
+            'text-xl md:text-2xl font-bold mb-2',
             isDark ? 'text-white' : 'text-black'
           )}>
             {title}

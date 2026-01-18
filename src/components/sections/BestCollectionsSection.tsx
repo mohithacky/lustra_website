@@ -60,7 +60,7 @@ export default function BestCollectionsSection({
         {/* Section Header - matches Flutter */}
         <div className="text-center mb-10">
           <h2 className={cn(
-            'font-display text-2xl font-semibold mb-2',
+            'text-xl md:text-2xl font-bold mb-2',
             isDark ? 'text-white' : 'text-black'
           )}>
             {title}

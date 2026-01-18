@@ -52,20 +52,20 @@ export default function ProductsSection({
         {/* Section Header - matches Flutter ProductShowcase */}
         <div className="flex items-center justify-between mb-8">
           <div className="text-center flex-1">
-            {subtitle && (
-              <span className={cn(
-                'text-xs font-light tracking-[0.15em] uppercase',
-                isDark ? 'text-white/70' : 'text-gray-500'
-              )}>
-                {subtitle}
-              </span>
-            )}
             <h2 className={cn(
-              'font-display text-2xl font-bold mt-2',
+              'text-xl md:text-2xl font-bold mb-2',
               isDark ? 'text-white' : 'text-black'
             )}>
               {title}
             </h2>
+            {subtitle && (
+              <p className={cn(
+                'text-sm mt-1.5',
+                isDark ? 'text-white/60' : 'text-gray-500'
+              )}>
+                {subtitle}
+              </p>
+            )}
           </div>
           <Link 
             href={`/products`}

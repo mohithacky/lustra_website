@@ -46,20 +46,20 @@ export default function TrendingProductsSection({
       <div className="max-w-[1100px] mx-auto">
         {/* Section Header - matches Flutter TrendingProductsShowcase */}
         <div className="text-center px-6 mb-6">
-          {subtitle && (
-            <span className={cn(
-              'text-xs font-light tracking-[0.15em] uppercase',
-              isDark ? 'text-white/70' : 'text-gray-500'
-            )}>
-              {subtitle}
-            </span>
-          )}
           <h2 className={cn(
-            'font-display text-2xl font-bold mt-2',
+            'text-xl md:text-2xl font-bold mb-2',
             isDark ? 'text-white' : 'text-black'
           )}>
             {title}
           </h2>
+          {subtitle && (
+            <p className={cn(
+              'text-sm mt-1.5',
+              isDark ? 'text-white/60' : 'text-gray-500'
+            )}>
+              {subtitle}
+            </p>
+          )}
           <div className="flex justify-end mt-2 px-6">
             <Link 
               href={`/products?filter=trending`}
