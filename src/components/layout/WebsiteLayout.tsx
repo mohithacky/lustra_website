@@ -115,14 +115,14 @@ export default function WebsiteLayout({
           isDark ? 'bg-[#121212]' : 'bg-white'
         )}>
           <nav className="px-4">
-          <div className="flex items-center justify-between h-14 md:h-16">
+          <div className="flex items-center justify-between h-20 md:h-24">
             {/* Left: Spacer for mobile */}
             <div className="w-10 h-10 md:hidden" />
 
             {/* Center: Logo + Shop Name */}
             <Link href={`/`} className="flex items-center gap-2 mx-auto md:mx-0 max-w-[60%] md:max-w-none">
               {user.logo_url && (
-                <div className="h-14 w-14 md:h-16 md:w-16 flex items-center justify-center flex-shrink-0">
+                <div className="h-20 w-20 md:h-24 md:w-24 flex items-center justify-center flex-shrink-0">
                   <Image
                     src={getImageUrl(user.logo_url)}
                     alt={user.shop_name || 'Store'}
