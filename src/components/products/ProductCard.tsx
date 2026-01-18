@@ -162,13 +162,38 @@ export default function ProductCard({ product, isDark, shopDomain, viewMode = 'g
       >
         {/* Image */}
         <div className="relative aspect-square overflow-hidden">
-          <Image
-            src={getImageUrl(product.image_url)}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          />
+          {product.images && product.images.length > 1 ? (
+            <>
+              <Image
+                src={getImageUrl(product.images[0])}
+                alt={product.name}
+                fill
+                className={cn(
+                  "object-cover transition-opacity duration-300",
+                  isHovered ? "opacity-0" : "opacity-100"
+                )}
+                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              />
+              <Image
+                src={getImageUrl(product.images[1])}
+                alt={`${product.name} - alternate view`}
+                fill
+                className={cn(
+                  "object-cover transition-opacity duration-300",
+                  isHovered ? "opacity-100" : "opacity-0"
+                )}
+                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              />
+            </>
+          ) : (
+            <Image
+              src={getImageUrl(product.image_url)}
+              alt={product.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            />
+          )}
           
           {/* Badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1">

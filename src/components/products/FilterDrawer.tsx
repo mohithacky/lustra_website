@@ -295,7 +295,10 @@ export default function FilterDrawer({
                 )}
               </button>
               {expandedSections.productTypes && (
-                <div className="space-y-2">
+                <div className={cn(
+                  "space-y-2", 
+                  selectedFilters.productTypes.length === 2 && "sm:flex sm:items-center sm:justify-center sm:space-y-0 sm:gap-4"
+                )}>
                   {productTypes.map((type) => (
                     <label
                       key={type}

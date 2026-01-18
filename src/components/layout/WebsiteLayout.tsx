@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { Menu, X, Search, Heart, ShoppingCart, ChevronDown, LogIn, LogOut, User } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 import { Category, Collection } from '@/types/database'
@@ -10,6 +11,7 @@ import PhoneLoginDialog from '@/components/auth/PhoneLoginDialog'
 import EditorProvider from '@/components/editor/EditorProvider'
 import AnnouncementBar from '@/components/sections/AnnouncementBar'
 import { PromotionalAnnouncement } from '@/lib/supabase-new-architecture'
+import BackButton from '@/components/ui/BackButton'
 
 interface WebsiteLayoutProps {
   children: React.ReactNode
@@ -46,6 +48,7 @@ export default function WebsiteLayout({
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
   const [customer, setCustomer] = useState<CustomerSession | null>(null)
+  const pathname = usePathname()
 
   const isDark = theme === 'dark'
   const shopDomain = user.shop_domain || ''
@@ -381,6 +384,12 @@ export default function WebsiteLayout({
 
       {/* Main Content */}
       <main>
+        {/* Back Button - Only show on pages other than home */}
+        {pathname !== '/' && (
+          <div className="max-w-[1200px] mx-auto px-6 pt-4">
+            <BackButton isDark={isDark} />
+          </div>
+        )}
         {children}
       </main>
 
