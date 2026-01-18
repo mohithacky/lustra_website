@@ -204,7 +204,7 @@ export default function ProductsGrid({
 
         {/* Filters Bar */}
         <div className={cn(
-          'flex items-center justify-between mb-6 pb-4 border-b',
+          'flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pb-4 gap-3 sm:gap-0 border-b',
           isDark ? 'border-zinc-800' : 'border-gray-200'
         )}>
           {/* Filter Toggle */}

@@ -60,8 +60,13 @@ export default function ShopByProductTypeSection({
         </div>
 
         {/* Product Types - Mobile: horizontal scroll, Desktop: flex-wrap */}
-        <div className="md:flex md:flex-wrap md:justify-center md:gap-6 lg:gap-8 overflow-x-auto md:overflow-x-visible scrollbar-hide px-4 md:px-0">
-          <div className="flex gap-4 md:contents">
+        <div className={cn(
+          "md:flex md:flex-wrap md:justify-center md:gap-6 lg:gap-8 overflow-x-auto md:overflow-x-visible scrollbar-hide px-4 md:px-0"
+        )}>
+          <div className={cn(
+            "flex gap-4 md:contents",
+            productTypes.length === 2 && "mx-auto justify-center w-full"
+          )}>
             {productTypes.map((productType) => (
               <ProductTypeCard
                 key={productType.id}
