@@ -122,16 +122,13 @@ export default function WebsiteLayout({
             {/* Center: Logo + Shop Name */}
             <Link href={`/`} className="flex items-center gap-2 mx-auto md:mx-0 max-w-[60%] md:max-w-none">
               {user.logo_url && (
-                <div className="relative flex-shrink-0">
+                <div className="h-14 w-14 md:h-16 md:w-16 flex items-center justify-center flex-shrink-0">
                   <Image
                     src={getImageUrl(user.logo_url)}
                     alt={user.shop_name || 'Store'}
-                    width={40}
-                    height={40}
-                    className={cn(
-                      "rounded-full object-cover ring-2",
-                      isDark ? "ring-zinc-700" : "ring-gray-200"
-                    )}
+                    width={56}
+                    height={56}
+                    className="object-contain w-full h-full"
                   />
                 </div>
               )}
