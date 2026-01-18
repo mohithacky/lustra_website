@@ -54,14 +54,14 @@ export default function ProductsSection({
           <div className="text-center flex-1">
             {subtitle && (
               <span className={cn(
-                'text-xs font-bold tracking-[0.15em] uppercase',
+                'text-xs font-light tracking-[0.15em] uppercase',
                 isDark ? 'text-white/70' : 'text-gray-500'
               )}>
                 {subtitle}
               </span>
             )}
             <h2 className={cn(
-              'font-display text-2xl font-semibold mt-2',
+              'font-display text-2xl font-bold mt-2',
               isDark ? 'text-white' : 'text-black'
             )}>
               {title}
@@ -121,13 +121,38 @@ function ProductCard({ product, isDark, showPrice = true, shopDomain }: {
       >
         {/* Image - 60% height like Flutter */}
         <div className="relative h-[200px] overflow-hidden">
-          <Image
-            src={getImageUrl(product.image_url)}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="230px"
-          />
+          {product.images && product.images.length > 1 ? (
+            <>
+              <Image
+                src={getImageUrl(product.images[0])}
+                alt={product.name}
+                fill
+                className={cn(
+                  "object-cover transition-opacity duration-300",
+                  isHovered ? "opacity-0" : "opacity-100"
+                )}
+                sizes="230px"
+              />
+              <Image
+                src={getImageUrl(product.images[1])}
+                alt={`${product.name} - alternate view`}
+                fill
+                className={cn(
+                  "object-cover transition-opacity duration-300",
+                  isHovered ? "opacity-100" : "opacity-0"
+                )}
+                sizes="230px"
+              />
+            </>
+          ) : (
+            <Image
+              src={getImageUrl(product.image_url)}
+              alt={product.name}
+              fill
+              className="object-cover"
+              sizes="230px"
+            />
+          )}
         </div>
 
         {/* Product Info - matches Flutter padding and styling */}

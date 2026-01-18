@@ -12,6 +12,7 @@ import EditorProvider from '@/components/editor/EditorProvider'
 import AnnouncementBar from '@/components/sections/AnnouncementBar'
 import { PromotionalAnnouncement } from '@/lib/supabase-new-architecture'
 import BackButton from '@/components/ui/BackButton'
+import LoadingIndicator from '@/components/ui/LoadingIndicator'
 
 interface WebsiteLayoutProps {
   children: React.ReactNode
@@ -99,6 +100,8 @@ export default function WebsiteLayout({
         'min-h-screen',
         isDark ? 'bg-[#080808] text-white' : 'bg-offwhite text-black'
       )}>
+        {/* Loading indicator for page transitions */}
+        <LoadingIndicator />
         {/* Promotional Announcement Bar - matches Flutter _buildAnnouncementBar */}
         {announcements.length > 0 && (
           <AnnouncementBar 
@@ -115,13 +118,17 @@ export default function WebsiteLayout({
         )}>
           <nav className="px-4">
           <div className="flex items-center justify-between h-14 md:h-16">
-            {/* Left: Menu Button (Mobile) */}
-            <button
-              className="p-2 md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              <Menu className="w-6 h-6" />
-            </button>
+            {/* Left: Menu Button (Mobile) - Only show on home page */}
+            {pathname === '/' ? (
+              <button
+                className="p-2 md:hidden"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            ) : (
+              <div className="w-10 h-10 md:hidden" />
+            )}
 
             {/* Center: Logo + Shop Name - matches Flutter centerTitle */}
             <Link href={`/`} className="flex items-center gap-2 mx-auto md:mx-0 max-w-[60%] md:max-w-none">
