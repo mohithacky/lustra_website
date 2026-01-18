@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Search, Heart, ShoppingCart, ChevronDown, LogIn, LogOut, User } from 'lucide-react'
+import { Search, Heart, ShoppingCart, ChevronDown, LogIn, LogOut, User } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 import { Category, Collection } from '@/types/database'
 import PhoneLoginDialog from '@/components/auth/PhoneLoginDialog'
@@ -45,14 +44,78 @@ export default function WebsiteLayout({
   announcements = [],
   announcementBarConfig = {},
 }: WebsiteLayoutProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
   const [customer, setCustomer] = useState<CustomerSession | null>(null)
+  const [generatedLogo, setGeneratedLogo] = useState<string | null>(null)
+  const [isLoadingLogo, setIsLoadingLogo] = useState(false)
   const pathname = usePathname()
 
   const isDark = theme === 'dark'
   const shopDomain = user.shop_domain || ''
+
+  // Generate AI logo from user's uploaded logo
+  useEffect(() => {
+    const generateLogo = async () => {
+      if (!user.logo_url) return
+      
+      // Check if we already have a cached logo for this user
+      const cacheKey = `generated_logo_${user.id}`
+      const cachedLogo = localStorage.getItem(cacheKey)
+      if (cachedLogo) {
+        setGeneratedLogo(cachedLogo)
+        return
+      }
+
+      setIsLoadingLogo(true)
+      try {
+        // Fetch the user's logo image and convert to base64
+        const logoUrl = getImageUrl(user.logo_url)
+        const response = await fetch(logoUrl)
+        const blob = await response.blob()
+        
+        // Convert blob to base64
+        const reader = new FileReader()
+        reader.onloadend = async () => {
+          const base64data = reader.result as string
+          // Remove data URL prefix to get raw base64
+          const base64Only = base64data.split(',')[1]
+          
+          try {
+            // Call the generate-logo API
+            const apiResponse = await fetch('https://us-central1-lustra-4552b.cloudfunctions.net/api/generate-logo', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ logoImageBase64: base64Only }),
+            })
+            
+            if (apiResponse.ok) {
+              const data = await apiResponse.json()
+              if (data.generatedLogo) {
+                setGeneratedLogo(data.generatedLogo)
+                // Cache the generated logo
+                localStorage.setItem(cacheKey, data.generatedLogo)
+              }
+            } else {
+              console.error('Failed to generate logo:', await apiResponse.text())
+            }
+          } catch (apiError) {
+            console.error('Error calling generate-logo API:', apiError)
+          } finally {
+            setIsLoadingLogo(false)
+          }
+        }
+        reader.readAsDataURL(blob)
+      } catch (error) {
+        console.error('Error fetching logo for generation:', error)
+        setIsLoadingLogo(false)
+      }
+    }
+
+    generateLogo()
+  }, [user.id, user.logo_url])
 
   // Load customer from localStorage on mount
   useEffect(() => {
@@ -118,24 +181,16 @@ export default function WebsiteLayout({
         )}>
           <nav className="px-4">
           <div className="flex items-center justify-between h-14 md:h-16">
-            {/* Left: Menu Button (Mobile) - Only show on home page */}
-            {pathname === '/' ? (
-              <button
-                className="p-2 md:hidden"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                <Menu className="w-6 h-6" />
-              </button>
-            ) : (
-              <div className="w-10 h-10 md:hidden" />
-            )}
+            {/* Left: Spacer for mobile */}
+            <div className="w-10 h-10 md:hidden" />
 
-            {/* Center: Logo + Shop Name - matches Flutter centerTitle */}
+            {/* Center: AI-Generated Logo + Shop Name */}
             <Link href={`/`} className="flex items-center gap-2 mx-auto md:mx-0 max-w-[60%] md:max-w-none">
-              {user.logo_url && (
+              {generatedLogo ? (
                 <div className="relative flex-shrink-0">
-                  <Image
-                    src={getImageUrl(user.logo_url)}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`data:image/jpeg;base64,${generatedLogo}`}
                     alt={user.shop_name || 'Store'}
                     width={40}
                     height={40}
@@ -145,7 +200,12 @@ export default function WebsiteLayout({
                     )}
                   />
                 </div>
-              )}
+              ) : isLoadingLogo ? (
+                <div className={cn(
+                  "w-10 h-10 rounded-full animate-pulse",
+                  isDark ? "bg-zinc-700" : "bg-gray-200"
+                )} />
+              ) : null}
               <span className={cn(
                 'font-display text-base sm:text-lg md:text-xl font-bold tracking-wide truncate',
                 isDark ? 'text-white' : 'text-black'
@@ -269,124 +329,6 @@ export default function WebsiteLayout({
           </div>
         </nav>
 
-        {/* Mobile Menu - matches Flutter drawer */}
-        {isMenuOpen && (
-          <div className={cn(
-            'md:hidden fixed inset-0 z-50',
-          )}>
-            {/* Backdrop */}
-            <div 
-              className="absolute inset-0 bg-black/50"
-              onClick={() => setIsMenuOpen(false)}
-            />
-            
-            {/* Drawer */}
-            <div className={cn(
-              'absolute top-0 left-0 bottom-0 w-72 shadow-xl overflow-y-auto',
-              isDark ? 'bg-zinc-900' : 'bg-white'
-            )}>
-              {/* Drawer Header */}
-              <div className={cn(
-                'flex items-center justify-between p-4 border-b',
-                isDark ? 'border-zinc-800' : 'border-gray-100'
-              )}>
-                <div className="flex items-center gap-2">
-                  {user.logo_url && (
-                    <div className="relative flex-shrink-0">
-                      <Image
-                        src={getImageUrl(user.logo_url)}
-                        alt={user.shop_name || 'Store'}
-                        width={40}
-                        height={40}
-                        className={cn(
-                          "rounded-full object-cover ring-2",
-                          isDark ? "ring-zinc-700" : "ring-gray-200"
-                        )}
-                      />
-                    </div>
-                  )}
-                  <span className="font-display text-lg font-bold truncate">
-                    {user.shop_name || 'Store'}
-                  </span>
-                </div>
-                <button onClick={() => setIsMenuOpen(false)} className="p-2">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Drawer Content */}
-              <div className="p-4 space-y-4">
-                {/* Home Link */}
-                <Link
-                  href={`/`}
-                  className="block py-2 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Home
-                </Link>
-
-                {/* Collections */}
-                <div>
-                  <div className={cn(
-                    'py-2 font-semibold text-sm uppercase tracking-wide',
-                    isDark ? 'text-gray-400' : 'text-gray-500'
-                  )}>
-                    Collections
-                  </div>
-                  <div className="space-y-1">
-                    {collections.slice(0, 8).map((collection) => (
-                      <Link
-                        key={collection.id}
-                        href={`/products?collection=${encodeURIComponent(collection.name)}`}
-                        className={cn(
-                          'block py-2 text-sm',
-                          isDark ? 'text-gray-300' : 'text-gray-600'
-                        )}
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        {collection.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Categories */}
-                <div>
-                  <div className={cn(
-                    'py-2 font-semibold text-sm uppercase tracking-wide',
-                    isDark ? 'text-gray-400' : 'text-gray-500'
-                  )}>
-                    Categories
-                  </div>
-                  <div className="space-y-1">
-                    {categories.slice(0, 8).map((category) => (
-                      <Link
-                        key={category.id}
-                        href={`/products?category=${encodeURIComponent(category.name)}`}
-                        className={cn(
-                          'block py-2 text-sm',
-                          isDark ? 'text-gray-300' : 'text-gray-600'
-                        )}
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        {category.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                {/* All Products */}
-                <Link
-                  href={`/products`}
-                  className="block py-2 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  All Products
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Main Content */}
