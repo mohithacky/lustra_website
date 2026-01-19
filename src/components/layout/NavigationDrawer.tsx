@@ -164,7 +164,7 @@ export default function NavigationDrawer({
         </div>
 
         {/* Navigation Sections */}
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-3">
           {/* Home Section */}
           <div>
             <Link
@@ -190,7 +190,7 @@ export default function NavigationDrawer({
 
           {/* Hero Carousel Collections */}
           <div>
-            <div className="flex items-center gap-2 px-3 mb-2">
+            <div className="flex items-center gap-2 px-3 mb-1">
               <Sparkles className={cn(
                 'w-4 h-4',
                 isDark ? 'text-gold-400' : 'text-gold-600'
@@ -223,7 +223,7 @@ export default function NavigationDrawer({
 
           {/* Categories Section */}
           <div>
-            <div className="flex items-center gap-2 px-3 mb-2">
+            <div className="flex items-center gap-2 px-3 mb-1">
               <Grid className={cn(
                 'w-4 h-4',
                 isDark ? 'text-gold-400' : 'text-gold-600'
@@ -256,7 +256,7 @@ export default function NavigationDrawer({
 
           {/* Product Types Section */}
           <div>
-            <div className="flex items-center gap-2 px-3 mb-2">
+            <div className="flex items-center gap-2 px-3 mb-1">
               <Tag className={cn(
                 'w-4 h-4',
                 isDark ? 'text-gold-400' : 'text-gold-600'
@@ -289,7 +289,7 @@ export default function NavigationDrawer({
 
           {/* Trending Collections */}
           <div>
-            <div className="flex items-center gap-2 px-3 mb-2">
+            <div className="flex items-center gap-2 px-3 mb-1">
               <TrendingUp className={cn(
                 'w-4 h-4',
                 isDark ? 'text-gold-400' : 'text-gold-600'

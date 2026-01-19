@@ -121,13 +121,13 @@ export default function WebsiteLayout({
           isDark ? 'bg-[#121212]' : 'bg-white'
         )}>
           <nav className="px-2 sm:px-4 py-2 sm:py-3">
-            {/* Top Row: Menu Icon + Logo + Shop Name + Search */}
+            {/* Top Row: Menu Icon (mobile only) + Logo + Shop Name + Search (right edge on mobile) */}
             <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3">
-              {/* Menu Icon - Left side */}
+              {/* Menu Icon - Left side (hidden on desktop) */}
               <button
                 onClick={() => setShowDrawer(true)}
                 className={cn(
-                  'p-2 rounded-lg transition-colors flex-shrink-0',
+                  'p-2 rounded-lg transition-colors flex-shrink-0 md:hidden',
                   isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
                 )}
                 aria-label="Open menu"
@@ -169,8 +169,8 @@ export default function WebsiteLayout({
                 </span>
               </Link>
 
-              {/* Right: Search Bar - Always visible, responsive width */}
-              <div className="flex-1 min-w-0">
+              {/* Search Bar - Right edge on mobile, flexible width on desktop */}
+              <div className="flex-1 md:flex-initial md:min-w-0 md:flex-grow flex justify-end md:justify-start">
                 <SearchBar isDark={isDark} shopDomain={shopDomain} />
               </div>
             </div>
