@@ -71,6 +71,7 @@ export default async function CollectionPage({ params }: PageProps) {
       theme={theme}
       categories={categoriesArray}
       collections={collectionsArray}
+      shopDomain={params.domain}
     >
       <ProductsGrid
         products={products}

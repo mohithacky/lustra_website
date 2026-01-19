@@ -100,6 +100,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       theme={theme}
       categories={categoriesArray}
       collections={collectionsArray}
+      shopDomain={params.domain}
     >
       <ProductDetail
         product={product}

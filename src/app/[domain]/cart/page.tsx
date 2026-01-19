@@ -63,6 +63,7 @@ export default async function CartPage({ params }: PageProps) {
       theme={theme}
       categories={categoriesArray}
       collections={collectionsArray}
+      shopDomain={params.domain}
     >
       <CartContent shopId={user.id} shopDomain={params.domain} isDark={isDark} />
       <Footer user={user} template={template ? { ...template, footer: footerData } : null} isDark={isDark} />

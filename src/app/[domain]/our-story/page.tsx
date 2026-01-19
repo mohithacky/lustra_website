@@ -68,6 +68,7 @@ export default async function OurStoryPage({ params }: PageProps) {
       theme={theme}
       categories={categoriesArray}
       collections={collectionsArray}
+      shopDomain={params.domain}
     >
       <EditableStaticPage
         userId={user.id}

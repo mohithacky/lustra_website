@@ -49,7 +49,7 @@ export default async function FAQsPage({ params }: PageProps) {
   const content = pageContent?.content || getDefaultFAQs()
 
   return (
-    <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray}>
+    <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray} shopDomain={params.domain}>
       <EditableStaticPage
         userId={user.id}
         slug="faqs"

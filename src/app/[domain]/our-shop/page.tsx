@@ -49,7 +49,7 @@ export default async function OurShopPage({ params }: PageProps) {
   const content = pageContent?.content
 
   return (
-    <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray}>
+    <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray} shopDomain={params.domain}>
       <div className={`min-h-screen py-16 px-6 ${isDark ? 'bg-[#080808]' : 'bg-offwhite'}`}>
         <div className="max-w-4xl mx-auto">
           <h1 className={`font-display text-3xl md:text-4xl font-bold mb-8 text-center ${isDark ? 'text-white' : 'text-black'}`}>

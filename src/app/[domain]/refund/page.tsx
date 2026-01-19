@@ -74,6 +74,7 @@ export default async function RefundPage({ params }: PageProps) {
       theme={theme}
       categories={categoriesArray}
       collections={collectionsArray}
+      shopDomain={params.domain}
     >
       <EditableStaticPage
         userId={user.id}

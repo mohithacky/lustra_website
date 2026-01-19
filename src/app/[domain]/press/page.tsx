@@ -49,7 +49,7 @@ export default async function PressPage({ params }: PageProps) {
   const content = pageContent?.content || getDefaultContent(user.shop_name)
 
   return (
-    <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray}>
+    <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray} shopDomain={params.domain}>
       <EditableStaticPage
         userId={user.id}
         slug="press"

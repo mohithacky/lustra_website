@@ -69,6 +69,7 @@ export default async function AboutPage({ params }: PageProps) {
       theme={theme}
       categories={categoriesArray}
       collections={collectionsArray}
+      shopDomain={params.domain}
     >
       <div className={isDark ? 'bg-[#080808] text-white' : 'bg-white text-black'}>
         <div className="max-w-4xl mx-auto px-6 py-12">
