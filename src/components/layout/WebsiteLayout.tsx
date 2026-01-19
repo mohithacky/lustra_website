@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Search, Heart, ShoppingCart, ChevronDown, LogIn, LogOut, User } from 'lucide-react'
+import { Search, Heart, ShoppingCart, ChevronDown, LogIn, LogOut, User, Menu } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 import { Category, Collection } from '@/types/database'
 import PhoneLoginDialog from '@/components/auth/PhoneLoginDialog'
@@ -14,6 +14,7 @@ import { PromotionalAnnouncement } from '@/lib/supabase-new-architecture'
 import BackButton from '@/components/ui/BackButton'
 import LoadingIndicator from '@/components/ui/LoadingIndicator'
 import SearchBar from '@/components/sections/SearchBar'
+import NavigationDrawer from '@/components/layout/NavigationDrawer'
 
 interface WebsiteLayoutProps {
   children: React.ReactNode
@@ -50,6 +51,7 @@ export default function WebsiteLayout({
 }: WebsiteLayoutProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
+  const [showDrawer, setShowDrawer] = useState(false)
   const [customer, setCustomer] = useState<CustomerSession | null>(null)
   const [logoError, setLogoError] = useState(false)
   const pathname = usePathname()
@@ -119,9 +121,24 @@ export default function WebsiteLayout({
           isDark ? 'bg-[#121212]' : 'bg-white'
         )}>
           <nav className="px-2 sm:px-4 py-2 sm:py-3">
-            {/* Top Row: Logo + Shop Name + Search */}
+            {/* Top Row: Menu Icon + Logo + Shop Name + Search */}
             <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3">
-              {/* Left: Logo + Shop Name */}
+              {/* Menu Icon - Left side */}
+              <button
+                onClick={() => setShowDrawer(true)}
+                className={cn(
+                  'p-2 rounded-lg transition-colors flex-shrink-0',
+                  isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                )}
+                aria-label="Open menu"
+              >
+                <Menu className={cn(
+                  'w-6 h-6',
+                  isDark ? 'text-white' : 'text-black'
+                )} />
+              </button>
+
+              {/* Logo + Shop Name */}
               <Link href={`/`} className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                 {user.logo_url && !logoError ? (
                   <div className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 lg:h-32 lg:w-32 flex items-center justify-center flex-shrink-0">
@@ -277,6 +294,19 @@ export default function WebsiteLayout({
           )}
           {children}
         </main>
+
+        {/* Navigation Drawer */}
+        <NavigationDrawer
+          isOpen={showDrawer}
+          onClose={() => setShowDrawer(false)}
+          isDark={isDark}
+          customer={customer}
+          onLogout={handleLogout}
+          onLoginClick={() => setShowLoginDialog(true)}
+          categories={categories}
+          collections={collections}
+          shopDomain={shopDomain}
+        />
 
         {/* Phone Login Dialog */}
         <PhoneLoginDialog
