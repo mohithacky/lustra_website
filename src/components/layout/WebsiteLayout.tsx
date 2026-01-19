@@ -120,11 +120,11 @@ export default function WebsiteLayout({
         )}>
           <nav className="px-2 sm:px-4 py-2 sm:py-3">
             {/* Top Row: Logo + Shop Name + Search */}
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3">
               {/* Left: Logo + Shop Name */}
-              <Link href={`/`} className="flex items-center gap-2 sm:gap-3 flex-shrink min-w-0 max-w-[60%] sm:max-w-none">
+              <Link href={`/`} className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                 {user.logo_url && !logoError ? (
-                  <div className="h-28 w-28 md:h-32 md:w-32 flex items-center justify-center flex-shrink-0">
+                  <div className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 lg:h-32 lg:w-32 flex items-center justify-center flex-shrink-0">
                     <Image
                       src={getImageUrl(user.logo_url)}
                       alt={user.shop_name || 'Store'}
@@ -138,29 +138,24 @@ export default function WebsiteLayout({
                   </div>
                 ) : (
                   <div className={cn(
-                    "h-28 w-28 md:h-32 md:w-32 flex items-center justify-center flex-shrink-0 rounded-full font-display text-3xl md:text-4xl font-bold",
+                    "h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 lg:h-32 lg:w-32 flex items-center justify-center flex-shrink-0 rounded-full font-display text-2xl sm:text-3xl md:text-4xl font-bold",
                     isDark ? 'bg-gold-500 text-black' : 'bg-gold-500 text-white'
                   )}>
                     {user.shop_name?.charAt(0) || 'S'}
                   </div>
                 )}
                 <span className={cn(
-                  'font-display text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-wide break-words line-clamp-2',
+                  'font-display text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-wide truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px] lg:max-w-none',
                   isDark ? 'text-white' : 'text-black'
                 )}>
                   {user.shop_name || 'YOUR BRAND'}
                 </span>
               </Link>
 
-              {/* Right: Search Bar - Hidden on mobile, shown on md+ */}
-              <div className="hidden md:flex flex-1 max-w-2xl ml-4 lg:ml-8">
+              {/* Right: Search Bar - Always visible, responsive width */}
+              <div className="flex-1 min-w-0">
                 <SearchBar isDark={isDark} shopDomain={shopDomain} />
               </div>
-            </div>
-
-            {/* Mobile Search Bar - Only visible on small screens */}
-            <div className="md:hidden mb-2">
-              <SearchBar isDark={isDark} shopDomain={shopDomain} />
             </div>
 
             {/* Bottom Row: Navigation Items + Actions */}
