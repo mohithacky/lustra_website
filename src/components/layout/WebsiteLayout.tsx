@@ -109,178 +109,182 @@ export default function WebsiteLayout({
           />
         )}
 
-        {/* Navigation - matches Flutter SliverAppBar */}
+        {/* Navigation - Two-row layout */}
         <header className={cn(
           'sticky top-0 z-50',
           isDark ? 'bg-[#121212]' : 'bg-white'
         )}>
-          <nav className="px-4">
-          <div className="flex items-center justify-between h-20 md:h-24">
-            {/* Left: Spacer for mobile */}
-            <div className="w-10 h-10 md:hidden" />
+          <nav className="px-4 py-3">
+            {/* Top Row: Logo + Shop Name + Search */}
+            <div className="flex items-center justify-between mb-3">
+              {/* Left: Logo + Shop Name */}
+              <Link href={`/`} className="flex items-center gap-3">
+                {user.logo_url && (
+                  <div className="h-28 w-28 md:h-32 md:w-32 flex items-center justify-center flex-shrink-0">
+                    <Image
+                      src={getImageUrl(user.logo_url)}
+                      alt={user.shop_name || 'Store'}
+                      width={512}
+                      height={512}
+                      quality={100}
+                      className="object-contain w-full h-full"
+                      priority
+                    />
+                  </div>
+                )}
+                <span className={cn(
+                  'font-display text-xl md:text-2xl lg:text-3xl font-bold tracking-wide',
+                  isDark ? 'text-white' : 'text-black'
+                )}>
+                  {user.shop_name || 'YOUR BRAND'}
+                </span>
+              </Link>
 
-            {/* Center: Logo + Shop Name */}
-            <Link href={`/`} className="flex items-center gap-2 mx-auto md:mx-0 max-w-[60%] md:max-w-none">
-              {user.logo_url && (
-                <div className="h-20 w-20 md:h-24 md:w-24 flex items-center justify-center flex-shrink-0">
-                  <Image
-                    src={getImageUrl(user.logo_url)}
-                    alt={user.shop_name || 'Store'}
-                    width={512}
-                    height={512}
-                    quality={100}
-                    className="object-contain w-full h-full"
-                    priority
-                  />
-                </div>
-              )}
-              <span className={cn(
-                'font-display text-base sm:text-lg md:text-xl font-bold tracking-wide truncate',
-                isDark ? 'text-white' : 'text-black'
-              )}>
-                {user.shop_name || 'YOUR BRAND'}
-              </span>
-            </Link>
-
-            {/* Desktop Navigation Items - matches Flutter topNavItems */}
-            <div className="hidden md:flex items-center gap-1">
-              {navItems.map((item) => (
-                <div
-                  key={item.key}
-                  className="relative"
-                  onMouseEnter={() => item.items.length > 0 && setActiveDropdown(item.key)}
-                  onMouseLeave={() => setActiveDropdown(null)}
-                >
-                  <button
-                    className={cn(
-                      'flex items-center gap-1 px-2 lg:px-3 py-2 text-xs lg:text-sm font-semibold transition-colors whitespace-nowrap',
-                      isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
-                    )}
-                  >
-                    {item.label}
-                    <ChevronDown className="w-3 lg:w-4 h-3 lg:h-4 opacity-60" />
-                  </button>
-
-                  {/* Dropdown Menu - matches Flutter mega menu */}
-                  {item.items.length > 0 && activeDropdown === item.key && (
-                    <div className={cn(
-                      'absolute top-full left-0 mt-0 min-w-[200px] rounded-lg shadow-xl py-2 z-50',
-                      isDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-white border border-gray-100'
-                    )}>
-                      {item.items.map((subItem) => (
-                        <Link
-                          key={subItem.name}
-                          href={subItem.href}
-                          className={cn(
-                            'block px-4 py-2.5 text-sm font-medium transition-colors',
-                            isDark ? 'text-gray-300 hover:bg-zinc-800 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-black'
-                          )}
-                        >
-                          {subItem.name}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {/* Login/Logout Button - matches Flutter canShowCustomerLogin */}
-              {customer ? (
-                <div className="flex items-center gap-1 lg:gap-2">
-                  <span className={cn(
-                    'text-xs lg:text-sm font-medium hidden lg:inline',
-                    isDark ? 'text-gray-300' : 'text-gray-600'
-                  )}>
-                    <User className="w-4 h-4 inline mr-1" />
-                    {customer.name || 'Customer'}
-                  </span>
-                  <button 
-                    onClick={handleLogout}
-                    className={cn(
-                      'flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-2 text-xs lg:text-sm font-semibold transition-colors',
-                      isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
-                    )}
-                  >
-                    <LogOut className="w-4 lg:w-5 h-4 lg:h-5" />
-                    <span className="hidden lg:inline">Logout</span>
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => setShowLoginDialog(true)}
-                  className={cn(
-                    'flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-2 text-xs lg:text-sm font-semibold transition-colors',
-                    isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
-                  )}
-                >
-                  <LogIn className="w-4 lg:w-5 h-4 lg:h-5" />
-                  <span className="hidden lg:inline">Login</span>
-                </button>
-              )}
-            </div>
-
-            {/* Right Actions - matches Flutter actions */}
-            <div className="flex items-center gap-1">
-              {/* Search */}
+              {/* Right: Search Bar */}
               <Link
                 href={`/products`}
                 className={cn(
-                  'p-2 transition-colors',
-                  isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
+                  'flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors',
+                  isDark 
+                    ? 'border-zinc-700 hover:border-gold-400 text-gray-300 hover:text-gold-400' 
+                    : 'border-gray-300 hover:border-gold-600 text-gray-700 hover:text-gold-600'
                 )}
               >
                 <Search className="w-5 h-5" />
-              </Link>
-              
-              {/* Wishlist - matches Flutter favorite_border icon */}
-              <Link
-                href={`/wishlist`}
-                className={cn(
-                  'p-2 transition-colors',
-                  isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
-                )}
-              >
-                <Heart className="w-5 h-5" />
-              </Link>
-              
-              {/* Cart - matches Flutter shopping_cart_outlined icon */}
-              <Link
-                href={`/cart`}
-                className={cn(
-                  'p-2 transition-colors',
-                  isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
-                )}
-              >
-                <ShoppingCart className="w-5 h-5" />
+                <span className="hidden md:inline text-sm font-medium">Search Products</span>
               </Link>
             </div>
-          </div>
-        </nav>
 
-      </header>
+            {/* Bottom Row: Navigation Items + Actions */}
+            <div className="flex items-center justify-between border-t pt-2" style={{
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+            }}>
+              {/* Left: Navigation Dropdowns */}
+              <div className="flex items-center gap-1">
+                {navItems.map((item) => (
+                  <div
+                    key={item.key}
+                    className="relative"
+                    onMouseEnter={() => item.items.length > 0 && setActiveDropdown(item.key)}
+                    onMouseLeave={() => setActiveDropdown(null)}
+                  >
+                    <button
+                      className={cn(
+                        'flex items-center gap-1 px-3 py-2 text-sm font-semibold transition-colors whitespace-nowrap',
+                        isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
+                      )}
+                    >
+                      {item.label}
+                      <ChevronDown className="w-4 h-4 opacity-60" />
+                    </button>
 
-      {/* Main Content */}
-      <main>
-        {/* Back Button - Only show on pages other than home */}
-        {pathname !== '/' && (
-          <div className="max-w-[1200px] mx-auto px-6 pt-4">
-            <BackButton isDark={isDark} />
-          </div>
-        )}
-        {children}
-      </main>
+                    {/* Dropdown Menu */}
+                    {item.items.length > 0 && activeDropdown === item.key && (
+                      <div className={cn(
+                        'absolute top-full left-0 mt-0 min-w-[200px] rounded-lg shadow-xl py-2 z-50',
+                        isDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-white border border-gray-100'
+                      )}>
+                        {item.items.map((subItem) => (
+                          <Link
+                            key={subItem.name}
+                            href={subItem.href}
+                            className={cn(
+                              'block px-4 py-2.5 text-sm font-medium transition-colors',
+                              isDark ? 'text-gray-300 hover:bg-zinc-800 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-black'
+                            )}
+                          >
+                            {subItem.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
 
-      {/* Phone Login Dialog */}
-      <PhoneLoginDialog
-        isOpen={showLoginDialog}
-        onClose={() => setShowLoginDialog(false)}
-        onSuccess={handleLoginSuccess}
-        shopName={user.shop_name}
-        shopId={user.id}
-        isDark={isDark}
-      />
+              {/* Right: Login/Logout + Wishlist + Cart */}
+              <div className="flex items-center gap-2">
+                {/* Login/Logout Button */}
+                {customer ? (
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      'text-sm font-medium hidden lg:inline',
+                      isDark ? 'text-gray-300' : 'text-gray-600'
+                    )}>
+                      <User className="w-4 h-4 inline mr-1" />
+                      {customer.name || 'Customer'}
+                    </span>
+                    <button 
+                      onClick={handleLogout}
+                      className={cn(
+                        'flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors',
+                        isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
+                      )}
+                    >
+                      <LogOut className="w-5 h-5" />
+                      <span className="hidden lg:inline">Logout</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setShowLoginDialog(true)}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors',
+                      isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
+                    )}
+                  >
+                    <LogIn className="w-5 h-5" />
+                    <span className="hidden lg:inline">Login</span>
+                  </button>
+                )}
+                
+                {/* Wishlist */}
+                <Link
+                  href={`/wishlist`}
+                  className={cn(
+                    'p-2 transition-colors',
+                    isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
+                  )}
+                >
+                  <Heart className="w-5 h-5" />
+                </Link>
+                
+                {/* Cart */}
+                <Link
+                  href={`/cart`}
+                  className={cn(
+                    'p-2 transition-colors',
+                    isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
+                  )}
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                </Link>
+              </div>
+            </div>
+          </nav>
+        </header>
+
+        {/* Main Content */}
+        <main>
+          {/* Back Button - Only show on pages other than home */}
+          {pathname !== '/' && (
+            <div className="max-w-[1200px] mx-auto px-6 pt-4">
+              <BackButton isDark={isDark} />
+            </div>
+          )}
+          {children}
+        </main>
+
+        {/* Phone Login Dialog */}
+        <PhoneLoginDialog
+          isOpen={showLoginDialog}
+          onClose={() => setShowLoginDialog(false)}
+          onSuccess={handleLoginSuccess}
+          shopName={user.shop_name}
+          shopId={user.id}
+          isDark={isDark}
+        />
       </div>
     </EditorProvider>
   )
 }
- 
