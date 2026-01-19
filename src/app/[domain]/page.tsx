@@ -232,10 +232,8 @@ export default async function StorePage({ params }: PageProps) {
       collections={collectionsArray}
       announcements={announcements}
       announcementBarConfig={announcementBarConfig}
+      shopDomain={params.domain}
     >
-      {/* Search Bar - matches Flutter website search bar above hero carousel */}
-      <SearchBar isDark={isDark} shopDomain={params.domain} />
-
       {/* 1. Hero Carousel - matches Flutter order, with editor controls */}
       {heroCollections.length > 0 && (
         <EditableHeroCarousel 

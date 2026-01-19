@@ -13,6 +13,7 @@ import AnnouncementBar from '@/components/sections/AnnouncementBar'
 import { PromotionalAnnouncement } from '@/lib/supabase-new-architecture'
 import BackButton from '@/components/ui/BackButton'
 import LoadingIndicator from '@/components/ui/LoadingIndicator'
+import SearchBar from '@/components/sections/SearchBar'
 
 interface WebsiteLayoutProps {
   children: React.ReactNode
@@ -27,6 +28,7 @@ interface WebsiteLayoutProps {
   collections: Collection[]
   announcements?: PromotionalAnnouncement[]
   announcementBarConfig?: Record<string, any>
+  shopDomain: string
 }
 
 interface CustomerSession {
@@ -44,6 +46,7 @@ export default function WebsiteLayout({
   collections,
   announcements = [],
   announcementBarConfig = {},
+  shopDomain,
 }: WebsiteLayoutProps) {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
@@ -141,18 +144,9 @@ export default function WebsiteLayout({
               </Link>
 
               {/* Right: Search Bar */}
-              <Link
-                href={`/products`}
-                className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors',
-                  isDark 
-                    ? 'border-zinc-700 hover:border-gold-400 text-gray-300 hover:text-gold-400' 
-                    : 'border-gray-300 hover:border-gold-600 text-gray-700 hover:text-gold-600'
-                )}
-              >
-                <Search className="w-5 h-5" />
-                <span className="hidden md:inline text-sm font-medium">Search Products</span>
-              </Link>
+              <div className="flex-1 max-w-2xl ml-8">
+                <SearchBar isDark={isDark} shopDomain={shopDomain} />
+              </div>
             </div>
 
             {/* Bottom Row: Navigation Items + Actions */}
