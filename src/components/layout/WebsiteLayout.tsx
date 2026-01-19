@@ -51,6 +51,7 @@ export default function WebsiteLayout({
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
   const [customer, setCustomer] = useState<CustomerSession | null>(null)
+  const [logoError, setLogoError] = useState(false)
   const pathname = usePathname()
 
   const isDark = theme === 'dark'
@@ -121,8 +122,8 @@ export default function WebsiteLayout({
             {/* Top Row: Logo + Shop Name + Search */}
             <div className="flex items-center justify-between mb-2 sm:mb-3">
               {/* Left: Logo + Shop Name */}
-              <Link href={`/`} className="flex items-center gap-2 sm:gap-3 flex-shrink min-w-0">
-                {user.logo_url && (
+              <Link href={`/`} className="flex items-center gap-2 sm:gap-3 flex-shrink min-w-0 max-w-[60%] sm:max-w-none">
+                {user.logo_url && !logoError ? (
                   <div className="h-28 w-28 md:h-32 md:w-32 flex items-center justify-center flex-shrink-0">
                     <Image
                       src={getImageUrl(user.logo_url)}
@@ -132,11 +133,19 @@ export default function WebsiteLayout({
                       quality={100}
                       className="object-contain w-full h-full"
                       priority
+                      onError={() => setLogoError(true)}
                     />
+                  </div>
+                ) : (
+                  <div className={cn(
+                    "h-28 w-28 md:h-32 md:w-32 flex items-center justify-center flex-shrink-0 rounded-full font-display text-3xl md:text-4xl font-bold",
+                    isDark ? 'bg-gold-500 text-black' : 'bg-gold-500 text-white'
+                  )}>
+                    {user.shop_name?.charAt(0) || 'S'}
                   </div>
                 )}
                 <span className={cn(
-                  'font-display text-sm sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold tracking-wide truncate',
+                  'font-display text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-wide break-words line-clamp-2',
                   isDark ? 'text-white' : 'text-black'
                 )}>
                   {user.shop_name || 'YOUR BRAND'}
