@@ -605,14 +605,20 @@ export function getFooterData(sections: MergedSection[]): Record<string, string[
   
   console.log('[getFooterData] Footer config keys:', Object.keys(footerSection.config))
   
-  // Footer data is stored in config.footer (nested structure from API)
-  const footerDataSource = footerSection.config.footer || footerSection.config
+  // Footer config structure: { columns: { "Help": [...], "Shop": [...] }, socialLinks: {...}, ... }
+  // Extract the columns object which contains the actual footer sections
+  const columns = footerSection.config.columns
+  
+  if (!columns || typeof columns !== 'object') {
+    console.log('[getFooterData] No columns found in footer config')
+    return {}
+  }
   
   // Filter out any metadata keys and return only the footer section data
   const result: Record<string, string[]> = {}
   
-  for (const [key, value] of Object.entries(footerDataSource)) {
-    // Skip metadata keys, only include actual footer sections (arrays of strings)
+  for (const [key, value] of Object.entries(columns)) {
+    // Only include actual footer sections (arrays of strings)
     if (Array.isArray(value) && value.every(item => typeof item === 'string')) {
       result[key] = value
     }
