@@ -123,12 +123,12 @@ export default function WebsiteLayout({
               {/* Left: Logo + Shop Name */}
               <Link href={`/`} className="flex items-center gap-2 sm:gap-3 flex-shrink min-w-0">
                 {user.logo_url && (
-                  <div className="h-12 w-12 sm:h-20 sm:w-20 md:h-28 md:w-28 lg:h-32 lg:w-32 flex items-center justify-center flex-shrink-0">
+                  <div className="h-28 w-28 md:h-32 md:w-32 flex items-center justify-center flex-shrink-0">
                     <Image
                       src={getImageUrl(user.logo_url)}
                       alt={user.shop_name || 'Store'}
-                      width={512}
-                      height={512}
+                      width={1024}
+                      height={1024}
                       quality={100}
                       className="object-contain w-full h-full"
                       priority

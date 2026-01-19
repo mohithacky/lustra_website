@@ -597,8 +597,12 @@ export function getFooterConfig(sections: MergedSection[]): FooterConfig {
 // Legacy function for backward compatibility - converts to old format
 export function getFooterData(sections: MergedSection[]): Record<string, string[]> {
   const footerSection = getSectionByType(sections, 'footer')
+  console.log('[getFooterData] Footer section found:', footerSection ? 'yes' : 'no')
+  console.log('[getFooterData] Footer section config:', JSON.stringify(footerSection?.config, null, 2))
+  
   // Check for new structure (groups array)
   if (footerSection?.config?.groups) {
+    console.log('[getFooterData] Using new groups structure')
     const result: Record<string, string[]> = {}
     for (const group of footerSection.config.groups) {
       // Convert page slugs to display titles for backward compatibility
@@ -606,10 +610,32 @@ export function getFooterData(sections: MergedSection[]): Record<string, string[
         slug.split('-').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
       )
     }
+    console.log('[getFooterData] Result from groups:', Object.keys(result))
     return result
   }
-  // Fallback to old structure
-  return footerSection?.config?.footer || {}
+  
+  // Fallback to old structure - check if config has footer property directly
+  if (footerSection?.config?.footer) {
+    console.log('[getFooterData] Using old footer structure from config.footer')
+    console.log('[getFooterData] Footer sections:', Object.keys(footerSection.config.footer))
+    return footerSection.config.footer
+  }
+  
+  // Check if config itself is the footer data (direct structure)
+  if (footerSection?.config && typeof footerSection.config === 'object') {
+    // Check if config has keys that look like footer sections (not system keys)
+    const configKeys = Object.keys(footerSection.config).filter(key => 
+      !['groups', 'show_social_links', 'show_contact_info', 'show_copyright'].includes(key)
+    )
+    if (configKeys.length > 0 && Array.isArray(footerSection.config[configKeys[0]])) {
+      console.log('[getFooterData] Using config directly as footer data')
+      console.log('[getFooterData] Footer sections:', configKeys)
+      return footerSection.config as Record<string, string[]>
+    }
+  }
+  
+  console.log('[getFooterData] No footer data found, returning empty object')
+  return {}
 }
 
 export function getGoldRateData(sections: MergedSection[]): any {
