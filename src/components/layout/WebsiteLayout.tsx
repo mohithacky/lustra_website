@@ -117,13 +117,13 @@ export default function WebsiteLayout({
           'sticky top-0 z-50',
           isDark ? 'bg-[#121212]' : 'bg-white'
         )}>
-          <nav className="px-4 py-3">
+          <nav className="px-2 sm:px-4 py-2 sm:py-3">
             {/* Top Row: Logo + Shop Name + Search */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
               {/* Left: Logo + Shop Name */}
-              <Link href={`/`} className="flex items-center gap-3">
+              <Link href={`/`} className="flex items-center gap-2 sm:gap-3 flex-shrink min-w-0">
                 {user.logo_url && (
-                  <div className="h-28 w-28 md:h-32 md:w-32 flex items-center justify-center flex-shrink-0">
+                  <div className="h-12 w-12 sm:h-20 sm:w-20 md:h-28 md:w-28 lg:h-32 lg:w-32 flex items-center justify-center flex-shrink-0">
                     <Image
                       src={getImageUrl(user.logo_url)}
                       alt={user.shop_name || 'Store'}
@@ -136,25 +136,30 @@ export default function WebsiteLayout({
                   </div>
                 )}
                 <span className={cn(
-                  'font-display text-xl md:text-2xl lg:text-3xl font-bold tracking-wide',
+                  'font-display text-sm sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold tracking-wide truncate',
                   isDark ? 'text-white' : 'text-black'
                 )}>
                   {user.shop_name || 'YOUR BRAND'}
                 </span>
               </Link>
 
-              {/* Right: Search Bar */}
-              <div className="flex-1 max-w-2xl ml-8">
+              {/* Right: Search Bar - Hidden on mobile, shown on md+ */}
+              <div className="hidden md:flex flex-1 max-w-2xl ml-4 lg:ml-8">
                 <SearchBar isDark={isDark} shopDomain={shopDomain} />
               </div>
             </div>
 
+            {/* Mobile Search Bar - Only visible on small screens */}
+            <div className="md:hidden mb-2">
+              <SearchBar isDark={isDark} shopDomain={shopDomain} />
+            </div>
+
             {/* Bottom Row: Navigation Items + Actions */}
-            <div className="flex items-center justify-between border-t pt-2" style={{
+            <div className="flex items-center justify-between border-t pt-1.5 sm:pt-2" style={{
               borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
             }}>
-              {/* Left: Navigation Dropdowns */}
-              <div className="flex items-center gap-1">
+              {/* Left: Navigation Dropdowns - Scrollable on mobile */}
+              <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto flex-shrink scrollbar-hide">
                 {navItems.map((item) => (
                   <div
                     key={item.key}
@@ -164,12 +169,12 @@ export default function WebsiteLayout({
                   >
                     <button
                       className={cn(
-                        'flex items-center gap-1 px-3 py-2 text-sm font-semibold transition-colors whitespace-nowrap',
+                        'flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap',
                         isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
                       )}
                     >
                       {item.label}
-                      <ChevronDown className="w-4 h-4 opacity-60" />
+                      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 opacity-60" />
                     </button>
 
                     {/* Dropdown Menu */}
@@ -197,25 +202,25 @@ export default function WebsiteLayout({
               </div>
 
               {/* Right: Login/Logout + Wishlist + Cart */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 {/* Login/Logout Button */}
                 {customer ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2">
                     <span className={cn(
-                      'text-sm font-medium hidden lg:inline',
+                      'text-xs sm:text-sm font-medium hidden xl:inline',
                       isDark ? 'text-gray-300' : 'text-gray-600'
                     )}>
-                      <User className="w-4 h-4 inline mr-1" />
+                      <User className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
                       {customer.name || 'Customer'}
                     </span>
                     <button 
                       onClick={handleLogout}
                       className={cn(
-                        'flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors',
+                        'flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-colors',
                         isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
                       )}
                     >
-                      <LogOut className="w-5 h-5" />
+                      <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span className="hidden lg:inline">Logout</span>
                     </button>
                   </div>
@@ -223,11 +228,11 @@ export default function WebsiteLayout({
                   <button 
                     onClick={() => setShowLoginDialog(true)}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-colors',
+                      'flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-colors',
                       isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
                     )}
                   >
-                    <LogIn className="w-5 h-5" />
+                    <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span className="hidden lg:inline">Login</span>
                   </button>
                 )}
@@ -236,22 +241,22 @@ export default function WebsiteLayout({
                 <Link
                   href={`/wishlist`}
                   className={cn(
-                    'p-2 transition-colors',
+                    'p-1.5 sm:p-2 transition-colors',
                     isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
                   )}
                 >
-                  <Heart className="w-5 h-5" />
+                  <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Link>
                 
                 {/* Cart */}
                 <Link
                   href={`/cart`}
                   className={cn(
-                    'p-2 transition-colors',
+                    'p-1.5 sm:p-2 transition-colors',
                     isDark ? 'hover:text-gold-400' : 'hover:text-gold-600'
                   )}
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Link>
               </div>
             </div>
