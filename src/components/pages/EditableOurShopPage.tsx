@@ -19,6 +19,12 @@ interface EditableOurShopPageProps {
   initialTitle: string
   initialContent: string
   isDark: boolean
+  businessHours?: Array<{
+    day: string
+    openTime: string
+    closeTime: string
+    isClosed: boolean
+  }>
 }
 
 interface ShopPhoto {
@@ -33,6 +39,7 @@ export default function EditableOurShopPage({
   initialTitle,
   initialContent,
   isDark,
+  businessHours = [],
 }: EditableOurShopPageProps) {
   const { isEditorMode } = useEditor()
   const [isEditing, setIsEditing] = useState(false)
@@ -411,14 +418,22 @@ export default function EditableOurShopPage({
               </div>
             )}
 
-            <div className="flex items-start gap-3">
-              <Clock className="w-5 h-5 text-gold-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>Hours</p>
-                <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Mon - Sat: 10:00 AM - 8:00 PM</p>
-                <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Sunday: 11:00 AM - 6:00 PM</p>
+            {businessHours.length > 0 && (
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-gold-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>Hours</p>
+                  {businessHours.map((hours, index) => (
+                    <p key={index} className={isDark ? 'text-gray-400' : 'text-gray-600'}>
+                      {hours.isClosed 
+                        ? `${hours.day}: Closed`
+                        : `${hours.day}: ${hours.openTime} - ${hours.closeTime}`
+                      }
+                    </p>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

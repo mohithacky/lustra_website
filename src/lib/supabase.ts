@@ -24,6 +24,33 @@ export interface UserData {
   shop_domain: string | null
 }
 
+export interface StoreInfo {
+  id: string
+  user_id: string
+  shop_name: string | null
+  shop_address: string | null
+  phone_number: string | null
+  logo_url: string | null
+  instagram_id: string | null
+  facebook_id: string | null
+  email: string | null
+  website: string | null
+  description: string | null
+  city: string | null
+  state: string | null
+  zip_code: string | null
+  country: string | null
+  google_maps_link: string | null
+  hours: Array<{
+    day: string
+    openTime: string
+    closeTime: string
+    isClosed: boolean
+  }> | null
+  created_at: string
+  updated_at: string
+}
+
 // Product type definition
 export interface ProductData {
   id: string
@@ -90,6 +117,21 @@ export async function getWebsiteByDomain(domain: string): Promise<UserData | nul
   }
 
   return data as UserData
+}
+
+export async function getStoreInfoForUser(userId: string): Promise<StoreInfo | null> {
+  const { data, error } = await supabase
+    .from('store_info')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error fetching store info:', error)
+    return null
+  }
+
+  return data as StoreInfo | null
 }
 
 export async function getWebsiteTemplate(userId: string): Promise<WebsiteTemplate | null> {
