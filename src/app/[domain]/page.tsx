@@ -276,7 +276,6 @@ export default async function StorePage({ params }: PageProps) {
       )}
 
       <div className="h-5" /> {/* Spacing */}
-/* 3. Products Section (New Arrivals) - matches Flutter ProductShowcase */
       {products.length > 0 && (
         <ProductsSection 
           products={products} 
