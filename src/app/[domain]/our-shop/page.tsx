@@ -44,7 +44,14 @@ export default async function OurShopPage({ params }: PageProps) {
   const isDark = theme === 'dark'
 
   const pageTitle = pageContent?.title || 'Our Shop'
-  const content = pageContent?.content || ''
+  const defaultContent = `Welcome to ${user.shop_name || 'our store'}!
+
+We are a premier jewelry destination offering exquisite pieces crafted with passion and precision. Each piece in our collection tells a unique story and is designed to make you shine.
+
+Visit us to explore our stunning collection of rings, necklaces, earrings, bracelets, and more. Our expert team is dedicated to helping you find the perfect piece for any occasion.
+
+We look forward to serving you!`
+  const content = pageContent?.content || defaultContent
 
   return (
     <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray} shopDomain={params.domain}>
