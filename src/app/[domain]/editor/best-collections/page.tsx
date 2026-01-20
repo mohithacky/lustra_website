@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate } from '@/lib/supabase'
 import BestCollectionsEditor from '@/components/editor/BestCollectionsEditor'
 
 interface PageProps {
@@ -16,10 +16,14 @@ export default async function EditBestCollectionsPage({ params }: PageProps) {
   const user = await getWebsiteByDomain(params.domain)
   if (!user) notFound()
 
+  const template = await getWebsiteTemplate(user.id)
+  const isDark = template?.theme === 'dark'
+
   return (
     <BestCollectionsEditor 
       userId={user.id} 
-      shopDomain={params.domain} 
+      shopDomain={params.domain}
+      isDark={isDark}
     />
   )
 }

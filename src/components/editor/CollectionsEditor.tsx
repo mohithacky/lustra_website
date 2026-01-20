@@ -32,6 +32,7 @@ interface CollectionsEditorProps {
   maxItems?: number
   showAIGeneration?: boolean
   aspectRatioFilter?: 'small' | 'large'  // For trending: small=3:2, large=5:6
+  isDark?: boolean
 }
 
 export default function CollectionsEditor({ 
@@ -44,6 +45,7 @@ export default function CollectionsEditor({
   showAIGeneration = true,
   maxItems,
   aspectRatioFilter,
+  isDark = false,
 }: CollectionsEditorProps) {
   const router = useRouter()
   const [collections, setCollections] = useState<Collection[]>([])
@@ -483,20 +485,20 @@ export default function CollectionsEditor({
   const [collectionToActivate, setCollectionToActivate] = useState<Collection | null>(null)
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className={cn("min-h-screen py-8", isDark ? "bg-[#080808]" : "bg-gray-50")}>
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}
-              className="p-2 hover:bg-gray-100 rounded-full"
+              className={cn("p-2 rounded-full", isDark ? "hover:bg-white/10 text-white" : "hover:bg-gray-100")}
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-black">{title}</h1>
-              <p className="text-sm text-gray-500 mt-1">{description}</p>
+              <h1 className={cn("text-2xl font-bold", isDark ? "text-white" : "text-black")}>{title}</h1>
+              <p className={cn("text-sm mt-1", isDark ? "text-gray-400" : "text-gray-500")}>{description}</p>
             </div>
           </div>
           {!showAddForm && (
@@ -530,14 +532,14 @@ export default function CollectionsEditor({
 
         {/* Add/Edit Form */}
         {showAddForm && (
-          <div className="bg-white rounded-xl shadow-lg border-2 border-amber-200 p-6 mb-8">
+          <div className={cn("rounded-xl shadow-lg border-2 p-6 mb-8", isDark ? "bg-zinc-900 border-amber-500/50" : "bg-white border-amber-200")}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">
+              <h2 className={cn("text-xl font-bold", isDark ? "text-white" : "text-black")}>
                 {editingCollection 
                   ? `Edit: ${editingCollection.name}` 
                   : collectionLabel === 'category' ? 'Add New Category' : 'Add New Collection'}
               </h2>
-              <button onClick={resetForm} className="p-1 hover:bg-gray-100 rounded">
+              <button onClick={resetForm} className={cn("p-1 rounded", isDark ? "hover:bg-white/10 text-white" : "hover:bg-gray-100")}>
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -545,7 +547,7 @@ export default function CollectionsEditor({
             {/* Collection Name */}
             {!editingCollection && (
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className={cn("block text-sm font-medium mb-2", isDark ? "text-gray-300" : "text-gray-700")}>
                   Collection Name *
                 </label>
                 <input
@@ -553,15 +555,15 @@ export default function CollectionsEditor({
                   value={collectionName}
                   onChange={(e) => setCollectionName(e.target.value)}
                   placeholder="e.g., Summer Collection, Wedding Specials"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className={cn("w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent", isDark ? "bg-zinc-800 border-zinc-700 text-white placeholder-gray-500" : "border-gray-300")}
                 />
               </div>
             )}
             
             {/* Image Section */}
             <div className="mb-4">
-              <h3 className="font-semibold text-gray-900">Collection Banner</h3>
-              <p className="text-xs text-gray-500">Required aspect ratio: {aspectRatio}</p>
+              <h3 className={cn("font-semibold", isDark ? "text-white" : "text-gray-900")}>Collection Banner</h3>
+              <p className={cn("text-xs", isDark ? "text-gray-400" : "text-gray-500")}>Required aspect ratio: {aspectRatio}</p>
             </div>
 
             {/* Banner Source Tabs */}
@@ -643,9 +645,9 @@ export default function CollectionsEditor({
             <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
           </div>
         ) : collections.length === 0 ? (
-          <div className="text-center py-16 bg-gray-100 rounded-xl">
-            <ImageIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-500 mb-4">
+          <div className={cn("text-center py-16 rounded-xl", isDark ? "bg-zinc-900" : "bg-gray-100")}>
+            <ImageIcon className={cn("w-12 h-12 mx-auto mb-4", isDark ? "text-gray-600" : "text-gray-400")} />
+            <p className={cn("mb-4", isDark ? "text-gray-400" : "text-gray-500")}>
               {collectionLabel === 'category' ? 'No categories yet' : 'No collections yet'}
             </p>
             <button
@@ -664,14 +666,14 @@ export default function CollectionsEditor({
                 className={cn(
                   "rounded-xl border shadow-sm flex items-center overflow-hidden transition-all",
                   collection.is_active
-                    ? "bg-white border-gray-200"
-                    : "bg-gray-50 border-dashed border-gray-300 opacity-70"
+                    ? isDark ? "bg-zinc-900 border-zinc-700" : "bg-white border-gray-200"
+                    : isDark ? "bg-zinc-900/50 border-dashed border-zinc-700 opacity-70" : "bg-gray-50 border-dashed border-gray-300 opacity-70"
                 )}
               >
                 {/* Image thumbnail */}
                 <div className={cn(
                   "relative w-28 h-20 flex-shrink-0",
-                  collection.is_active ? "bg-gray-100" : "bg-gray-200"
+                  collection.is_active ? isDark ? "bg-zinc-800" : "bg-gray-100" : isDark ? "bg-zinc-800" : "bg-gray-200"
                 )}>
                   {collection.image_url ? (
                     <Image
@@ -682,7 +684,7 @@ export default function CollectionsEditor({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="w-8 h-8 text-gray-300" />
+                      <ImageIcon className={cn("w-8 h-8", isDark ? "text-gray-600" : "text-gray-300")} />
                     </div>
                   )}
                 </div>
@@ -691,13 +693,13 @@ export default function CollectionsEditor({
                 <div className="flex-1 px-4 py-2">
                   <h3 className={cn(
                     "font-semibold",
-                    collection.is_active ? "text-gray-900" : "text-gray-500"
+                    collection.is_active ? isDark ? "text-white" : "text-gray-900" : isDark ? "text-gray-400" : "text-gray-500"
                   )}>{collection.name}</h3>
                   <span className={cn(
                     'inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded',
                     collection.is_active
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-amber-50 text-amber-700'
+                      ? isDark ? 'bg-green-900/50 text-green-400' : 'bg-green-50 text-green-700'
+                      : isDark ? 'bg-amber-900/50 text-amber-400' : 'bg-amber-50 text-amber-700'
                   )}>
                     {collection.is_active ? 'Active' : 'Inactive'}
                   </span>
@@ -711,9 +713,9 @@ export default function CollectionsEditor({
                       else menuButtonRefs.current.delete(collection.id)
                     }}
                     onClick={() => handleMenuToggle(collection.id)}
-                    className="p-2 hover:bg-gray-100 rounded-full"
+                    className={cn("p-2 rounded-full", isDark ? "hover:bg-white/10" : "hover:bg-gray-100")}
                   >
-                    <MoreVertical className="w-5 h-5 text-gray-500" />
+                    <MoreVertical className={cn("w-5 h-5", isDark ? "text-gray-400" : "text-gray-500")} />
                   </button>
                 </div>
               </div>

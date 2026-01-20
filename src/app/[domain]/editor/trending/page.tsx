@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate } from '@/lib/supabase'
 import UnifiedTrendingEditor from '@/components/editor/UnifiedTrendingEditor'
 
 interface PageProps {
@@ -16,10 +16,14 @@ export default async function EditTrendingPage({ params }: PageProps) {
   const user = await getWebsiteByDomain(params.domain)
   if (!user) notFound()
 
+  const template = await getWebsiteTemplate(user.id)
+  const isDark = template?.theme === 'dark'
+
   return (
     <UnifiedTrendingEditor 
       userId={user.id} 
-      shopDomain={params.domain} 
+      shopDomain={params.domain}
+      isDark={isDark}
     />
   )
 }

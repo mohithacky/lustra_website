@@ -30,9 +30,10 @@ interface BestCollection {
 interface BestCollectionsEditorProps {
   userId: string
   shopDomain: string
+  isDark?: boolean
 }
 
-export default function BestCollectionsEditor({ userId, shopDomain }: BestCollectionsEditorProps) {
+export default function BestCollectionsEditor({ userId, shopDomain, isDark }: BestCollectionsEditorProps) {
   const router = useRouter()
   const [heroCollections, setHeroCollections] = useState<HeroCollection[]>([])
   const [bestCollections, setBestCollections] = useState<BestCollection[]>([])

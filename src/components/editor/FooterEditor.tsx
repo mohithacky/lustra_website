@@ -11,6 +11,7 @@ interface FooterData {
 interface FooterEditorProps {
   userId: string
   shopDomain: string
+  isDark?: boolean
 }
 
 const DEFAULT_FOOTER: FooterData = {
@@ -19,7 +20,7 @@ const DEFAULT_FOOTER: FooterData = {
   'Customer Care': ['FAQs', 'Contact Us', 'Shipping & Returns', 'Warranty'],
 }
 
-export default function FooterEditor({ userId, shopDomain }: FooterEditorProps) {
+export default function FooterEditor({ userId, shopDomain, isDark = false }: FooterEditorProps) {
   const router = useRouter()
   const [footerData, setFooterData] = useState<FooterData>(DEFAULT_FOOTER)
   const [isLoading, setIsLoading] = useState(true)

@@ -24,6 +24,7 @@ interface TrendingCollection {
 interface UnifiedTrendingEditorProps {
   userId: string
   shopDomain: string
+  isDark?: boolean
 }
 
 // Box configuration with positions and aspect ratios
@@ -34,7 +35,7 @@ const BOX_CONFIG = [
   { position: 3, aspectRatio: '3:2', label: 'Box 4', description: 'Bottom Right - Landscape', heightRatio: 0.8 },
 ]
 
-export default function UnifiedTrendingEditor({ userId, shopDomain }: UnifiedTrendingEditorProps) {
+export default function UnifiedTrendingEditor({ userId, shopDomain, isDark = false }: UnifiedTrendingEditorProps) {
   const router = useRouter()
   const [collections, setCollections] = useState<TrendingCollection[]>([])
   const [isLoading, setIsLoading] = useState(true)
