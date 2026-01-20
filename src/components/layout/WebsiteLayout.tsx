@@ -170,7 +170,7 @@ export default function WebsiteLayout({
               </Link>
 
               {/* Search Bar - Right edge on mobile, flexible width on desktop */}
-              <div className="flex-1 md:flex-initial md:min-w-0 md:flex-grow flex justify-end md:justify-start">
+              <div className="md:flex-1 md:min-w-0 flex-shrink-0">
                 <SearchBar isDark={isDark} shopDomain={shopDomain} />
               </div>
             </div>

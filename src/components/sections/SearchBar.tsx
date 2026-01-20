@@ -49,7 +49,7 @@ export default function SearchBar({ isDark = false, shopDomain }: SearchBarProps
   return (
     <form onSubmit={handleSearch} className="w-full">
       {/* Mobile: Icon only, expands on click */}
-      <div className="md:hidden">
+      <div className="md:hidden flex justify-end">
         {!isExpanded ? (
           <button
             type="button"
@@ -66,7 +66,7 @@ export default function SearchBar({ isDark = false, shopDomain }: SearchBarProps
           </button>
         ) : (
           <div className={cn(
-            'flex items-center gap-2 px-4 py-2.5 rounded-full border transition-all animate-in slide-in-from-right duration-300',
+            'flex items-center gap-2 px-4 py-2.5 rounded-full border transition-all animate-in slide-in-from-right duration-300 w-full',
             isDark 
               ? 'bg-white/[0.06] border-white/[0.18]' 
               : 'bg-white border-black/[0.08] shadow-sm',

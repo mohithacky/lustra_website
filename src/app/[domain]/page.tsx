@@ -262,9 +262,9 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
-      <div className="h-10" /> {/* Spacing */}
+      <div className="h-5" /> {/* Spacing */}
 
-      {/* 3. Shop By Product Type - matches Flutter ShopByProductTypeSection */}
+      {/* 3. Shop By Product Type - matches Flutter ShopByProductTypeSection */
       {productTypes.length > 1 && (
         <ShopByProductTypeSection
           productTypes={productTypes}
@@ -275,9 +275,9 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
-      <div className="h-10" /> {/* Spacing */}
+      <div className="h-5" /> {/* Spacing */}
 
-      {/* 3. Products Section (New Arrivals) - matches Flutter ProductShowcase */}
+      {/* 3. Products Section (New Arrivals) - matches Flutter ProductShowcase */
       {products.length > 0 && (
         <ProductsSection 
           products={products} 
@@ -291,18 +291,18 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
-      <div className="h-16" /> {/* Spacing */}
+      <div className="h-8" /> {/* Spacing */}
 
-      {/* 4. Shop By Recipient (Him/Her) - matches Flutter ShopByRecipientSection */}
+      {/* 4. Shop By Recipient (Him/Her) - matches Flutter ShopByRecipientSection */
       <ShopByRecipientSection 
         isDark={isDark}
         config={shopByRecipientConfig}
         shopDomain={params.domain}
       />
 
-      <div className="h-16" /> {/* Spacing */}
+      <div className="h-8" /> {/* Spacing */}
 
-      {/* 5. Trending Collections - matches Flutter FourBoxStaggeredSection, with edit icons */}
+      {/* 5. Trending Collections - matches Flutter FourBoxStaggeredSection, with edit icons */
       {trendingCollections.length > 0 && (
         <EditableTrendingSection 
           collections={trendingCollections} 
@@ -312,9 +312,9 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
-      <div className="h-16" /> {/* Spacing */}
+      <div className="h-8" /> {/* Spacing */}
 
-      {/* 6. Trending Products - matches Flutter TrendingProductsShowcase */}
+      {/* 6. Trending Products - matches Flutter TrendingProductsShowcase */
       {trendingProducts.length > 0 && (
         <TrendingProductsSection 
           products={trendingProducts} 
@@ -328,9 +328,9 @@ export default async function StorePage({ params }: PageProps) {
         />
       )}
 
-      <div className="h-10" /> {/* Spacing */}
+      <div className="h-5" /> {/* Spacing */}
 
-      {/* 7. Best Collections - matches Flutter FeaturedCollectionsShowcase */}
+      {/* 7. Best Collections - matches Flutter FeaturedCollectionsShowcase */
       {bestCollections.length > 0 && (
         <EditableBestCollections 
           collections={bestCollections} 
@@ -342,7 +342,7 @@ export default async function StorePage({ params }: PageProps) {
 
       {/* 8. Testimonials - matches Flutter JewelleryTestimonialSection */}
       {testimonials.length > 0 && (
-        <div className="mt-10">
+        <div className="mt-5">
           <TestimonialsSection 
             testimonials={testimonials} 
             isDark={isDark}
