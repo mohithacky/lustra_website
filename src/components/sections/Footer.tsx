@@ -56,16 +56,16 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
   return (
     <footer className={cn(
       'pt-16 pb-8 relative',
-      isDark ? 'bg-black text-white' : 'bg-zinc-900 text-white'
+      isDark ? 'bg-zinc-100 text-gray-900' : 'bg-zinc-900 text-white'
     )}>
       {/* Edit button - matches Flutter Footer edit icon */}
       {canEdit && (
         <button
           onClick={() => shopDomain && router.push(`/editor/footer`)}
-          className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+          className={cn("absolute top-4 right-4 p-2 rounded-full transition-colors z-10", isDark ? "bg-gray-200 hover:bg-gray-300" : "bg-white/10 hover:bg-white/20")}
           title="Edit Footer"
         >
-          <Edit className="w-5 h-5 text-white" />
+          <Edit className={cn("w-5 h-5", isDark ? "text-gray-900" : "text-white")} />
         </button>
       )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -91,7 +91,7 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
                 {user.shop_name || 'Jewelry Store'}
               </span>
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+            <p className={cn("text-sm leading-relaxed mb-6", isDark ? "text-gray-600" : "text-gray-400")}>
               Discover exquisite jewelry pieces crafted with passion and precision. 
               Each piece tells a unique story.
             </p>
@@ -103,7 +103,7 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
                   href={`https://instagram.com/${user.instagram_id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 bg-white/10 rounded-full hover:bg-gold-500 transition-colors"
+                  className={cn("p-2 rounded-full hover:bg-gold-500 transition-colors", isDark ? "bg-gray-200" : "bg-white/10")}
                   aria-label="Instagram"
                 >
                   <Instagram className="w-5 h-5" />
@@ -111,14 +111,14 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
               )}
               <a 
                 href="#"
-                className="p-2 bg-white/10 rounded-full hover:bg-gold-500 transition-colors"
+                className={cn("p-2 rounded-full hover:bg-gold-500 transition-colors", isDark ? "bg-gray-200" : "bg-white/10")}
                 aria-label="Facebook"
               >
                 <Facebook className="w-5 h-5" />
               </a>
               <a 
                 href="#"
-                className="p-2 bg-white/10 rounded-full hover:bg-gold-500 transition-colors"
+                className={cn("p-2 rounded-full hover:bg-gold-500 transition-colors", isDark ? "bg-gray-200" : "bg-white/10")}
                 aria-label="Twitter"
               >
                 <Twitter className="w-5 h-5" />
@@ -138,7 +138,7 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
                     <li key={index}>
                       <Link 
                         href={getFooterLinkHref(link)}
-                        className="text-gray-400 hover:text-gold-400 text-sm transition-colors"
+                        className={cn("hover:text-gold-400 text-sm transition-colors", isDark ? "text-gray-600" : "text-gray-400")}
                       >
                         {link}
                       </Link>
@@ -156,7 +156,7 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
             </h4>
             <ul className="space-y-4">
               {user.shop_address && (
-                <li className="flex items-start gap-3 text-sm text-gray-400">
+                <li className={cn("flex items-start gap-3 text-sm", isDark ? "text-gray-600" : "text-gray-400")}>
                   <MapPin className="w-5 h-5 text-gold-500 flex-shrink-0 mt-0.5" />
                   <span>{user.shop_address}</span>
                 </li>
@@ -165,7 +165,7 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
                 <li>
                   <a 
                     href={`tel:${user.phone_number}`}
-                    className="flex items-center gap-3 text-sm text-gray-400 hover:text-gold-400 transition-colors"
+                    className={cn("flex items-center gap-3 text-sm hover:text-gold-400 transition-colors", isDark ? "text-gray-600" : "text-gray-400")}
                   >
                     <Phone className="w-5 h-5 text-gold-500" />
                     <span>{user.phone_number}</span>
@@ -176,7 +176,7 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
                 <li>
                   <a 
                     href={`mailto:${user.email}`}
-                    className="flex items-center gap-3 text-sm text-gray-400 hover:text-gold-400 transition-colors"
+                    className={cn("flex items-center gap-3 text-sm hover:text-gold-400 transition-colors", isDark ? "text-gray-600" : "text-gray-400")}
                   >
                     <Mail className="w-5 h-5 text-gold-500" />
                     <span>{user.email}</span>
@@ -188,7 +188,7 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
         </div>
 
         {/* Divider */}
-        <div className="border-t border-white/10 pt-8">
+        <div className={cn("border-t pt-8", isDark ? "border-gray-300" : "border-white/10")}>
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-gray-500 text-sm">
               © {new Date().getFullYear()} {user.shop_name || 'Jewelry Store'}. All rights reserved.
