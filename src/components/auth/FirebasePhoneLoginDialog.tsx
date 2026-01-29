@@ -16,6 +16,7 @@ import {
   verifyFirebaseOtp,
   FirebaseAuthResult 
 } from '@/lib/firebaseAuth'
+import { createOrGetFirebaseCustomer } from '@/lib/customerApi'
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth'
 
 interface FirebasePhoneLoginDialogProps {
@@ -35,6 +36,8 @@ export default function FirebasePhoneLoginDialog({
   shopId,
   isDark,
 }: FirebasePhoneLoginDialogProps) {
+  const [isSignupMode, setIsSignupMode] = useState(true)
+  const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [codeSent, setCodeSent] = useState(false)
@@ -70,7 +73,11 @@ export default function FirebasePhoneLoginDialog({
   if (!isOpen) return null
 
   const handleSendOtp = async () => {
-    // Validate phone number
+    // Validate inputs
+    if (isSignupMode && !name.trim()) {
+      setError('Please enter your name')
+      return
+    }
     if (!phone.trim()) {
       setError('Please enter your mobile number')
       return
@@ -147,20 +154,42 @@ export default function FirebasePhoneLoginDialog({
       console.log('[Firebase] Is new user:', authResult.isNewUser)
       console.log('[Firebase] Shop details filled:', authResult.shopDetailsFilled)
       
-      // Store authentication data in localStorage
-      localStorage.setItem('firebaseAuth', JSON.stringify({
-        userId: authResult.userId,
-        phoneNumber: authResult.phoneNumber,
-        idToken: authResult.idToken,
-        isNewUser: authResult.isNewUser,
-        shopDetailsFilled: authResult.shopDetailsFilled,
-        shopId,
-        timestamp: Date.now()
-      }))
+      // Create or get customer record in the customers table
+      console.log('[Firebase] Creating/getting customer record...')
+      console.log('[Firebase] Shop owner ID:', shopId)
+      console.log('[Firebase] Customer phone:', authResult.phoneNumber)
+      console.log('[Firebase] Customer name:', name || 'Not provided')
       
-      // Call success callback
-      onSuccess(authResult.userId, authResult.phoneNumber, authResult)
-      onClose()
+      try {
+        const customer = await createOrGetFirebaseCustomer(
+          shopId,  // Shop owner's Firebase UID
+          authResult.phoneNumber,
+          authResult.idToken,
+          isSignupMode ? name : undefined
+        )
+        
+        console.log('[Firebase] Customer record created/retrieved:', customer.id)
+        
+        // Store authentication data in localStorage
+        localStorage.setItem('firebaseAuth', JSON.stringify({
+          userId: authResult.userId,
+          phoneNumber: authResult.phoneNumber,
+          idToken: authResult.idToken,
+          isNewUser: authResult.isNewUser,
+          shopDetailsFilled: authResult.shopDetailsFilled,
+          shopId,
+          customerId: customer.id,
+          customerName: customer.name,
+          timestamp: Date.now()
+        }))
+        
+        // Call success callback with customer info
+        onSuccess(customer.id, customer.name || authResult.phoneNumber, authResult)
+        onClose()
+      } catch (customerError) {
+        console.error('[Firebase] Error creating customer record:', customerError)
+        setError('Authentication successful but failed to create customer record. Please try again.')
+      }
     } catch (e: any) {
       console.error('[Firebase] Error verifying OTP:', e)
       
@@ -215,16 +244,58 @@ export default function FirebasePhoneLoginDialog({
 
         {/* Title */}
         <h2 className={cn('font-display text-2xl font-bold mb-2', textColor)}>
-          {codeSent ? 'Enter OTP' : `Login to ${shopName || 'Store'}`}
+          {codeSent ? 'Enter OTP' : `${isSignupMode ? 'Sign up' : 'Login'} to ${shopName || 'Store'}`}
         </h2>
         <p className={cn('text-sm mb-5', mutedText)}>
           {codeSent
             ? `We've sent a 6-digit code to ${normalizedPhone}`
-            : 'Enter your mobile number to continue with Firebase authentication.'}
+            : isSignupMode
+              ? 'Enter your name and mobile number to create an account.'
+              : 'Enter your mobile number to login.'}
         </p>
 
         {!codeSent ? (
           <>
+            {/* Login/Signup Toggle */}
+            <div className="flex justify-center gap-2 mb-5">
+              <button
+                onClick={() => { setIsSignupMode(true); setError(null); }}
+                className={cn(
+                  'px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors',
+                  isSignupMode
+                    ? 'bg-gold-500/10 text-gold-500'
+                    : cn('bg-transparent', mutedText)
+                )}
+              >
+                Sign Up
+              </button>
+              <button
+                onClick={() => { setIsSignupMode(false); setError(null); }}
+                className={cn(
+                  'px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors',
+                  !isSignupMode
+                    ? 'bg-gold-500/10 text-gold-500'
+                    : cn('bg-transparent', mutedText)
+                )}
+              >
+                Login
+              </button>
+            </div>
+
+            {/* Name field (signup only) */}
+            {isSignupMode && (
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+                className={cn(
+                  'w-full px-4 py-3 rounded-xl border mb-3 outline-none transition-colors focus:border-gold-500',
+                  inputBg, inputBorder, textColor
+                )}
+              />
+            )}
+
             {/* Phone field */}
             <div className="relative mb-3">
               <span className={cn('absolute left-4 top-1/2 -translate-y-1/2 text-sm', mutedText)}>
