@@ -7,7 +7,8 @@ import { usePathname } from 'next/navigation'
 import { Search, Heart, ShoppingCart, ChevronDown, LogIn, LogOut, User, Menu } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 import { Category, Collection } from '@/types/database'
-import PhoneLoginDialog from '@/components/auth/PhoneLoginDialog'
+import FirebasePhoneLoginDialog from '@/components/auth/FirebasePhoneLoginDialog'
+import { FirebaseAuthResult } from '@/lib/firebaseAuth'
 import EditorProvider from '@/components/editor/EditorProvider'
 import AnnouncementBar from '@/components/sections/AnnouncementBar'
 import { PromotionalAnnouncement } from '@/lib/supabase-new-architecture'
@@ -60,11 +61,30 @@ export default function WebsiteLayout({
 
   // Load customer from localStorage on mount
   useEffect(() => {
+    // Try Firebase auth first
+    const firebaseAuth = localStorage.getItem('firebaseAuth')
+    if (firebaseAuth) {
+      try {
+        const parsed = JSON.parse(firebaseAuth)
+        if (parsed.shopId === user.id) {
+          setCustomer({
+            id: parsed.userId,
+            name: parsed.phoneNumber,
+            phone: parsed.phoneNumber,
+            shopId: user.id,
+          })
+          return
+        }
+      } catch (e) {
+        console.error('Error parsing Firebase auth session:', e)
+      }
+    }
+    
+    // Fallback to old Twilio session
     const savedCustomer = localStorage.getItem('websiteCustomer')
     if (savedCustomer) {
       try {
         const parsed = JSON.parse(savedCustomer)
-        // Only use if it's for the same shop
         if (parsed.shopId === user.id) {
           setCustomer(parsed)
         }
@@ -78,17 +98,22 @@ export default function WebsiteLayout({
     document.body.className = theme
   }, [theme])
 
-  const handleLoginSuccess = (customerId: string, customerName: string) => {
+  const handleLoginSuccess = (userId: string, userName: string, authResult: FirebaseAuthResult) => {
+    console.log('[WebsiteLayout] Firebase auth successful:', userId)
+    console.log('[WebsiteLayout] Is new user:', authResult.isNewUser)
+    console.log('[WebsiteLayout] Shop details filled:', authResult.shopDetailsFilled)
+    
     setCustomer({
-      id: customerId,
-      name: customerName,
-      phone: '',
+      id: userId,
+      name: userName,
+      phone: authResult.phoneNumber,
       shopId: user.id,
     })
   }
 
   const handleLogout = () => {
     localStorage.removeItem('websiteCustomer')
+    localStorage.removeItem('firebaseAuth')
     setCustomer(null)
   }
 
@@ -308,8 +333,8 @@ export default function WebsiteLayout({
           shopDomain={shopDomain}
         />
 
-        {/* Phone Login Dialog */}
-        <PhoneLoginDialog
+        {/* Firebase Phone Login Dialog */}
+        <FirebasePhoneLoginDialog
           isOpen={showLoginDialog}
           onClose={() => setShowLoginDialog(false)}
           onSuccess={handleLoginSuccess}
