@@ -16,7 +16,6 @@ import {
   verifyFirebaseOtp,
   FirebaseAuthResult 
 } from '@/lib/firebaseAuth'
-import { createOrGetFirebaseCustomer } from '@/lib/customerApi'
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth'
 
 interface FirebasePhoneLoginDialogProps {
@@ -154,42 +153,56 @@ export default function FirebasePhoneLoginDialog({
       console.log('[Firebase] Is new user:', authResult.isNewUser)
       console.log('[Firebase] Shop details filled:', authResult.shopDetailsFilled)
       
-      // Create or get customer record in the customers table
-      console.log('[Firebase] Creating/getting customer record...')
-      console.log('[Firebase] Shop owner ID:', shopId)
-      console.log('[Firebase] Customer phone:', authResult.phoneNumber)
-      console.log('[Firebase] Customer name:', name || 'Not provided')
-      
-      try {
-        const customer = await createOrGetFirebaseCustomer(
-          shopId,  // Shop owner's Firebase UID
-          authResult.phoneNumber,
-          authResult.idToken,
-          isSignupMode ? name : undefined
-        )
-        
-        console.log('[Firebase] Customer record created/retrieved:', customer.id)
-        
-        // Store authentication data in localStorage
-        localStorage.setItem('firebaseAuth', JSON.stringify({
-          userId: authResult.userId,
+      // Create or update customer record in backend
+      console.log('[Firebase] Creating customer record in backend...')
+      const customerResponse = await fetch('https://api-5sqqk2n6ra-uc.a.run.app/auth/firebase-customer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          firebaseUid: authResult.userId,
           phoneNumber: authResult.phoneNumber,
-          idToken: authResult.idToken,
-          isNewUser: authResult.isNewUser,
-          shopDetailsFilled: authResult.shopDetailsFilled,
-          shopId,
-          customerId: customer.id,
-          customerName: customer.name,
-          timestamp: Date.now()
-        }))
-        
-        // Call success callback with customer info
-        onSuccess(customer.id, customer.name || authResult.phoneNumber, authResult)
-        onClose()
-      } catch (customerError) {
-        console.error('[Firebase] Error creating customer record:', customerError)
-        setError('Authentication successful but failed to create customer record. Please try again.')
+          shopId: shopId,
+          name: isSignupMode ? name.trim() : undefined,
+          isSignup: isSignupMode
+        })
+      })
+
+      if (!customerResponse.ok) {
+        const errorData = await customerResponse.json()
+        if (errorData.shouldSignup) {
+          setError('Phone number not registered. Please sign up first.')
+          setIsSignupMode(true)
+          return
+        }
+        throw new Error(errorData.error || 'Failed to create customer record')
       }
+
+      const customerData = await customerResponse.json()
+      console.log('[Firebase] Customer record created:', customerData.customer.id)
+      console.log('[Firebase] Is new customer:', customerData.isNewCustomer)
+      
+      // Store authentication data in localStorage
+      localStorage.setItem('firebaseAuth', JSON.stringify({
+        userId: authResult.userId,
+        phoneNumber: authResult.phoneNumber,
+        idToken: authResult.idToken,
+        isNewUser: authResult.isNewUser,
+        shopDetailsFilled: authResult.shopDetailsFilled,
+        customerId: customerData.customer.id,
+        customerName: customerData.customer.name,
+        shopId,
+        timestamp: Date.now()
+      }))
+      
+      // Call success callback with customer name
+      onSuccess(
+        customerData.customer.id, 
+        customerData.customer.name || authResult.phoneNumber, 
+        authResult
+      )
+      onClose()
     } catch (e: any) {
       console.error('[Firebase] Error verifying OTP:', e)
       
