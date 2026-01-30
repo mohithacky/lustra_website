@@ -42,17 +42,11 @@ export function createSupabaseClientWithFirebaseAuth(): SupabaseClient {
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
     {
-      global: {
-        headers: {
-          // Dynamic token retrieval - gets fresh token on each request
-        }
-      },
       auth: {
         persistSession: false,
         autoRefreshToken: false,
         detectSessionInUrl: false
       },
-      // Custom fetch that adds Firebase token to every request
       global: {
         fetch: async (url, options = {}) => {
           const auth = getFirebaseAuth()
