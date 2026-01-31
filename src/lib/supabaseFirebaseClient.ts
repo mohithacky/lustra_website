@@ -122,15 +122,33 @@ export function createSupabaseClientWithFirebaseToken(
     global: {
       // Use custom fetch to add Authorization header while preserving default headers
       fetch: async (url, options = {}) => {
-        // Merge our Authorization header with existing headers
-        const headers = {
-          ...options.headers,
-          'Authorization': `Bearer ${firebaseIdToken}`
+        // Supabase passes headers as a Headers object or plain object
+        // We need to convert it to a plain object and add our Authorization header
+        const existingHeaders: Record<string, string> = {}
+        
+        if (options.headers) {
+          if (options.headers instanceof Headers) {
+            // Convert Headers object to plain object
+            options.headers.forEach((value, key) => {
+              existingHeaders[key] = value
+            })
+          } else {
+            // Already a plain object
+            Object.assign(existingHeaders, options.headers)
+          }
+        }
+        
+        // Add our Authorization header
+        existingHeaders['Authorization'] = `Bearer ${firebaseIdToken}`
+        
+        // Ensure apikey is present (Supabase should add it, but let's be explicit)
+        if (!existingHeaders['apikey']) {
+          existingHeaders['apikey'] = SUPABASE_ANON_KEY
         }
         
         return fetch(url, {
           ...options,
-          headers
+          headers: existingHeaders
         })
       }
     }
