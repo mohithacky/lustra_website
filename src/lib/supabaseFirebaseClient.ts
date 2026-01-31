@@ -110,9 +110,9 @@ export function createSupabaseClientWithFirebaseToken(
   }
   
   // Create client with Firebase token in Authorization header
-  // IMPORTANT: We need both apikey and Authorization headers
-  // - apikey: Required by Supabase for all requests
-  // - Authorization: Contains Firebase token with role claim for RLS
+  // IMPORTANT: Match Flutter implementation exactly
+  // Flutter: SupabaseClient(url, anonKey, headers: {'Authorization': 'Bearer $idToken'})
+  // The anonKey automatically sets the apikey header, and we add Authorization on top
   const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       persistSession: false,  // Don't persist the Supabase session
@@ -120,9 +120,18 @@ export function createSupabaseClientWithFirebaseToken(
       detectSessionInUrl: false, // Don't detect session in URL - this is handled by Firebase
     },
     global: {
-      headers: {
-        apikey: SUPABASE_ANON_KEY, // Required by Supabase
-        Authorization: `Bearer ${firebaseIdToken}` // Firebase token for RLS
+      // Use custom fetch to add Authorization header while preserving default headers
+      fetch: async (url, options = {}) => {
+        // Merge our Authorization header with existing headers
+        const headers = {
+          ...options.headers,
+          'Authorization': `Bearer ${firebaseIdToken}`
+        }
+        
+        return fetch(url, {
+          ...options,
+          headers
+        })
       }
     }
   })
