@@ -282,11 +282,11 @@ export async function verifyFirebaseOtpWithCustomData(
       console.log('')
       console.log('👤 [STEP 7/8] Creating/updating customer in Supabase customers table...')
       customerRecord = await createOrUpdateCustomer(supabaseClient, user.uid, {
-        name: customerData.fullName || '',
+        // Required fields per schema
+        user_id: customerData.shopId || 'default', // Must provide user_id (website owner ID)
+        firebase_uid: user.uid, // Using firebase_uid as per schema
         phone_number: user.phoneNumber || '',
-        // Add customer data with firebase_uid (previously twilio_uid)
-        firebase_uid: user.uid, // Updated column name from twilio_uid
-        auth_provider: 'firebase',
+        name: customerData.fullName || '',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         // Add shop-specific data if available
@@ -303,9 +303,9 @@ export async function verifyFirebaseOtpWithCustomData(
     console.log('')
     console.log('📊 [STEP 8/8] Fetching customer data from Supabase customers table...')
     const { data: userResponse, error } = await supabaseClient
-      .from('customers') // Changed from users to customers table
+      .from('customers') // Using customers table for website visitors
       .select()
-      .eq('firebase_uid', user.uid) // Updated from id to firebase_uid
+      .eq('firebase_uid', user.uid) // Use firebase_uid as per schema
       .maybeSingle()
 
     if (error) {
@@ -317,9 +317,9 @@ export async function verifyFirebaseOtpWithCustomData(
     console.log('📋 Customer Data from Supabase:')
     console.log('   • Customer ID:', userResponse?.id || 'Not found')
     console.log('   • Firebase UID:', userResponse?.firebase_uid || 'Not set')
+    console.log('   • User ID:', userResponse?.user_id || 'Not set')
     console.log('   • Phone:', userResponse?.phone_number || 'Not set')
     console.log('   • Name:', userResponse?.name || 'Not set')
-    console.log('   • Shop ID:', userResponse?.shop_id || 'Not set')
     console.log('   • Shop Domain:', userResponse?.shop_domain || 'Not set')
 
     const shopDetailsFilled = userResponse?.shop_details_filled || false
@@ -451,7 +451,7 @@ async function createOrUpdateCustomer(
     const { data: existingCustomer } = await supabaseClient
       .from('customers')
       .select('*')
-      .eq('firebase_uid', userId) // Changed from id to firebase_uid
+      .eq('firebase_uid', userId) // Use firebase_uid per schema
       .maybeSingle()
       
     if (existingCustomer) {
@@ -462,7 +462,7 @@ async function createOrUpdateCustomer(
           ...customerData,
           updated_at: new Date().toISOString()
         })
-        .eq('firebase_uid', userId) // Changed from id to firebase_uid
+        .eq('firebase_uid', userId) // Use firebase_uid per schema
         
       if (updateError) {
         console.error('[Firebase] Failed to update customer:', updateError)
@@ -474,12 +474,14 @@ async function createOrUpdateCustomer(
     } else {
       console.log('[Firebase] Customer does not exist, creating new record')
       // Note: Don't use id field directly - the database will generate it
-      // Instead use firebase_uid to link to Firebase user
+      // Instead pass firebase_uid and required user_id
       const { error: insertError } = await supabaseClient
         .from('customers')
         .insert({
-          // No id field, let database generate it
-          firebase_uid: userId, // Use firebase_uid instead of id field
+          // Include all required fields per schema
+          firebase_uid: userId, // Use firebase_uid as per schema
+          user_id: customerData.user_id || 'default', // Required field per schema
+          phone_number: customerData.phone_number || '', // Required field per schema
           ...customerData
         })
         

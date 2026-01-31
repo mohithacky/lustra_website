@@ -109,14 +109,30 @@ export default function PhoneAuthForm({ returnUrl, isNewUser = false }: PhoneAut
       // Always ensure redirect back to original domain
       console.log('[Auth] Preparing redirect to:', returnUrl)
       
-      // Make sure we're redirecting back to original domain
+      // Ensure we have a proper URL to redirect to - if root path, prepend referrer origin
       let redirectTarget = returnUrl
       
-      // Check if this is a proper URL with protocol and domain
-      if (returnUrl.startsWith('http')) {
-        console.log('[Auth] Using cross-domain redirect to original subdomain')
-        // Cross-domain redirect to the original subdomain
-        const url = new URL(returnUrl)
+      // For bare paths like '/' that don't have a domain, try to extract referrer domain
+      if (!returnUrl.startsWith('http') && document.referrer && document.referrer.startsWith('http')) {
+        try {
+          // Extract the origin from the referrer
+          const referrerUrl = new URL(document.referrer)
+          // If returnUrl is a relative path (like '/'), prefix with the referrer's origin
+          if (returnUrl === '/' || returnUrl.startsWith('/')) {
+            redirectTarget = `${referrerUrl.origin}${returnUrl}`
+            console.log('[Auth] Enhanced relative URL with referrer origin:', redirectTarget)
+          }
+        } catch (e) {
+          console.error('[Auth] Error parsing referrer URL:', e)
+        }
+      }
+      
+      // Now process the URL for redirect - ensure it's a full URL for subdomain redirects
+      if (redirectTarget.startsWith('http')) {
+        console.log('[Auth] Using cross-domain redirect to:', redirectTarget)
+        
+        // Parse the URL to add params
+        const url = new URL(redirectTarget)
         
         // Add signup/login indicators to the URL
         if (isNewUser) {
@@ -126,24 +142,27 @@ export default function PhoneAuthForm({ returnUrl, isNewUser = false }: PhoneAut
           }
         }
         
-        // Use the original full URL (subdomain intact)
-        redirectTarget = url.toString()
-        console.log('[Auth] Redirecting to original subdomain:', redirectTarget)
+        // Use the original full URL with subdomain intact
+        const finalUrl = url.toString()
+        console.log('[Auth] Final redirect URL:', finalUrl)
         
         // Force window location to handle cross-domain redirect
-        window.location.href = redirectTarget
+        window.location.href = finalUrl
       } else {
         // Handle relative URLs (shouldn't happen with the cross-domain flow, but just in case)
-        console.log('[Auth] Same-domain redirect (not recommended for subdomain auth):', returnUrl)
+        console.log('[Auth] Same-domain redirect (WARNING: may lose subdomain!):', redirectTarget)
         if (isNewUser) {
-          let redirectUrl = `${returnUrl}${returnUrl.includes('?') ? '&' : '?'}new_user=true`
+          let redirectUrl = `${redirectTarget}${redirectTarget.includes('?') ? '&' : '?'}new_user=true`
           if (fullName) {
             redirectUrl += `&name=${encodeURIComponent(fullName)}`
           }
           router.push(redirectUrl)
         } else {
-          router.push(returnUrl)
+          router.push(redirectTarget)
         }
+        
+        // Display warning in console
+        console.warn('[Auth] WARNING: Using relative URL redirect which may not preserve subdomain!')
       }
     } catch (err: any) {
       console.error('[Auth] Error verifying OTP:', err)
