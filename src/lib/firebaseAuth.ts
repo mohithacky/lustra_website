@@ -77,6 +77,17 @@ export async function sendFirebaseOtp(
 }
 
 /**
+ * Customer data interface for Supabase integration
+ */
+export interface CustomerData {
+  isSignup: boolean;
+  fullName?: string;
+  shopId?: string;
+  shopDomain?: string;
+  metadata?: Record<string, any>;
+}
+
+/**
  * Verify OTP and complete Firebase phone authentication
  * This follows the exact same flow as the Flutter app
  */
@@ -194,6 +205,149 @@ export async function verifyFirebaseOtp(
 }
 
 /**
+ * Verify OTP with custom data (for user signup)
+ * Enhanced version that accepts customer data for new user registration
+ */
+export async function verifyFirebaseOtpWithCustomData(
+  confirmationResult: ConfirmationResult,
+  otp: string,
+  customerData: CustomerData
+): Promise<FirebaseAuthResult> {
+  try {
+    console.log('')
+    console.log('╔════════════════════════════════════════════════════════════════╗')
+    console.log('║  FIREBASE PHONE AUTH - ENHANCED FLOW WITH CUSTOMER DATA       ║')
+    console.log('╚════════════════════════════════════════════════════════════════╝')
+    console.log('')
+    console.log('[Auth] Flow type:', customerData.isSignup ? 'SIGNUP' : 'LOGIN')
+    if (customerData.isSignup) {
+      console.log('[Auth] Customer name:', customerData.fullName || 'Not provided')
+    }
+
+    // STEP 1: Sign in to Firebase with OTP
+    console.log('📱 [STEP 1/8] Verifying OTP with Firebase...')
+    const userCredential = await confirmationResult.confirm(otp)
+    const user = userCredential.user
+    console.log('✅ [STEP 1/8] Firebase sign-in completed successfully')
+    console.log('   • User ID:', user.uid)
+    console.log('   • Phone:', user.phoneNumber)
+
+    // STEP 2: Get Firebase ID token
+    console.log('')
+    console.log('🔑 [STEP 2/8] Obtaining Firebase ID token...')
+    const idToken = await user.getIdToken()
+    console.log('✅ [STEP 2/8] Firebase ID token obtained:', idToken.substring(0, 20) + '...')
+
+    // STEP 3: Send token to backend for verification and custom claim addition
+    console.log('')
+    console.log('🔐 [STEP 3/8] Sending token to backend with customer data...')
+    const backendResponse = await verifyTokenAndAddClaimWithData(idToken, customerData)
+    const isNewUser = backendResponse.isNewUser || customerData.isSignup || false
+    console.log('✅ [STEP 3/8] Backend verification complete')
+    console.log('   • User status:', isNewUser ? 'NEW USER' : 'EXISTING USER')
+
+    // STEP 4: Force refresh token to get updated claims
+    console.log('')
+    console.log('🔄 [STEP 4/8] Refreshing Firebase token to get updated claims...')
+    await user.getIdToken(true) // Force refresh
+    const updatedIdToken = await user.getIdToken()
+    console.log('✅ [STEP 4/8] Token refreshed:', updatedIdToken.substring(0, 20) + '...')
+
+    // Print token details
+    console.log('')
+    console.log('📋 Token Details:')
+    printTokenDetails(updatedIdToken)
+
+    // STEP 5: Create Supabase client with Firebase token
+    console.log('')
+    console.log('🗄️  [STEP 5/8] Creating Supabase client with Firebase token...')
+    const supabaseClient = createSupabaseClientWithFirebaseToken(updatedIdToken)
+    console.log('✅ [STEP 5/8] Supabase client created')
+
+    // STEP 6: Verify Supabase authentication
+    console.log('')
+    console.log('🔍 [STEP 6/8] Verifying Supabase authentication...')
+    console.log('   • Attempting to access users table with Firebase UID:', user.uid)
+    const authVerified = await verifySupabaseAuthentication(supabaseClient, user.uid)
+    console.log('   • Verification result:', authVerified ? '✅ SUCCESS' : '❌ FAILED')
+
+    if (!authVerified) {
+      console.error('❌ Supabase authentication failed')
+      throw new Error('Failed to authenticate with Supabase using Firebase token')
+    }
+
+    // STEP 7: Create/Update customer in Supabase if this is a signup
+    let customerRecord = null
+    if (isNewUser && customerData.isSignup) {
+      console.log('')
+      console.log('👤 [STEP 7/8] Creating/updating customer in Supabase...')
+      customerRecord = await createOrUpdateCustomer(supabaseClient, user.uid, {
+        name: customerData.fullName || '',
+        phone_number: user.phoneNumber || '',
+        // Add any other customer data
+        auth_provider: 'firebase',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // Add shop-specific data if available
+        ...(customerData.shopId ? { shop_id: customerData.shopId } : {}),
+        ...(customerData.shopDomain ? { shop_domain: customerData.shopDomain } : {}),
+      })
+      console.log('✅ [STEP 7/8] Customer record created/updated:', customerRecord ? 'Success' : 'Failed')
+    } else {
+      console.log('')
+      console.log('👤 [STEP 7/8] Skipping customer creation (existing user)')
+    }
+
+    // STEP 8: Fetch user data from Supabase
+    console.log('')
+    console.log('📊 [STEP 8/8] Fetching user data from Supabase users table...')
+    const { data: userResponse, error } = await supabaseClient
+      .from('users')
+      .select()
+      .eq('id', user.uid)
+      .maybeSingle()
+
+    if (error) {
+      console.error('[Firebase] Error fetching user data:', error)
+    }
+
+    console.log('✅ [STEP 8/8] User data retrieved successfully')
+    console.log('')
+    console.log('📋 User Data from Supabase:')
+    console.log('   • User ID:', userResponse?.id || 'Not found')
+    console.log('   • Phone:', userResponse?.phone_number || 'Not set')
+    console.log('   • Name:', userResponse?.name || 'Not set')
+    console.log('   • Shop ID:', userResponse?.shop_id || 'Not set')
+    console.log('   • Auth Provider:', userResponse?.auth_provider || 'Not set')
+
+    const shopDetailsFilled = userResponse?.shop_details_filled || false
+
+    console.log('')
+    console.log('╔════════════════════════════════════════════════════════════════╗')
+    console.log('║  ✅ AUTHENTICATION COMPLETE - FINAL STATUS                    ║')
+    console.log('╚════════════════════════════════════════════════════════════════╝')
+    console.log('🔐 Authentication Status:')
+    console.log('   • Firebase Auth: ✅ SUCCESS')
+    console.log('   • Supabase Auth: ✅', authVerified ? 'SUCCESS' : 'FAILED')
+    console.log('   • User Type:', isNewUser ? 'NEW USER' : 'EXISTING USER')
+    console.log('   • Shop Details:', shopDetailsFilled ? '✅ FILLED' : '❌ NOT FILLED')
+    console.log('')
+
+    return {
+      firebaseUser: user,
+      idToken: updatedIdToken,
+      isNewUser,
+      shopDetailsFilled,
+      userId: user.uid,
+      phoneNumber: user.phoneNumber || ''
+    }
+  } catch (error) {
+    console.error('[Firebase] Error verifying OTP:', error)
+    throw error
+  }
+}
+
+/**
  * Send Firebase ID token to backend for verification and custom claim addition
  * This is the same endpoint used by the Flutter app
  */
@@ -231,6 +385,110 @@ async function verifyTokenAndAddClaim(idToken: string): Promise<any> {
   } catch (error) {
     console.error('[Firebase] Token verification error:', error)
     throw new Error(`Failed to communicate with backend: ${error}`)
+  }
+}
+
+/**
+ * Enhanced version that sends customer data for signup/registration
+ */
+async function verifyTokenAndAddClaimWithData(idToken: string, customerData: CustomerData): Promise<any> {
+  try {
+    console.log('[Firebase] Sending ID token to backend with customer data')
+
+    const response = await fetch(`${BACKEND_URL}/auth/verify-phone-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        idToken: idToken,
+        isSignup: customerData.isSignup,
+        fullName: customerData.fullName || '',
+        shopId: customerData.shopId || '',
+        shopDomain: customerData.shopDomain || '',
+        metadata: customerData.metadata || {}
+      })
+    })
+
+    console.log('[Firebase] Backend response status:', response.status)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[Firebase] Backend verification failed:', errorText)
+      throw new Error('Failed to verify token with backend')
+    }
+
+    const data = await response.json()
+    console.log('[Firebase] Backend verification response:', data)
+    console.log('[Firebase] Is new user:', data.isNewUser)
+
+    if (data.user) {
+      console.log('[Firebase] User record:', data.user)
+    }
+
+    return data
+  } catch (error) {
+    console.error('[Firebase] Token verification error:', error)
+    throw new Error(`Failed to communicate with backend: ${error}`)
+  }
+}
+
+/**
+ * Create or update customer in Supabase
+ */
+async function createOrUpdateCustomer(
+  supabaseClient: any,
+  userId: string,
+  customerData: Record<string, any>
+): Promise<boolean> {
+  try {
+    console.log('[Firebase] Creating/updating customer in Supabase:', userId)
+    console.log('[Firebase] Customer data:', customerData)
+    
+    // First check if customer exists
+    const { data: existingCustomer } = await supabaseClient
+      .from('customers')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
+      
+    if (existingCustomer) {
+      console.log('[Firebase] Customer exists, updating record')
+      const { error: updateError } = await supabaseClient
+        .from('customers')
+        .update({
+          ...customerData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        
+      if (updateError) {
+        console.error('[Firebase] Failed to update customer:', updateError)
+        return false
+      }
+      
+      console.log('[Firebase] Customer updated successfully')
+      return true
+    } else {
+      console.log('[Firebase] Customer does not exist, creating new record')
+      const { error: insertError } = await supabaseClient
+        .from('customers')
+        .insert({
+          id: userId,
+          ...customerData
+        })
+        
+      if (insertError) {
+        console.error('[Firebase] Failed to create customer:', insertError)
+        return false
+      }
+      
+      console.log('[Firebase] Customer created successfully')
+      return true
+    }
+  } catch (error) {
+    console.error('[Firebase] Error creating/updating customer:', error)
+    return false
   }
 }
 

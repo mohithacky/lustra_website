@@ -6,7 +6,9 @@ import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth'
 import { 
   initializeRecaptcha, 
   sendFirebaseOtp, 
-  verifyFirebaseOtp 
+  verifyFirebaseOtp,
+  verifyFirebaseOtpWithCustomData,
+  CustomerData
 } from '@/lib/firebaseAuth'
 import { Phone, ArrowRight, Loader2 } from 'lucide-react'
 
@@ -17,6 +19,7 @@ interface PhoneAuthFormProps {
 
 export default function PhoneAuthForm({ returnUrl, isNewUser = false }: PhoneAuthFormProps) {
   const router = useRouter()
+  const [fullName, setFullName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [otp, setOtp] = useState('')
   const [step, setStep] = useState<'phone' | 'otp'>('phone')
@@ -73,35 +76,64 @@ export default function PhoneAuthForm({ returnUrl, isNewUser = false }: PhoneAut
         throw new Error('No confirmation result available')
       }
 
-      // Pass isNewUser as a URL parameter to the backend
-      const result = await verifyFirebaseOtp(confirmationResult, otp)
+      console.log('[Auth] Starting verification with OTP:', '******')
+      console.log('[Auth] User is signup:', isNewUser ? 'Yes' : 'No')
+      if (isNewUser) {
+        console.log('[Auth] User fullName:', fullName || 'Not provided')
+      }
+
+      // Store the name in localStorage for backend access
+      if (isNewUser && fullName) {
+        localStorage.setItem('signup_full_name', fullName)
+      }
+
+      // Get the custom authentication data to pass to the backend
+      const authData = {
+        isSignup: isNewUser,
+        fullName: fullName || '',
+      }
+
+      // Verify OTP and create user in Supabase
+      const result = await verifyFirebaseOtpWithCustomData(confirmationResult, otp, authData)
       console.log('[Auth] Authentication successful:', result)
       console.log('[Auth] Is new user:', isNewUser ? 'Yes' : 'No')
-
-      // Store the user type in localStorage for the receiving domain
+      
+      // Store user info in localStorage for the receiving domain
       if (isNewUser) {
         localStorage.setItem('auth_user_type', 'new_user')
+        if (fullName) {
+          localStorage.setItem('auth_user_name', fullName)
+        }
       }
       
       // Handle cross-domain redirect
       if (returnUrl.startsWith('http')) {
+        console.log('[Auth] Cross-domain redirect to:', returnUrl)
         // For cross-domain redirects, we need to use window.location
         // Add signup indicator to the URL if this is a new user
         const url = new URL(returnUrl)
         if (isNewUser) {
           url.searchParams.append('new_user', 'true')
+          if (fullName) {
+            url.searchParams.append('name', encodeURIComponent(fullName))
+          }
         }
         window.location.href = url.toString()
       } else {
+        console.log('[Auth] Same-domain redirect to:', returnUrl)
         // For same-domain redirects, we can use the router
         if (isNewUser) {
-          router.push(`${returnUrl}${returnUrl.includes('?') ? '&' : '?'}new_user=true`)
+          let redirectUrl = `${returnUrl}${returnUrl.includes('?') ? '&' : '?'}new_user=true`
+          if (fullName) {
+            redirectUrl += `&name=${encodeURIComponent(fullName)}`
+          }
+          router.push(redirectUrl)
         } else {
           router.push(returnUrl)
         }
       }
     } catch (err: any) {
-      console.error('Error verifying OTP:', err)
+      console.error('[Auth] Error verifying OTP:', err)
       setError(err.message || 'Invalid OTP. Please try again.')
     } finally {
       setLoading(false)
@@ -139,6 +171,25 @@ export default function PhoneAuthForm({ returnUrl, isNewUser = false }: PhoneAut
 
       {step === 'phone' ? (
         <form onSubmit={handleSendOtp} className="space-y-6">
+          {isNewUser && (
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Enter your full name"
+                  className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  required={isNewUser}
+                  disabled={loading}
+                />
+              </div>
+            </div>
+          )}
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
               Phone Number

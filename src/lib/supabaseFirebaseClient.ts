@@ -70,6 +70,7 @@ export function createSupabaseClientWithFirebaseAuth(): SupabaseClient {
     }
   )
   
+  console.log('[Supabase] Supabase client created successfully with dynamic Firebase token')
   return supabaseClient
 }
 
@@ -80,26 +81,51 @@ export function createSupabaseClientWithFirebaseAuth(): SupabaseClient {
 export function createSupabaseClientWithFirebaseToken(
   firebaseIdToken: string
 ): SupabaseClient {
-  console.log('[Supabase] Creating client with static Firebase ID token')
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('[Supabase] Missing Supabase URL or anon key in environment variables')
+    throw new Error('Supabase URL and anon key are required')
+  }
   
-  const supabaseClient = createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${firebaseIdToken}`
-        }
-      },
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false
+  console.log('[Supabase] Creating Supabase client with static Firebase token')
+  console.log('[Supabase] Token prefix:', firebaseIdToken.substring(0, 10) + '...')
+  
+  // Extract token payload to log claims and verify role
+  try {
+    const tokenParts = firebaseIdToken.split('.')
+    if (tokenParts.length === 3) {
+      const payload = JSON.parse(atob(tokenParts[1].replace(/-/g, '+').replace(/_/g, '/')))
+      console.log('[Supabase] Token claims:')
+      console.log('  • Subject (user ID):', payload.sub)
+      console.log('  • Role claim:', payload.role || 'NOT SET')
+      console.log('  • Expires at:', new Date(payload.exp * 1000).toISOString())
+      
+      if (!payload.role) {
+        console.warn('[Supabase] WARNING: Token does not have a role claim. RLS policies may fail!')
+      } else if (payload.role === 'authenticated') {
+        console.log('[Supabase] ✅ Role claim is properly set to "authenticated"')
       }
     }
-  )
+  } catch (e) {
+    console.error('[Supabase] Could not parse token payload:', e)
+  }
   
-  console.log('[Supabase] Client created successfully with Firebase token')
-  return supabaseClient
+  // Create client with Firebase token in Authorization header
+  // Create client with Firebase token in Authorization header
+  const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: false,  // Don't persist the Supabase session
+      autoRefreshToken: false, // Don't refresh the token - Firebase handles this
+      detectSessionInUrl: false, // Don't detect session in URL - this is handled by Firebase
+    },
+    global: {
+      headers: {
+        Authorization: `Bearer ${firebaseIdToken}`
+      }
+    }
+  })
+  
+  console.log('[Supabase] Supabase client created successfully with static Firebase token')
+  return client
 }
 
 /**
