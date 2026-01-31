@@ -110,7 +110,9 @@ export function createSupabaseClientWithFirebaseToken(
   }
   
   // Create client with Firebase token in Authorization header
-  // Create client with Firebase token in Authorization header
+  // IMPORTANT: We need both apikey and Authorization headers
+  // - apikey: Required by Supabase for all requests
+  // - Authorization: Contains Firebase token with role claim for RLS
   const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       persistSession: false,  // Don't persist the Supabase session
@@ -119,7 +121,8 @@ export function createSupabaseClientWithFirebaseToken(
     },
     global: {
       headers: {
-        Authorization: `Bearer ${firebaseIdToken}`
+        apikey: SUPABASE_ANON_KEY, // Required by Supabase
+        Authorization: `Bearer ${firebaseIdToken}` // Firebase token for RLS
       }
     }
   })
