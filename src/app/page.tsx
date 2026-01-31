@@ -37,12 +37,12 @@ export default async function Home() {
             Beautiful jewelry websites powered by AI
           </p>
           <div className="flex gap-4 justify-center">
-            <Link
-              href="/auth"
+            <a
+              href={`https://lustrai.in/auth?returnUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '/')}`}
               className="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-semibold"
             >
               Sign In
-            </Link>
+            </a>
             <Link
               href="/profile"
               className="px-6 py-3 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-semibold"

@@ -271,8 +271,8 @@ export default function WebsiteLayout({
                     </button>
                   </div>
                 ) : (
-                  <Link
-                    href={`/auth?returnUrl=${encodeURIComponent(pathname)}`}
+                  <a
+                    href={`https://lustrai.in/auth?returnUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '/')}`}
                     className={cn(
                       'flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-colors',
                       isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
@@ -280,7 +280,7 @@ export default function WebsiteLayout({
                   >
                     <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span className="hidden lg:inline">Login</span>
-                  </Link>
+                  </a>
                 )}
                 
                 {/* Wishlist */}

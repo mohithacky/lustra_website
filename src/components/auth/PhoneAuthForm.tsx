@@ -12,9 +12,10 @@ import { Phone, ArrowRight, Loader2 } from 'lucide-react'
 
 interface PhoneAuthFormProps {
   returnUrl: string
+  isNewUser?: boolean
 }
 
-export default function PhoneAuthForm({ returnUrl }: PhoneAuthFormProps) {
+export default function PhoneAuthForm({ returnUrl, isNewUser = false }: PhoneAuthFormProps) {
   const router = useRouter()
   const [phoneNumber, setPhoneNumber] = useState('')
   const [otp, setOtp] = useState('')
@@ -72,10 +73,33 @@ export default function PhoneAuthForm({ returnUrl }: PhoneAuthFormProps) {
         throw new Error('No confirmation result available')
       }
 
+      // Pass isNewUser as a URL parameter to the backend
       const result = await verifyFirebaseOtp(confirmationResult, otp)
       console.log('[Auth] Authentication successful:', result)
+      console.log('[Auth] Is new user:', isNewUser ? 'Yes' : 'No')
 
-      router.push(returnUrl)
+      // Store the user type in localStorage for the receiving domain
+      if (isNewUser) {
+        localStorage.setItem('auth_user_type', 'new_user')
+      }
+      
+      // Handle cross-domain redirect
+      if (returnUrl.startsWith('http')) {
+        // For cross-domain redirects, we need to use window.location
+        // Add signup indicator to the URL if this is a new user
+        const url = new URL(returnUrl)
+        if (isNewUser) {
+          url.searchParams.append('new_user', 'true')
+        }
+        window.location.href = url.toString()
+      } else {
+        // For same-domain redirects, we can use the router
+        if (isNewUser) {
+          router.push(`${returnUrl}${returnUrl.includes('?') ? '&' : '?'}new_user=true`)
+        } else {
+          router.push(returnUrl)
+        }
+      }
     } catch (err: any) {
       console.error('Error verifying OTP:', err)
       setError(err.message || 'Invalid OTP. Please try again.')

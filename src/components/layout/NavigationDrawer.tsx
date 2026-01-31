@@ -145,8 +145,8 @@ export default function NavigationDrawer({
               </button>
             </div>
           ) : (
-            <Link
-              href={`/auth?returnUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '/')}`}
+            <a
+              href={`https://lustrai.in/auth?returnUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '/')}`}
               onClick={onClose}
               className={cn(
                 'w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-colors',
@@ -157,7 +157,7 @@ export default function NavigationDrawer({
             >
               <User className="w-5 h-5" />
               Login / Sign Up
-            </Link>
+            </a>
           )}
         </div>
 
