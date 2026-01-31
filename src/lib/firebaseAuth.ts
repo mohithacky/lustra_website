@@ -280,11 +280,12 @@ export async function verifyFirebaseOtpWithCustomData(
     let customerRecord = null
     if (isNewUser && customerData.isSignup) {
       console.log('')
-      console.log('👤 [STEP 7/8] Creating/updating customer in Supabase...')
+      console.log('👤 [STEP 7/8] Creating/updating customer in Supabase customers table...')
       customerRecord = await createOrUpdateCustomer(supabaseClient, user.uid, {
         name: customerData.fullName || '',
         phone_number: user.phoneNumber || '',
-        // Add any other customer data
+        // Add customer data with firebase_uid (previously twilio_uid)
+        firebase_uid: user.uid, // Updated column name from twilio_uid
         auth_provider: 'firebase',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -292,33 +293,34 @@ export async function verifyFirebaseOtpWithCustomData(
         ...(customerData.shopId ? { shop_id: customerData.shopId } : {}),
         ...(customerData.shopDomain ? { shop_domain: customerData.shopDomain } : {}),
       })
-      console.log('✅ [STEP 7/8] Customer record created/updated:', customerRecord ? 'Success' : 'Failed')
+      console.log('✅ [STEP 7/8] Customer record created/updated in customers table:', customerRecord ? 'Success' : 'Failed')
     } else {
       console.log('')
       console.log('👤 [STEP 7/8] Skipping customer creation (existing user)')
     }
 
-    // STEP 8: Fetch user data from Supabase
+    // STEP 8: Fetch customer data from Supabase
     console.log('')
-    console.log('📊 [STEP 8/8] Fetching user data from Supabase users table...')
+    console.log('📊 [STEP 8/8] Fetching customer data from Supabase customers table...')
     const { data: userResponse, error } = await supabaseClient
-      .from('users')
+      .from('customers') // Changed from users to customers table
       .select()
-      .eq('id', user.uid)
+      .eq('firebase_uid', user.uid) // Updated from id to firebase_uid
       .maybeSingle()
 
     if (error) {
       console.error('[Firebase] Error fetching user data:', error)
     }
 
-    console.log('✅ [STEP 8/8] User data retrieved successfully')
+    console.log('✅ [STEP 8/8] Customer data retrieved successfully')
     console.log('')
-    console.log('📋 User Data from Supabase:')
-    console.log('   • User ID:', userResponse?.id || 'Not found')
+    console.log('📋 Customer Data from Supabase:')
+    console.log('   • Customer ID:', userResponse?.id || 'Not found')
+    console.log('   • Firebase UID:', userResponse?.firebase_uid || 'Not set')
     console.log('   • Phone:', userResponse?.phone_number || 'Not set')
     console.log('   • Name:', userResponse?.name || 'Not set')
     console.log('   • Shop ID:', userResponse?.shop_id || 'Not set')
-    console.log('   • Auth Provider:', userResponse?.auth_provider || 'Not set')
+    console.log('   • Shop Domain:', userResponse?.shop_domain || 'Not set')
 
     const shopDetailsFilled = userResponse?.shop_details_filled || false
 
@@ -434,7 +436,7 @@ async function verifyTokenAndAddClaimWithData(idToken: string, customerData: Cus
 }
 
 /**
- * Create or update customer in Supabase
+ * Create or update customer in Supabase customers table
  */
 async function createOrUpdateCustomer(
   supabaseClient: any,
@@ -442,14 +444,14 @@ async function createOrUpdateCustomer(
   customerData: Record<string, any>
 ): Promise<boolean> {
   try {
-    console.log('[Firebase] Creating/updating customer in Supabase:', userId)
+    console.log('[Firebase] Creating/updating customer in Supabase customers table:', userId)
     console.log('[Firebase] Customer data:', customerData)
     
-    // First check if customer exists
+    // First check if customer exists by firebase_uid
     const { data: existingCustomer } = await supabaseClient
       .from('customers')
       .select('*')
-      .eq('id', userId)
+      .eq('firebase_uid', userId) // Changed from id to firebase_uid
       .maybeSingle()
       
     if (existingCustomer) {
@@ -460,7 +462,7 @@ async function createOrUpdateCustomer(
           ...customerData,
           updated_at: new Date().toISOString()
         })
-        .eq('id', userId)
+        .eq('firebase_uid', userId) // Changed from id to firebase_uid
         
       if (updateError) {
         console.error('[Firebase] Failed to update customer:', updateError)
@@ -471,10 +473,13 @@ async function createOrUpdateCustomer(
       return true
     } else {
       console.log('[Firebase] Customer does not exist, creating new record')
+      // Note: Don't use id field directly - the database will generate it
+      // Instead use firebase_uid to link to Firebase user
       const { error: insertError } = await supabaseClient
         .from('customers')
         .insert({
-          id: userId,
+          // No id field, let database generate it
+          firebase_uid: userId, // Use firebase_uid instead of id field
           ...customerData
         })
         

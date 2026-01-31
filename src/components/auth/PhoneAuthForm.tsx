@@ -106,22 +106,35 @@ export default function PhoneAuthForm({ returnUrl, isNewUser = false }: PhoneAut
         }
       }
       
-      // Handle cross-domain redirect
+      // Always ensure redirect back to original domain
+      console.log('[Auth] Preparing redirect to:', returnUrl)
+      
+      // Make sure we're redirecting back to original domain
+      let redirectTarget = returnUrl
+      
+      // Check if this is a proper URL with protocol and domain
       if (returnUrl.startsWith('http')) {
-        console.log('[Auth] Cross-domain redirect to:', returnUrl)
-        // For cross-domain redirects, we need to use window.location
-        // Add signup indicator to the URL if this is a new user
+        console.log('[Auth] Using cross-domain redirect to original subdomain')
+        // Cross-domain redirect to the original subdomain
         const url = new URL(returnUrl)
+        
+        // Add signup/login indicators to the URL
         if (isNewUser) {
           url.searchParams.append('new_user', 'true')
           if (fullName) {
             url.searchParams.append('name', encodeURIComponent(fullName))
           }
         }
-        window.location.href = url.toString()
+        
+        // Use the original full URL (subdomain intact)
+        redirectTarget = url.toString()
+        console.log('[Auth] Redirecting to original subdomain:', redirectTarget)
+        
+        // Force window location to handle cross-domain redirect
+        window.location.href = redirectTarget
       } else {
-        console.log('[Auth] Same-domain redirect to:', returnUrl)
-        // For same-domain redirects, we can use the router
+        // Handle relative URLs (shouldn't happen with the cross-domain flow, but just in case)
+        console.log('[Auth] Same-domain redirect (not recommended for subdomain auth):', returnUrl)
         if (isNewUser) {
           let redirectUrl = `${returnUrl}${returnUrl.includes('?') ? '&' : '?'}new_user=true`
           if (fullName) {
