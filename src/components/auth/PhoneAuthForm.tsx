@@ -10,6 +10,7 @@ import {
   verifyFirebaseOtpWithCustomData,
   CustomerData
 } from '@/lib/firebaseAuth'
+import { getSupabaseClient } from '@/lib/supabaseFirebaseClient'
 import { Phone, ArrowRight, Loader2 } from 'lucide-react'
 
 interface PhoneAuthFormProps {
@@ -87,10 +88,49 @@ export default function PhoneAuthForm({ returnUrl, isNewUser = false }: PhoneAut
         localStorage.setItem('signup_full_name', fullName)
       }
 
+      // Extract shop owner user_id from returnUrl subdomain
+      let shopOwnerId = ''
+      let shopDomain = ''
+      
+      try {
+        if (returnUrl.startsWith('http')) {
+          const url = new URL(returnUrl)
+          const hostname = url.hostname
+          
+          // Extract subdomain (e.g., ashishjewellers from ashishjewellers.lustrai.in)
+          const parts = hostname.split('.')
+          if (parts.length >= 3 && hostname.includes('lustrai.in')) {
+            shopDomain = parts[0] // e.g., 'ashishjewellers'
+            console.log('[Auth] Extracted shop domain from URL:', shopDomain)
+            
+            // Query users table to get shop owner's user_id
+            const supabase = getSupabaseClient()
+            const { data: shopOwner, error } = await supabase
+              .from('users')
+              .select('id')
+              .eq('shop_domain', shopDomain)
+              .single()
+            
+            if (error) {
+              console.error('[Auth] Error fetching shop owner:', error)
+            } else if (shopOwner) {
+              shopOwnerId = shopOwner.id
+              console.log('[Auth] Found shop owner ID:', shopOwnerId)
+            } else {
+              console.warn('[Auth] No shop owner found for domain:', shopDomain)
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Auth] Error extracting shop info from URL:', e)
+      }
+
       // Get the custom authentication data to pass to the backend
       const authData = {
         isSignup: isNewUser,
         fullName: fullName || '',
+        shopId: shopOwnerId,
+        shopDomain: shopDomain,
       }
 
       // Verify OTP and create user in Supabase
