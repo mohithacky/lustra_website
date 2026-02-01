@@ -15,7 +15,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { getFirebaseAuth } from './firebase'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://phlccyxgyftspxnuzttf.supabase.co'
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBobGNjeXhneWZ0c3B4bnV6dHRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU0NTc4MTIsImV4cCI6MjA1MTAzMzgxMn0.vYZ_OPuJOGJXqNuYvyPMqgp9F-oPqJxCeJRqwRhLJqk'
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_tMc-l2KRHyKOXlR0tODIPw_VhBH-w5R'
 
 /**
  * Create a Supabase client with dynamic Firebase token retrieval
@@ -52,19 +52,39 @@ export function createSupabaseClientWithFirebaseAuth(): SupabaseClient {
           const auth = getFirebaseAuth()
           const user = auth?.currentUser
           
+          // Start with a fresh headers object
+          const headers = new Headers();
+          
+          // Always add the apikey header
+          headers.set('apikey', SUPABASE_ANON_KEY);
+          headers.set('Content-Type', 'application/json');
+          
+          // Copy existing headers if any
+          if (options.headers) {
+            const existingHeaders = options.headers instanceof Headers 
+              ? options.headers 
+              : new Headers(options.headers as any);
+            
+            existingHeaders.forEach((value, key) => {
+              if (key.toLowerCase() !== 'apikey') {  // Don't duplicate apikey
+                headers.set(key, value);
+              }
+            });
+          }
+
           if (user) {
             try {
               const token = await user.getIdToken()
-              options.headers = {
-                ...options.headers,
-                Authorization: `Bearer ${token}`
-              }
+              headers.set('Authorization', `Bearer ${token}`)
             } catch (error) {
               console.error('[Supabase] Error getting Firebase token:', error)
             }
           }
           
-          return fetch(url, options)
+          return fetch(url, {
+            ...options,
+            headers
+          })
         }
       }
     }
