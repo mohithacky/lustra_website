@@ -49,48 +49,49 @@ export function createSupabaseClientWithFirebaseAuth(): SupabaseClient {
       },
       global: {
         headers: {
-          apikey: SUPABASE_ANON_KEY
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
         },
         fetch: async (url, options = {}) => {
           const auth = getFirebaseAuth()
           const user = auth?.currentUser
           
-          // Start with a fresh headers object
-          const headers = new Headers();
-          
-          // Always add the apikey header
-          headers.set('apikey', SUPABASE_ANON_KEY);
-          headers.set('Content-Type', 'application/json');
+          // Build headers as plain object for maximum compatibility
+          const headers: Record<string, string> = {
+            'apikey': SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json'
+          };
           
           // Copy existing headers if any
           if (options.headers) {
-            const existingHeaders = options.headers instanceof Headers 
-              ? options.headers 
-              : new Headers(options.headers as any);
-            
-            existingHeaders.forEach((value, key) => {
-              if (key.toLowerCase() !== 'apikey') {  // Don't duplicate apikey
-                headers.set(key, value);
-              }
-            });
+            if (options.headers instanceof Headers) {
+              options.headers.forEach((value, key) => {
+                if (key.toLowerCase() !== 'apikey') {
+                  headers[key] = value;
+                }
+              });
+            } else if (typeof options.headers === 'object') {
+              Object.entries(options.headers as Record<string, string>).forEach(([key, value]) => {
+                if (key.toLowerCase() !== 'apikey') {
+                  headers[key] = value;
+                }
+              });
+            }
           }
 
           if (user) {
             try {
               const token = await user.getIdToken()
-              headers.set('Authorization', `Bearer ${token}`)
+              headers['Authorization'] = `Bearer ${token}`;
             } catch (error) {
               console.error('[Supabase] Error getting Firebase token:', error)
             }
           }
           
-          // Create new options with our headers
-          const newOptions = {
-            ...options,
-            headers
-          };
+          console.log('[Supabase] Request URL:', url);
+          console.log('[Supabase] Request headers:', { ...headers, Authorization: headers.Authorization ? 'Bearer [TOKEN]' : undefined });
           
-          return fetch(url, newOptions)
+          return fetch(url, { ...options, headers })
         }
       }
     }
@@ -144,37 +145,38 @@ export function createSupabaseClientWithFirebaseToken(
     },
     global: {
       headers: {
-        apikey: SUPABASE_ANON_KEY
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
       },
       fetch: async (url, options = {}) => {
-        // Start with a fresh headers object
-        const headers = new Headers();
-        
-        // Always add the apikey header
-        headers.set('apikey', SUPABASE_ANON_KEY);
-        headers.set('Content-Type', 'application/json');
-        headers.set('Authorization', `Bearer ${firebaseIdToken}`);
+        // Build headers as plain object for maximum compatibility
+        const headers: Record<string, string> = {
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${firebaseIdToken}`
+        };
         
         // Copy existing headers if any
         if (options.headers) {
-          const existingHeaders = options.headers instanceof Headers 
-            ? options.headers 
-            : new Headers(options.headers as any);
-          
-          existingHeaders.forEach((value, key) => {
-            if (!['apikey', 'authorization'].includes(key.toLowerCase())) {
-              headers.set(key, value);
-            }
-          });
+          if (options.headers instanceof Headers) {
+            options.headers.forEach((value, key) => {
+              if (!['apikey', 'authorization'].includes(key.toLowerCase())) {
+                headers[key] = value;
+              }
+            });
+          } else if (typeof options.headers === 'object') {
+            Object.entries(options.headers as Record<string, string>).forEach(([key, value]) => {
+              if (!['apikey', 'authorization'].includes(key.toLowerCase())) {
+                headers[key] = value;
+              }
+            });
+          }
         }
         
-        // Create new options with our headers
-        const newOptions = {
-          ...options,
-          headers
-        };
+        console.log('[Supabase] Request URL:', url);
+        console.log('[Supabase] Request headers:', { ...headers, Authorization: 'Bearer [TOKEN]' });
         
-        return fetch(url, newOptions)
+        return fetch(url, { ...options, headers })
       }
     }
   })
@@ -188,5 +190,11 @@ export function createSupabaseClientWithFirebaseToken(
  * Use this for public access only
  */
 export function getSupabaseClient(): SupabaseClient {
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY
+      }
+    }
+  })
 }
