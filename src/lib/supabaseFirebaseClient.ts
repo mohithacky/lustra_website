@@ -48,6 +48,9 @@ export function createSupabaseClientWithFirebaseAuth(): SupabaseClient {
         detectSessionInUrl: false
       },
       global: {
+        headers: {
+          apikey: SUPABASE_ANON_KEY
+        },
         fetch: async (url, options = {}) => {
           const auth = getFirebaseAuth()
           const user = auth?.currentUser
@@ -55,25 +58,21 @@ export function createSupabaseClientWithFirebaseAuth(): SupabaseClient {
           // Start with a fresh headers object
           const headers = new Headers();
           
-          // Copy existing headers first (including apikey that Supabase sets)
+          // Always add the apikey header
+          headers.set('apikey', SUPABASE_ANON_KEY);
+          headers.set('Content-Type', 'application/json');
+          
+          // Copy existing headers if any
           if (options.headers) {
             const existingHeaders = options.headers instanceof Headers 
               ? options.headers 
               : new Headers(options.headers as any);
             
             existingHeaders.forEach((value, key) => {
-              headers.set(key, value);
+              if (key.toLowerCase() !== 'apikey') {  // Don't duplicate apikey
+                headers.set(key, value);
+              }
             });
-          }
-          
-          // Ensure apikey is always present
-          if (!headers.has('apikey')) {
-            headers.set('apikey', SUPABASE_ANON_KEY);
-          }
-          
-          // Ensure Content-Type is set
-          if (!headers.has('Content-Type')) {
-            headers.set('Content-Type', 'application/json');
           }
 
           if (user) {
@@ -85,10 +84,13 @@ export function createSupabaseClientWithFirebaseAuth(): SupabaseClient {
             }
           }
           
-          return fetch(url, {
+          // Create new options with our headers
+          const newOptions = {
             ...options,
             headers
-          })
+          };
+          
+          return fetch(url, newOptions)
         }
       }
     }
