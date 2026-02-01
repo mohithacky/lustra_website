@@ -55,21 +55,25 @@ export function createSupabaseClientWithFirebaseAuth(): SupabaseClient {
           // Start with a fresh headers object
           const headers = new Headers();
           
-          // Always add the apikey header
-          headers.set('apikey', SUPABASE_ANON_KEY);
-          headers.set('Content-Type', 'application/json');
-          
-          // Copy existing headers if any
+          // Copy existing headers first (including apikey that Supabase sets)
           if (options.headers) {
             const existingHeaders = options.headers instanceof Headers 
               ? options.headers 
               : new Headers(options.headers as any);
             
             existingHeaders.forEach((value, key) => {
-              if (key.toLowerCase() !== 'apikey') {  // Don't duplicate apikey
-                headers.set(key, value);
-              }
+              headers.set(key, value);
             });
+          }
+          
+          // Ensure apikey is always present
+          if (!headers.has('apikey')) {
+            headers.set('apikey', SUPABASE_ANON_KEY);
+          }
+          
+          // Ensure Content-Type is set
+          if (!headers.has('Content-Type')) {
+            headers.set('Content-Type', 'application/json');
           }
 
           if (user) {
