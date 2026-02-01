@@ -56,6 +56,12 @@ export function createSupabaseClientWithFirebaseAuth(): SupabaseClient {
           const auth = getFirebaseAuth()
           const user = auth?.currentUser
           
+          console.log('[Supabase] Firebase auth state:', {
+            authExists: !!auth,
+            userExists: !!user,
+            userId: user?.uid || 'NO USER'
+          });
+          
           // Build headers as plain object for maximum compatibility
           const headers: Record<string, string> = {
             'apikey': SUPABASE_ANON_KEY,
@@ -81,15 +87,19 @@ export function createSupabaseClientWithFirebaseAuth(): SupabaseClient {
 
           if (user) {
             try {
+              console.log('[Supabase] Getting Firebase ID token...');
               const token = await user.getIdToken()
+              console.log('[Supabase] Token retrieved, length:', token?.length || 0);
               headers['Authorization'] = `Bearer ${token}`;
             } catch (error) {
               console.error('[Supabase] Error getting Firebase token:', error)
             }
+          } else {
+            console.warn('[Supabase] ⚠️ No Firebase user - request will be made without Authorization header');
           }
           
           console.log('[Supabase] Request URL:', url);
-          console.log('[Supabase] Request headers:', { ...headers, Authorization: headers.Authorization ? 'Bearer [TOKEN]' : undefined });
+          console.log('[Supabase] Request headers:', headers);
           
           return fetch(url, { ...options, headers })
         }
