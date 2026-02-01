@@ -282,16 +282,13 @@ export async function verifyFirebaseOtpWithCustomData(
       console.log('')
       console.log('👤 [STEP 7/8] Creating/updating customer in Supabase customers table...')
       customerRecord = await createOrUpdateCustomer(supabaseClient, user.uid, {
-        // Required fields per schema
+        // Required fields per schema (customers table)
         user_id: customerData.shopId || 'default', // Must provide user_id (website owner ID)
         firebase_uid: user.uid, // Using firebase_uid as per schema
         phone_number: user.phoneNumber || '',
         name: customerData.fullName || '',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        // Add shop-specific data if available
-        ...(customerData.shopId ? { shop_id: customerData.shopId } : {}),
-        ...(customerData.shopDomain ? { shop_domain: customerData.shopDomain } : {}),
       })
       console.log('✅ [STEP 7/8] Customer record created/updated in customers table:', customerRecord ? 'Success' : 'Failed')
     } else {
@@ -454,15 +451,25 @@ async function createOrUpdateCustomer(
       .eq('firebase_uid', userId) // Use firebase_uid per schema
       .maybeSingle()
       
+    // Only include valid columns from customers table schema
+    const validCustomerData = {
+      user_id: customerData.user_id || 'default',
+      firebase_uid: userId,
+      phone_number: customerData.phone_number || '',
+      name: customerData.name || null,
+      email: customerData.email || null,
+    }
+
     if (existingCustomer) {
       console.log('[Firebase] Customer exists, updating record')
       const { error: updateError } = await supabaseClient
         .from('customers')
         .update({
-          ...customerData,
+          name: validCustomerData.name,
+          email: validCustomerData.email,
           updated_at: new Date().toISOString()
         })
-        .eq('firebase_uid', userId) // Use firebase_uid per schema
+        .eq('firebase_uid', userId)
         
       if (updateError) {
         console.error('[Firebase] Failed to update customer:', updateError)
@@ -473,17 +480,9 @@ async function createOrUpdateCustomer(
       return true
     } else {
       console.log('[Firebase] Customer does not exist, creating new record')
-      // Note: Don't use id field directly - the database will generate it
-      // Instead pass firebase_uid and required user_id
       const { error: insertError } = await supabaseClient
         .from('customers')
-        .insert({
-          // Include all required fields per schema
-          firebase_uid: userId, // Use firebase_uid as per schema
-          user_id: customerData.user_id || 'default', // Required field per schema
-          phone_number: customerData.phone_number || '', // Required field per schema
-          ...customerData
-        })
+        .insert(validCustomerData)
         
       if (insertError) {
         console.error('[Firebase] Failed to create customer:', insertError)
