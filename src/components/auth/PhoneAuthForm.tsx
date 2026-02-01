@@ -16,9 +16,16 @@ import { Phone, ArrowRight, Loader2 } from 'lucide-react'
 interface PhoneAuthFormProps {
   returnUrl: string
   isNewUser?: boolean
+  shopOwnerId?: string  // Optional: pass directly from parent if available
+  shopDomain?: string   // Optional: pass directly from parent if available
 }
 
-export default function PhoneAuthForm({ returnUrl, isNewUser = false }: PhoneAuthFormProps) {
+export default function PhoneAuthForm({ 
+  returnUrl, 
+  isNewUser = false,
+  shopOwnerId: propShopOwnerId,
+  shopDomain: propShopDomain
+}: PhoneAuthFormProps) {
   const router = useRouter()
   const [fullName, setFullName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -88,58 +95,67 @@ export default function PhoneAuthForm({ returnUrl, isNewUser = false }: PhoneAut
         localStorage.setItem('signup_full_name', fullName)
       }
 
-      // Extract shop owner user_id from returnUrl subdomain
-      let shopOwnerId = ''
-      let shopDomain = ''
+      // Extract shop owner user_id - use props first, then fall back to URL extraction
+      let shopOwnerId = propShopOwnerId || ''
+      let shopDomain = propShopDomain || ''
       
       console.log('[Auth] ========== SHOP OWNER LOOKUP START ==========')
+      console.log('[Auth] Props - shopOwnerId:', propShopOwnerId || '(not provided)')
+      console.log('[Auth] Props - shopDomain:', propShopDomain || '(not provided)')
       console.log('[Auth] Return URL:', returnUrl)
       
-      try {
-        if (returnUrl.startsWith('http')) {
-          const url = new URL(returnUrl)
-          const hostname = url.hostname
-          console.log('[Auth] Hostname:', hostname)
-          
-          // Extract subdomain (e.g., ashishjewellers from ashishjewellers.lustrai.in)
-          const parts = hostname.split('.')
-          console.log('[Auth] Hostname parts:', parts)
-          console.log('[Auth] Parts length:', parts.length)
-          console.log('[Auth] Contains lustrai.in:', hostname.includes('lustrai.in'))
-          
-          if (parts.length >= 3 && hostname.includes('lustrai.in')) {
-            shopDomain = parts[0] // e.g., 'ashishjewellers'
-            console.log('[Auth] ✅ Extracted shop domain:', shopDomain)
+      // If not provided via props, extract from returnUrl
+      if (!shopOwnerId || !shopDomain) {
+        console.log('[Auth] Shop info not provided via props, extracting from returnUrl...')
+        
+        try {
+          if (returnUrl.startsWith('http')) {
+            const url = new URL(returnUrl)
+            const hostname = url.hostname
+            console.log('[Auth] Hostname:', hostname)
             
-            // Query users table to get shop owner's user_id
-            console.log('[Auth] Querying users table for shop_domain:', shopDomain)
-            const supabase = getSupabaseClient()
-            const { data: shopOwner, error } = await supabase
-              .from('users')
-              .select('id, shop_domain, email')
-              .eq('shop_domain', shopDomain)
-              .single()
+            // Extract subdomain (e.g., ashishjewellers from ashishjewellers.lustrai.in)
+            const parts = hostname.split('.')
+            console.log('[Auth] Hostname parts:', parts)
+            console.log('[Auth] Parts length:', parts.length)
+            console.log('[Auth] Contains lustrai.in:', hostname.includes('lustrai.in'))
             
-            console.log('[Auth] Query result - data:', shopOwner)
-            console.log('[Auth] Query result - error:', error)
-            
-            if (error) {
-              console.error('[Auth] ❌ Error fetching shop owner:', error.message, error.details, error.hint)
-            } else if (shopOwner) {
-              shopOwnerId = shopOwner.id
-              console.log('[Auth] ✅ Found shop owner ID:', shopOwnerId)
-              console.log('[Auth] Shop owner email:', shopOwner.email)
+            if (parts.length >= 3 && hostname.includes('lustrai.in')) {
+              shopDomain = parts[0] // e.g., 'ashishjewellers'
+              console.log('[Auth] ✅ Extracted shop domain:', shopDomain)
+              
+              // Query users table to get shop owner's user_id
+              console.log('[Auth] Querying users table for shop_domain:', shopDomain)
+              const supabase = getSupabaseClient()
+              const { data: shopOwner, error } = await supabase
+                .from('users')
+                .select('id, shop_domain, email')
+                .eq('shop_domain', shopDomain)
+                .single()
+              
+              console.log('[Auth] Query result - data:', shopOwner)
+              console.log('[Auth] Query result - error:', error)
+              
+              if (error) {
+                console.error('[Auth] ❌ Error fetching shop owner:', error.message, error.details, error.hint)
+              } else if (shopOwner) {
+                shopOwnerId = shopOwner.id
+                console.log('[Auth] ✅ Found shop owner ID:', shopOwnerId)
+                console.log('[Auth] Shop owner email:', shopOwner.email)
+              } else {
+                console.warn('[Auth] ⚠️ No shop owner found for domain:', shopDomain)
+              }
             } else {
-              console.warn('[Auth] ⚠️ No shop owner found for domain:', shopDomain)
+              console.log('[Auth] ⚠️ Subdomain extraction failed - not a valid lustrai.in subdomain')
             }
           } else {
-            console.log('[Auth] ⚠️ Subdomain extraction failed - not a valid lustrai.in subdomain')
+            console.log('[Auth] ⚠️ Return URL does not start with http - cannot extract subdomain')
           }
-        } else {
-          console.log('[Auth] ⚠️ Return URL does not start with http - cannot extract subdomain')
+        } catch (e) {
+          console.error('[Auth] ❌ Error extracting shop info from URL:', e)
         }
-      } catch (e) {
-        console.error('[Auth] ❌ Error extracting shop info from URL:', e)
+      } else {
+        console.log('[Auth] ✅ Using shop info from props')
       }
       
       console.log('[Auth] Final shopOwnerId:', shopOwnerId || '(empty - will default to "default")')
