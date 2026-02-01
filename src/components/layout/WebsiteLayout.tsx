@@ -272,7 +272,10 @@ export default function WebsiteLayout({
                   </div>
                 ) : (
                   <a
-                    href={`https://lustrai.in/auth?returnUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '/')}`}
+                    href={typeof window !== 'undefined' 
+                      ? `https://lustrai.in/auth?returnUrl=${encodeURIComponent(window.location.href)}`
+                      : `https://lustrai.in/auth?returnUrl=${encodeURIComponent('https://lustrai.in')}`
+                    }
                     className={cn(
                       'flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-colors',
                       isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'

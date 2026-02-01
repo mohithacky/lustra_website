@@ -146,7 +146,10 @@ export default function NavigationDrawer({
             </div>
           ) : (
             <a
-              href={`https://lustrai.in/auth?returnUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '/')}`}
+              href={typeof window !== 'undefined'
+                ? `https://lustrai.in/auth?returnUrl=${encodeURIComponent(window.location.href)}`
+                : `https://lustrai.in/auth`
+              }
               onClick={onClose}
               className={cn(
                 'w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-colors',
