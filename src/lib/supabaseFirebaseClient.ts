@@ -113,17 +113,17 @@ export function createSupabaseClientWithFirebaseToken(
   }
   
   console.log('[Supabase] Creating Supabase client with static Firebase token')
-  console.log('[Supabase] Token prefix:', firebaseIdToken.substring(0, 10) + '...')
   
   // Extract token payload to log claims and verify role
   try {
     const tokenParts = firebaseIdToken.split('.')
     if (tokenParts.length === 3) {
       const payload = JSON.parse(atob(tokenParts[1].replace(/-/g, '+').replace(/_/g, '/')))
-      console.log('[Supabase] Token claims:')
-      console.log('  • Subject (user ID):', payload.sub)
-      console.log('  • Role claim:', payload.role || 'NOT SET')
-      console.log('  • Expires at:', new Date(payload.exp * 1000).toISOString())
+      console.log('[Supabase] Token claims:', {
+        sub: payload.sub,
+        role: payload.role || 'NOT SET',
+        exp: new Date(payload.exp * 1000).toISOString()
+      })
       
       if (!payload.role) {
         console.warn('[Supabase] WARNING: Token does not have a role claim. RLS policies may fail!')
@@ -135,10 +135,7 @@ export function createSupabaseClientWithFirebaseToken(
     console.error('[Supabase] Could not parse token payload:', e)
   }
   
-  // Create client with Firebase token in Authorization header
-  // IMPORTANT: Match Flutter implementation exactly
-  // Flutter: SupabaseClient(url, anonKey, headers: {'Authorization': 'Bearer $idToken'})
-  // The anonKey automatically sets the apikey header, and we add Authorization on top
+  // Create client with Firebase token and apikey headers
   const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       persistSession: false,  // Don't persist the Supabase session
@@ -146,36 +143,38 @@ export function createSupabaseClientWithFirebaseToken(
       detectSessionInUrl: false, // Don't detect session in URL - this is handled by Firebase
     },
     global: {
-      // Use custom fetch to add Authorization header while preserving default headers
+      headers: {
+        apikey: SUPABASE_ANON_KEY
+      },
       fetch: async (url, options = {}) => {
-        // Supabase passes headers as a Headers object or plain object
-        // We need to convert it to a plain object and add our Authorization header
-        const existingHeaders: Record<string, string> = {}
+        // Start with a fresh headers object
+        const headers = new Headers();
         
+        // Always add the apikey header
+        headers.set('apikey', SUPABASE_ANON_KEY);
+        headers.set('Content-Type', 'application/json');
+        headers.set('Authorization', `Bearer ${firebaseIdToken}`);
+        
+        // Copy existing headers if any
         if (options.headers) {
-          if (options.headers instanceof Headers) {
-            // Convert Headers object to plain object
-            options.headers.forEach((value, key) => {
-              existingHeaders[key] = value
-            })
-          } else {
-            // Already a plain object
-            Object.assign(existingHeaders, options.headers)
-          }
+          const existingHeaders = options.headers instanceof Headers 
+            ? options.headers 
+            : new Headers(options.headers as any);
+          
+          existingHeaders.forEach((value, key) => {
+            if (!['apikey', 'authorization'].includes(key.toLowerCase())) {
+              headers.set(key, value);
+            }
+          });
         }
         
-        // Add our Authorization header
-        existingHeaders['Authorization'] = `Bearer ${firebaseIdToken}`
-        
-        // Ensure apikey is present (Supabase should add it, but let's be explicit)
-        if (!existingHeaders['apikey']) {
-          existingHeaders['apikey'] = SUPABASE_ANON_KEY
-        }
-        
-        return fetch(url, {
+        // Create new options with our headers
+        const newOptions = {
           ...options,
-          headers: existingHeaders
-        })
+          headers
+        };
+        
+        return fetch(url, newOptions)
       }
     }
   })
