@@ -16,6 +16,7 @@ import BackButton from '@/components/ui/BackButton'
 import LoadingIndicator from '@/components/ui/LoadingIndicator'
 import SearchBar from '@/components/sections/SearchBar'
 import NavigationDrawer from '@/components/layout/NavigationDrawer'
+import { useShopStore } from '@/store/shopStore'
 
 interface WebsiteLayoutProps {
   children: React.ReactNode
@@ -58,6 +59,17 @@ export default function WebsiteLayout({
   const pathname = usePathname()
 
   const isDark = theme === 'dark'
+  const setShopData = useShopStore((state) => state.setShopData)
+
+  // Store shop owner data in Zustand global state
+  useEffect(() => {
+    console.log('[WebsiteLayout] Storing shop owner data in global state')
+    setShopData({
+      shopOwnerId: user.id,
+      shopDomain: shopDomain,
+      shopName: user.shop_name || undefined,
+    })
+  }, [user.id, shopDomain, user.shop_name, setShopData])
 
   // Load customer from localStorage on mount
   useEffect(() => {

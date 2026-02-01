@@ -12,6 +12,7 @@ import {
 } from '@/lib/firebaseAuth'
 import { getSupabaseClient } from '@/lib/supabaseFirebaseClient'
 import { Phone, ArrowRight, Loader2 } from 'lucide-react'
+import { useShopStore } from '@/store/shopStore'
 
 interface PhoneAuthFormProps {
   returnUrl: string
@@ -26,6 +27,9 @@ export default function PhoneAuthForm({
   shopOwnerId: propShopOwnerId,
   shopDomain: propShopDomain
 }: PhoneAuthFormProps) {
+  // Get shop owner data from Zustand global state
+  const shopOwnerIdFromStore = useShopStore((state) => state.shopOwnerId)
+  const shopDomainFromStore = useShopStore((state) => state.shopDomain)
   const router = useRouter()
   const [fullName, setFullName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -95,18 +99,20 @@ export default function PhoneAuthForm({
         localStorage.setItem('signup_full_name', fullName)
       }
 
-      // Extract shop owner user_id - use props first, then fall back to URL extraction
-      let shopOwnerId = propShopOwnerId || ''
-      let shopDomain = propShopDomain || ''
+      // Extract shop owner user_id - Priority: Zustand store > props > URL extraction
+      let shopOwnerId = shopOwnerIdFromStore || propShopOwnerId || ''
+      let shopDomain = shopDomainFromStore || propShopDomain || ''
       
       console.log('[Auth] ========== SHOP OWNER LOOKUP START ==========')
+      console.log('[Auth] Zustand Store - shopOwnerId:', shopOwnerIdFromStore || '(not in store)')
+      console.log('[Auth] Zustand Store - shopDomain:', shopDomainFromStore || '(not in store)')
       console.log('[Auth] Props - shopOwnerId:', propShopOwnerId || '(not provided)')
       console.log('[Auth] Props - shopDomain:', propShopDomain || '(not provided)')
       console.log('[Auth] Return URL:', returnUrl)
       
-      // If not provided via props, extract from returnUrl
+      // If not available from store or props, extract from returnUrl as fallback
       if (!shopOwnerId || !shopDomain) {
-        console.log('[Auth] Shop info not provided via props, extracting from returnUrl...')
+        console.log('[Auth] Shop info not in store or props, extracting from returnUrl as fallback...')
         
         try {
           if (returnUrl.startsWith('http')) {
@@ -155,11 +161,13 @@ export default function PhoneAuthForm({
           console.error('[Auth] ❌ Error extracting shop info from URL:', e)
         }
       } else {
-        console.log('[Auth] ✅ Using shop info from props')
+        const source = shopOwnerIdFromStore ? 'Zustand Store' : (propShopOwnerId ? 'Props' : 'Unknown')
+        console.log(`[Auth] ✅ Using shop info from ${source}`)
       }
       
       console.log('[Auth] Final shopOwnerId:', shopOwnerId || '(empty - will default to "default")')
       console.log('[Auth] Final shopDomain:', shopDomain || '(empty)')
+      console.log('[Auth] Source:', shopOwnerIdFromStore ? '🟢 Zustand Store' : (propShopOwnerId ? '🟡 Props' : '🔴 URL Extraction'))
       console.log('[Auth] ========== SHOP OWNER LOOKUP END ==========')
       console.log('')
 
