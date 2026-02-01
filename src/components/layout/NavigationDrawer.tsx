@@ -147,7 +147,9 @@ export default function NavigationDrawer({
           ) : (
             <a
               href={typeof window !== 'undefined'
-                ? `https://lustrai.in/auth?returnUrl=${encodeURIComponent(window.location.href)}`
+                ? `https://lustrai.in/auth?returnUrl=${encodeURIComponent(
+                    `${window.location.protocol}//${window.location.host}${window.location.pathname}${window.location.search}`
+                  )}`
                 : `https://lustrai.in/auth`
               }
               onClick={onClose}
