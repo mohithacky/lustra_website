@@ -12,6 +12,8 @@ export default function AuthPage() {
   const [returnUrl, setReturnUrl] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login')
+  const [shopOwnerId, setShopOwnerId] = useState<string>('')
+  const [shopDomain, setShopDomain] = useState<string>('')
 
   useEffect(() => {
     initializeFirebase()
@@ -21,6 +23,19 @@ export default function AuthPage() {
       setReturnUrl(decodeURIComponent(url))
     } else {
       setReturnUrl('/')
+    }
+    
+    // Extract shopOwnerId and shopDomain from query params
+    const ownerIdParam = searchParams.get('shopOwnerId')
+    const domainParam = searchParams.get('shopDomain')
+    
+    if (ownerIdParam) {
+      setShopOwnerId(decodeURIComponent(ownerIdParam))
+      console.log('[Auth Page] shopOwnerId from URL:', decodeURIComponent(ownerIdParam))
+    }
+    if (domainParam) {
+      setShopDomain(decodeURIComponent(domainParam))
+      console.log('[Auth Page] shopDomain from URL:', decodeURIComponent(domainParam))
     }
     
     const mode = searchParams.get('mode')
@@ -75,7 +90,9 @@ export default function AuthPage() {
           
           <PhoneAuthForm 
             returnUrl={returnUrl} 
-            isNewUser={authMode === 'signup'} 
+            isNewUser={authMode === 'signup'}
+            shopOwnerId={shopOwnerId}
+            shopDomain={shopDomain}
           />
         </div>
         

@@ -285,7 +285,7 @@ export default function WebsiteLayout({
                 ) : (
                   <a
                     href={typeof window !== 'undefined' 
-                      ? `https://lustrai.in/auth?returnUrl=${encodeURIComponent(
+                      ? `https://lustrai.in/auth?shopOwnerId=${encodeURIComponent(user.id)}&shopDomain=${encodeURIComponent(shopDomain)}&returnUrl=${encodeURIComponent(
                           `${window.location.protocol}//${window.location.host}${window.location.pathname}${window.location.search}`
                         )}`
                       : `https://lustrai.in/auth`
@@ -348,6 +348,7 @@ export default function WebsiteLayout({
           categories={categories}
           collections={collections}
           shopDomain={shopDomain}
+          shopOwnerId={user.id}
         />
 
         {/* Firebase Phone Login Dialog */}
