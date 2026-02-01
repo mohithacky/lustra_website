@@ -21,6 +21,7 @@ interface NavigationDrawerProps {
   collections: Collection[]
   shopDomain: string
   shopOwnerId: string
+  authUrl: string
 }
 
 export default function NavigationDrawer({
@@ -34,6 +35,7 @@ export default function NavigationDrawer({
   collections,
   shopDomain,
   shopOwnerId,
+  authUrl,
 }: NavigationDrawerProps) {
   const [mounted, setMounted] = useState(false)
 
@@ -148,12 +150,7 @@ export default function NavigationDrawer({
             </div>
           ) : (
             <a
-              href={typeof window !== 'undefined'
-                ? `https://lustrai.in/auth?shopOwnerId=${encodeURIComponent(shopOwnerId)}&shopDomain=${encodeURIComponent(shopDomain)}&returnUrl=${encodeURIComponent(
-                    `${window.location.protocol}//${window.location.host}${window.location.pathname}${window.location.search}`
-                  )}`
-                : `https://lustrai.in/auth`
-              }
+              href={authUrl}
               onClick={onClose}
               className={cn(
                 'w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-colors',

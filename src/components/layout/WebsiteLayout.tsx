@@ -56,10 +56,19 @@ export default function WebsiteLayout({
   const [showDrawer, setShowDrawer] = useState(false)
   const [customer, setCustomer] = useState<CustomerSession | null>(null)
   const [logoError, setLogoError] = useState(false)
+  const [authUrl, setAuthUrl] = useState<string>('https://lustrai.in/auth')
   const pathname = usePathname()
 
   const isDark = theme === 'dark'
   const setShopData = useShopStore((state) => state.setShopData)
+
+  // Compute auth URL client-side to include query params
+  useEffect(() => {
+    const currentUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}${window.location.search}`
+    const url = `https://lustrai.in/auth?shopOwnerId=${encodeURIComponent(user.id)}&shopDomain=${encodeURIComponent(shopDomain)}&returnUrl=${encodeURIComponent(currentUrl)}`
+    setAuthUrl(url)
+    console.log('[WebsiteLayout] Auth URL set:', url)
+  }, [user.id, shopDomain])
 
   // Store shop owner data in Zustand global state
   useEffect(() => {
@@ -284,12 +293,7 @@ export default function WebsiteLayout({
                   </div>
                 ) : (
                   <a
-                    href={typeof window !== 'undefined' 
-                      ? `https://lustrai.in/auth?shopOwnerId=${encodeURIComponent(user.id)}&shopDomain=${encodeURIComponent(shopDomain)}&returnUrl=${encodeURIComponent(
-                          `${window.location.protocol}//${window.location.host}${window.location.pathname}${window.location.search}`
-                        )}`
-                      : `https://lustrai.in/auth`
-                    }
+                    href={authUrl}
                     className={cn(
                       'flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-colors',
                       isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
@@ -349,6 +353,7 @@ export default function WebsiteLayout({
           collections={collections}
           shopDomain={shopDomain}
           shopOwnerId={user.id}
+          authUrl={authUrl}
         />
 
         {/* Firebase Phone Login Dialog */}
