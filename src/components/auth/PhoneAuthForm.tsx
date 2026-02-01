@@ -92,38 +92,60 @@ export default function PhoneAuthForm({ returnUrl, isNewUser = false }: PhoneAut
       let shopOwnerId = ''
       let shopDomain = ''
       
+      console.log('[Auth] ========== SHOP OWNER LOOKUP START ==========')
+      console.log('[Auth] Return URL:', returnUrl)
+      
       try {
         if (returnUrl.startsWith('http')) {
           const url = new URL(returnUrl)
           const hostname = url.hostname
+          console.log('[Auth] Hostname:', hostname)
           
           // Extract subdomain (e.g., ashishjewellers from ashishjewellers.lustrai.in)
           const parts = hostname.split('.')
+          console.log('[Auth] Hostname parts:', parts)
+          console.log('[Auth] Parts length:', parts.length)
+          console.log('[Auth] Contains lustrai.in:', hostname.includes('lustrai.in'))
+          
           if (parts.length >= 3 && hostname.includes('lustrai.in')) {
             shopDomain = parts[0] // e.g., 'ashishjewellers'
-            console.log('[Auth] Extracted shop domain from URL:', shopDomain)
+            console.log('[Auth] ✅ Extracted shop domain:', shopDomain)
             
             // Query users table to get shop owner's user_id
+            console.log('[Auth] Querying users table for shop_domain:', shopDomain)
             const supabase = getSupabaseClient()
             const { data: shopOwner, error } = await supabase
               .from('users')
-              .select('id')
+              .select('id, shop_domain, email')
               .eq('shop_domain', shopDomain)
               .single()
             
+            console.log('[Auth] Query result - data:', shopOwner)
+            console.log('[Auth] Query result - error:', error)
+            
             if (error) {
-              console.error('[Auth] Error fetching shop owner:', error)
+              console.error('[Auth] ❌ Error fetching shop owner:', error.message, error.details, error.hint)
             } else if (shopOwner) {
               shopOwnerId = shopOwner.id
-              console.log('[Auth] Found shop owner ID:', shopOwnerId)
+              console.log('[Auth] ✅ Found shop owner ID:', shopOwnerId)
+              console.log('[Auth] Shop owner email:', shopOwner.email)
             } else {
-              console.warn('[Auth] No shop owner found for domain:', shopDomain)
+              console.warn('[Auth] ⚠️ No shop owner found for domain:', shopDomain)
             }
+          } else {
+            console.log('[Auth] ⚠️ Subdomain extraction failed - not a valid lustrai.in subdomain')
           }
+        } else {
+          console.log('[Auth] ⚠️ Return URL does not start with http - cannot extract subdomain')
         }
       } catch (e) {
-        console.error('[Auth] Error extracting shop info from URL:', e)
+        console.error('[Auth] ❌ Error extracting shop info from URL:', e)
       }
+      
+      console.log('[Auth] Final shopOwnerId:', shopOwnerId || '(empty - will default to "default")')
+      console.log('[Auth] Final shopDomain:', shopDomain || '(empty)')
+      console.log('[Auth] ========== SHOP OWNER LOOKUP END ==========')
+      console.log('')
 
       // Get the custom authentication data to pass to the backend
       const authData = {
