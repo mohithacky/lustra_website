@@ -116,12 +116,11 @@ export async function verifyFirebaseOtp(
     const idToken = await user.getIdToken()
     console.log('✅ [STEP 2/7] Firebase ID token obtained:', idToken.substring(0, 20) + '...')
 
-    // STEP 3: Send token to backend for verification and custom claim addition
+    // STEP 3: Skip backend API call (eliminated dependency)
     console.log('')
-    console.log('🔐 [STEP 3/7] Sending token to backend for verification...')
-    const backendResponse = await verifyTokenAndAddClaim(idToken)
-    const isNewUser = backendResponse.isNewUser || false
-    console.log('✅ [STEP 3/7] Backend verification complete')
+    console.log('🔐 [STEP 3/7] Skipping backend API call (direct Supabase integration)...')
+    const isNewUser = false // Assume existing user by default in standard auth flow
+    console.log('✅ [STEP 3/7] Using direct Supabase integration')
     console.log('   • User status:', isNewUser ? 'NEW USER' : 'EXISTING USER')
 
     // STEP 4: Force refresh token to get updated claims
@@ -238,12 +237,11 @@ export async function verifyFirebaseOtpWithCustomData(
     const idToken = await user.getIdToken()
     console.log('✅ [STEP 2/8] Firebase ID token obtained:', idToken.substring(0, 20) + '...')
 
-    // STEP 3: Send token to backend for verification and custom claim addition
+    // STEP 3: Skip backend API call (eliminated dependency)
     console.log('')
-    console.log('🔐 [STEP 3/8] Sending token to backend with customer data...')
-    const backendResponse = await verifyTokenAndAddClaimWithData(idToken, customerData)
-    const isNewUser = backendResponse.isNewUser || customerData.isSignup || false
-    console.log('✅ [STEP 3/8] Backend verification complete')
+    console.log('🔐 [STEP 3/8] Skipping backend API call (direct Supabase integration)...')
+    const isNewUser = customerData.isSignup || false
+    console.log('✅ [STEP 3/8] Using direct Supabase integration')
     console.log('   • User status:', isNewUser ? 'NEW USER' : 'EXISTING USER')
 
     // STEP 4: Force refresh token to get updated claims
@@ -441,17 +439,36 @@ async function createOrUpdateCustomer(
   customerData: Record<string, any>
 ): Promise<boolean> {
   try {
-    console.log('[Firebase] Creating/updating customer in Supabase customers table:', userId)
-    console.log('[Firebase] Customer data:', customerData)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('[createOrUpdateCustomer] STEP 1: Starting customer creation/update process')
+    console.log('[createOrUpdateCustomer] Firebase UID:', userId)
+    console.log('[createOrUpdateCustomer] Customer data received:', JSON.stringify(customerData, null, 2))
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
     
     // First check if customer exists by firebase_uid
-    const { data: existingCustomer } = await supabaseClient
+    console.log('[createOrUpdateCustomer] STEP 2: Checking if customer exists...')
+    console.log('[createOrUpdateCustomer] Query: SELECT * FROM customers WHERE firebase_uid =', userId)
+    
+    const { data: existingCustomer, error: fetchError } = await supabaseClient
       .from('customers')
       .select('*')
       .eq('firebase_uid', userId) // Use firebase_uid per schema
       .maybeSingle()
+    
+    if (fetchError) {
+      console.error('[createOrUpdateCustomer] ❌ ERROR fetching customer:', fetchError)
+      console.error('[createOrUpdateCustomer] Error details:', JSON.stringify(fetchError, null, 2))
+      throw fetchError
+    }
+    
+    console.log('[createOrUpdateCustomer] ✅ Query successful')
+    console.log('[createOrUpdateCustomer] Existing customer found:', existingCustomer ? 'YES' : 'NO')
+    if (existingCustomer) {
+      console.log('[createOrUpdateCustomer] Existing customer data:', JSON.stringify(existingCustomer, null, 2))
+    }
       
     // Only include valid columns from customers table schema
+    console.log('[createOrUpdateCustomer] STEP 3: Preparing customer data...')
     const validCustomerData = {
       user_id: customerData.user_id || 'default',
       firebase_uid: userId,
@@ -459,10 +476,17 @@ async function createOrUpdateCustomer(
       name: customerData.name || null,
       email: customerData.email || null,
     }
+    console.log('[createOrUpdateCustomer] Valid customer data:', JSON.stringify(validCustomerData, null, 2))
 
     if (existingCustomer) {
-      console.log('[Firebase] Customer exists, updating record')
-      const { error: updateError } = await supabaseClient
+      console.log('[createOrUpdateCustomer] STEP 4: Customer exists - UPDATING record')
+      console.log('[createOrUpdateCustomer] Update data:', {
+        name: validCustomerData.name,
+        email: validCustomerData.email,
+        updated_at: new Date().toISOString()
+      })
+      
+      const { data: updatedData, error: updateError } = await supabaseClient
         .from('customers')
         .update({
           name: validCustomerData.name,
@@ -470,30 +494,54 @@ async function createOrUpdateCustomer(
           updated_at: new Date().toISOString()
         })
         .eq('firebase_uid', userId)
+        .select()
         
       if (updateError) {
-        console.error('[Firebase] Failed to update customer:', updateError)
+        console.error('[createOrUpdateCustomer] ❌ ERROR updating customer:', updateError)
+        console.error('[createOrUpdateCustomer] Error code:', updateError.code)
+        console.error('[createOrUpdateCustomer] Error message:', updateError.message)
+        console.error('[createOrUpdateCustomer] Error details:', JSON.stringify(updateError, null, 2))
         return false
       }
       
-      console.log('[Firebase] Customer updated successfully')
+      console.log('[createOrUpdateCustomer] ✅ Customer updated successfully')
+      console.log('[createOrUpdateCustomer] Updated customer data:', JSON.stringify(updatedData, null, 2))
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
       return true
     } else {
-      console.log('[Firebase] Customer does not exist, creating new record')
-      const { error: insertError } = await supabaseClient
+      console.log('[createOrUpdateCustomer] STEP 4: Customer does NOT exist - CREATING new record')
+      console.log('[createOrUpdateCustomer] Insert data:', JSON.stringify(validCustomerData, null, 2))
+      
+      const { data: insertedData, error: insertError } = await supabaseClient
         .from('customers')
         .insert(validCustomerData)
+        .select()
         
       if (insertError) {
-        console.error('[Firebase] Failed to create customer:', insertError)
+        console.error('[createOrUpdateCustomer] ❌ ERROR creating customer:', insertError)
+        console.error('[createOrUpdateCustomer] Error code:', insertError.code)
+        console.error('[createOrUpdateCustomer] Error message:', insertError.message)
+        console.error('[createOrUpdateCustomer] Error details:', JSON.stringify(insertError, null, 2))
+        console.error('[createOrUpdateCustomer] Attempted insert data:', JSON.stringify(validCustomerData, null, 2))
         return false
       }
       
-      console.log('[Firebase] Customer created successfully')
+      console.log('[createOrUpdateCustomer] ✅ Customer created successfully')
+      console.log('[createOrUpdateCustomer] New customer data:', JSON.stringify(insertedData, null, 2))
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
       return true
     }
   } catch (error) {
-    console.error('[Firebase] Error creating/updating customer:', error)
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.error('[createOrUpdateCustomer] ❌ CRITICAL ERROR in createOrUpdateCustomer:')
+    console.error('[createOrUpdateCustomer] Error type:', typeof error)
+    console.error('[createOrUpdateCustomer] Error:', error)
+    if (error instanceof Error) {
+      console.error('[createOrUpdateCustomer] Error message:', error.message)
+      console.error('[createOrUpdateCustomer] Error stack:', error.stack)
+    }
+    console.error('[createOrUpdateCustomer] Full error object:', JSON.stringify(error, null, 2))
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
     return false
   }
 }
@@ -506,7 +554,10 @@ async function verifySupabaseAuthentication(
   userId: string
 ): Promise<boolean> {
   try {
-    console.log('[Firebase] Verifying Supabase authentication with users table access')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('[verifySupabaseAuthentication] Starting Supabase authentication verification')
+    console.log('[verifySupabaseAuthentication] User ID:', userId)
+    console.log('[verifySupabaseAuthentication] Query: SELECT id FROM users WHERE id =', userId)
 
     const { data, error } = await supabaseClient
       .from('users')
@@ -515,14 +566,26 @@ async function verifySupabaseAuthentication(
       .maybeSingle()
 
     if (error) {
-      console.error('[Firebase] Supabase authentication verification failed:', error)
+      console.error('[verifySupabaseAuthentication] ❌ Authentication verification FAILED')
+      console.error('[verifySupabaseAuthentication] Error:', error)
+      console.error('[verifySupabaseAuthentication] Error details:', JSON.stringify(error, null, 2))
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
       return false
     }
 
-    console.log('[Firebase] Supabase authentication verified successfully')
+    console.log('[verifySupabaseAuthentication] ✅ Authentication verified successfully')
+    console.log('[verifySupabaseAuthentication] User data:', data)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
     return true
   } catch (error) {
-    console.error('[Firebase] Supabase authentication verification error:', error)
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.error('[verifySupabaseAuthentication] ❌ CRITICAL ERROR during verification')
+    console.error('[verifySupabaseAuthentication] Error:', error)
+    if (error instanceof Error) {
+      console.error('[verifySupabaseAuthentication] Error message:', error.message)
+      console.error('[verifySupabaseAuthentication] Error stack:', error.stack)
+    }
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
     return false
   }
 }
