@@ -237,20 +237,29 @@ export default function PhoneAuthForm({
       if (redirectTarget.startsWith('http')) {
         console.log('[Auth] Using cross-domain redirect to:', redirectTarget)
         
-        // Parse the URL to add params
-        const url = new URL(redirectTarget)
+        // Parse the return URL to extract origin for callback
+        const returnUrlObj = new URL(redirectTarget)
         
-        // Add signup/login indicators to the URL
+        // Build callback URL on the subdomain
+        // The callback endpoint will verify the token and set the session cookie
+        const callbackUrl = new URL('/api/auth/callback', returnUrlObj.origin)
+        
+        // Add Firebase ID token for verification
+        callbackUrl.searchParams.append('token', result.idToken)
+        
+        // Add return path (where to redirect after setting cookie)
+        callbackUrl.searchParams.append('returnPath', returnUrlObj.pathname + returnUrlObj.search)
+        
+        // Add signup/login indicators
         if (isNewUser) {
-          url.searchParams.append('new_user', 'true')
+          callbackUrl.searchParams.append('new_user', 'true')
           if (fullName) {
-            url.searchParams.append('name', encodeURIComponent(fullName))
+            callbackUrl.searchParams.append('name', encodeURIComponent(fullName))
           }
         }
         
-        // Use the original full URL with subdomain intact
-        const finalUrl = url.toString()
-        console.log('[Auth] Final redirect URL:', finalUrl)
+        const finalUrl = callbackUrl.toString()
+        console.log('[Auth] Redirecting to callback URL:', finalUrl.replace(result.idToken, '[TOKEN_HIDDEN]'))
         
         // Force window location to handle cross-domain redirect
         window.location.href = finalUrl

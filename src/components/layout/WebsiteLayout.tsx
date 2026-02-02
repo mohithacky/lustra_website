@@ -63,7 +63,7 @@ export default function WebsiteLayout({
   const setShopData = useShopStore((state) => state.setShopData)
   
   // Use CustomerContext for session management
-  const { customer: customerData, firebaseUser, signOut: customerSignOut, loading: customerLoading } = useCustomer()
+  const { customer: customerData, firebaseUid, signOut: customerSignOut, loading: customerLoading } = useCustomer()
 
   // Compute auth URL client-side to include query params
   useEffect(() => {
@@ -89,18 +89,18 @@ export default function WebsiteLayout({
 
   // Log customer session state for debugging
   useEffect(() => {
-    if (firebaseUser && customerData) {
+    if (firebaseUid && customerData) {
       console.log('[WebsiteLayout] Customer session active:', {
         customerId: customerData.id,
         customerName: customerData.name,
-        firebaseUid: firebaseUser.uid
+        firebaseUid: firebaseUid
       })
-    } else if (firebaseUser && !customerData) {
-      console.log('[WebsiteLayout] Firebase user exists but customer data not loaded yet')
+    } else if (firebaseUid && !customerData) {
+      console.log('[WebsiteLayout] Session exists but customer data not loaded yet')
     } else {
       console.log('[WebsiteLayout] No customer session')
     }
-  }, [firebaseUser, customerData])
+  }, [firebaseUid, customerData])
 
   const handleLoginSuccess = (userId: string, userName: string, authResult: FirebaseAuthResult) => {
     console.log('[WebsiteLayout] Firebase auth successful:', userId)
