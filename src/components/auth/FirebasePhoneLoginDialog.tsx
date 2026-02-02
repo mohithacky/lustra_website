@@ -157,6 +157,7 @@ export default function FirebasePhoneLoginDialog({
       // Create or update customer record directly in Supabase
       console.log('[Firebase] Creating/updating customer record in Supabase...')
       
+      console.log('[Firebase] idToken:', authResult.idToken)
       // Create Supabase client with the Firebase token
       const supabaseClient = createSupabaseClientWithFirebaseToken(authResult.idToken)
       
