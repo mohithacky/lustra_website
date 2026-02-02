@@ -474,7 +474,7 @@ async function createOrUpdateCustomer(
       firebase_uid: userId,
       phone_number: customerData.phone_number || '',
       name: customerData.name || null,
-      email: customerData.email || null,
+      email:  'abc@gmail.com',
     }
     console.log('[createOrUpdateCustomer] Valid customer data:', JSON.stringify(validCustomerData, null, 2))
 
@@ -490,7 +490,7 @@ async function createOrUpdateCustomer(
         .from('customers')
         .update({
           name: validCustomerData.name,
-          email: validCustomerData.email,
+          email: 'abc@gmail.com',
           updated_at: new Date().toISOString()
         })
         .eq('firebase_uid', userId)
