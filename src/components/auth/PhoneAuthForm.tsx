@@ -11,7 +11,8 @@ import {
   CustomerData
 } from '@/lib/firebaseAuth'
 import { getSupabaseClient } from '@/lib/supabaseFirebaseClient'
-import { Phone, ArrowRight, Loader2 } from 'lucide-react'
+import { checkCustomerExists } from '@/lib/customerApi'
+import { Phone, ArrowRight, Loader2, AlertCircle } from 'lucide-react'
 import { useShopStore } from '@/store/shopStore'
 
 interface PhoneAuthFormProps {
@@ -39,6 +40,8 @@ export default function PhoneAuthForm({
   const [error, setError] = useState('')
   const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null)
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
+  const [existingCustomerName, setExistingCustomerName] = useState<string | null>(null)
+  const [showExistingCustomerWarning, setShowExistingCustomerWarning] = useState(false)
 
   useEffect(() => {
     const verifier = initializeRecaptcha('recaptcha-container')
@@ -50,6 +53,8 @@ export default function PhoneAuthForm({
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setShowExistingCustomerWarning(false)
+    setExistingCustomerName(null)
     setLoading(true)
 
     try {
@@ -60,6 +65,21 @@ export default function PhoneAuthForm({
       let formattedPhone = phoneNumber.trim()
       if (!formattedPhone.startsWith('+')) {
         formattedPhone = '+91' + formattedPhone
+      }
+
+      // If signup mode, check if customer already exists with this phone number
+      if (isNewUser) {
+        console.log('[Auth] Checking if customer already exists for signup...')
+        const shopOwnerId = shopOwnerIdFromStore || propShopOwnerId || ''
+        const { exists, customerName } = await checkCustomerExists(formattedPhone, shopOwnerId)
+        
+        if (exists) {
+          console.log('[Auth] Customer already exists:', customerName)
+          setExistingCustomerName(customerName)
+          setShowExistingCustomerWarning(true)
+          setLoading(false)
+          return // Don't send OTP, prompt user to login instead
+        }
       }
 
       const confirmation = await sendFirebaseOtp(formattedPhone, recaptchaVerifier)
@@ -338,15 +358,42 @@ export default function PhoneAuthForm({
             </div>
           )}
 
+          {/* Warning for existing customer trying to signup */}
+          {showExistingCustomerWarning && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Account already exists!</p>
+                  <p className="text-sm mt-1">
+                    {existingCustomerName 
+                      ? `An account with this phone number already exists for ${existingCustomerName}.`
+                      : 'An account with this phone number already exists.'}
+                  </p>
+                  <p className="text-sm mt-2">
+                    Please{' '}
+                    <a 
+                      href={`/auth?returnUrl=${encodeURIComponent(returnUrl)}`}
+                      className="font-semibold text-amber-700 underline hover:text-amber-900"
+                    >
+                      login instead
+                    </a>
+                    {' '}to continue.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={loading || !phoneNumber}
+            disabled={loading || !phoneNumber || showExistingCustomerWarning}
             className="w-full flex items-center justify-center gap-2 bg-amber-600 text-white py-3 px-4 rounded-lg hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                Sending OTP...
+                {isNewUser ? 'Checking...' : 'Sending OTP...'}
               </>
             ) : (
               <>

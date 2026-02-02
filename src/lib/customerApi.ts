@@ -188,6 +188,48 @@ export async function authenticateCustomer(
 }
 
 /**
+ * Check if a customer already exists with the given phone number
+ * Used to detect existing customers during signup flow
+ */
+export async function checkCustomerExists(
+  phoneNumber: string,
+  shopOwnerId?: string
+): Promise<{ exists: boolean; customerName: string | null }> {
+  try {
+    console.log('[CustomerAPI] Checking if customer exists...');
+    console.log('[CustomerAPI] Phone:', phoneNumber);
+    console.log('[CustomerAPI] Shop owner:', shopOwnerId || 'any');
+    
+    const response = await fetch(`${BACKEND_URL}/customer/check`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        phoneNumber,
+        shopOwnerId
+      })
+    });
+    
+    if (!response.ok) {
+      console.error('[CustomerAPI] Check customer failed:', response.status);
+      return { exists: false, customerName: null };
+    }
+    
+    const data = await response.json();
+    console.log('[CustomerAPI] Check result:', data);
+    
+    return {
+      exists: data.exists || false,
+      customerName: data.customerName || null
+    };
+  } catch (error) {
+    console.error('[CustomerAPI] Error checking customer:', error);
+    return { exists: false, customerName: null };
+  }
+}
+
+/**
  * Get current customer data from backend
  */
 export async function getCurrentCustomer(firebaseIdToken: string): Promise<CustomerData | null> {

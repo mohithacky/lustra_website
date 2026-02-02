@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { CustomerProvider } from '@/contexts/CustomerContext'
 
 export const metadata: Metadata = {
   title: 'Lustra AI - Beautiful Jewelry Websites',
@@ -16,7 +17,9 @@ export default function RootLayout({
     <html lang="en">
       <body className="light">
         <AuthProvider>
-          {children}
+          <CustomerProvider>
+            {children}
+          </CustomerProvider>
         </AuthProvider>
       </body>
     </html>

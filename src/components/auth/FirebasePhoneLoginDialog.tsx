@@ -17,7 +17,8 @@ import {
   FirebaseAuthResult 
 } from '@/lib/firebaseAuth'
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth'
-import { authenticateCustomer } from '@/lib/customerApi'
+import { authenticateCustomer, checkCustomerExists } from '@/lib/customerApi'
+import { AlertCircle } from 'lucide-react'
 
 interface FirebasePhoneLoginDialogProps {
   isOpen: boolean
@@ -47,6 +48,8 @@ export default function FirebasePhoneLoginDialog({
   const [error, setError] = useState<string | null>(null)
   const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null)
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
+  const [existingCustomerName, setExistingCustomerName] = useState<string | null>(null)
+  const [showExistingCustomerWarning, setShowExistingCustomerWarning] = useState(false)
 
   // Initialize reCAPTCHA when component mounts
   useEffect(() => {
@@ -92,8 +95,24 @@ export default function FirebasePhoneLoginDialog({
 
     setIsSendingOtp(true)
     setError(null)
+    setShowExistingCustomerWarning(false)
+    setExistingCustomerName(null)
 
     try {
+      // If signup mode, check if customer already exists
+      if (isSignupMode) {
+        console.log('[Firebase] Checking if customer already exists...')
+        const { exists, customerName } = await checkCustomerExists(phoneNumber, shopId)
+        
+        if (exists) {
+          console.log('[Firebase] Customer already exists:', customerName)
+          setExistingCustomerName(customerName)
+          setShowExistingCustomerWarning(true)
+          setIsSendingOtp(false)
+          return // Don't send OTP, prompt user to login instead
+        }
+      }
+
       console.log('[Firebase] Sending OTP to:', phoneNumber)
       
       const confirmation = await sendFirebaseOtp(phoneNumber, recaptchaVerifier)
@@ -355,15 +374,41 @@ export default function FirebasePhoneLoginDialog({
           <p className="text-red-500 text-sm mb-3">{error}</p>
         )}
 
+        {/* Warning for existing customer trying to signup */}
+        {showExistingCustomerWarning && (
+          <div className={cn(
+            'px-4 py-3 rounded-xl mb-3 border',
+            isDark ? 'bg-amber-900/30 border-amber-700 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-800'
+          )}>
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Account already exists!</p>
+                <p className="text-xs mt-1">
+                  {existingCustomerName 
+                    ? `An account exists for ${existingCustomerName}.`
+                    : 'An account with this phone number already exists.'}
+                </p>
+                <button
+                  onClick={() => { setIsSignupMode(false); setShowExistingCustomerWarning(false); }}
+                  className="text-xs mt-2 font-semibold underline hover:no-underline"
+                >
+                  Switch to Login
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Submit button */}
         <button
           onClick={codeSent ? handleVerifyOtp : handleSendOtp}
-          disabled={isSendingOtp || isVerifyingOtp}
+          disabled={isSendingOtp || isVerifyingOtp || showExistingCustomerWarning}
           className="w-full bg-gold-500 hover:bg-gold-600 text-white py-3 rounded-full font-semibold transition-colors disabled:opacity-50"
         >
           {codeSent
             ? (isVerifyingOtp ? 'Verifying...' : 'Verify & Continue')
-            : (isSendingOtp ? 'Sending...' : 'Send OTP')}
+            : (isSendingOtp ? (isSignupMode ? 'Checking...' : 'Sending...') : 'Send OTP')}
         </button>
 
         {/* Secondary actions */}
