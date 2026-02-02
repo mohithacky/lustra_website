@@ -17,6 +17,7 @@ import LoadingIndicator from '@/components/ui/LoadingIndicator'
 import SearchBar from '@/components/sections/SearchBar'
 import NavigationDrawer from '@/components/layout/NavigationDrawer'
 import { useShopStore } from '@/store/shopStore'
+import { useCustomer } from '@/contexts/CustomerContext'
 
 interface WebsiteLayoutProps {
   children: React.ReactNode
@@ -54,13 +55,15 @@ export default function WebsiteLayout({
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
   const [showDrawer, setShowDrawer] = useState(false)
-  const [customer, setCustomer] = useState<CustomerSession | null>(null)
   const [logoError, setLogoError] = useState(false)
   const [authUrl, setAuthUrl] = useState<string>('https://lustrai.in/auth')
   const pathname = usePathname()
 
   const isDark = theme === 'dark'
   const setShopData = useShopStore((state) => state.setShopData)
+  
+  // Use CustomerContext for session management
+  const { customer: customerData, firebaseUser, signOut: customerSignOut, loading: customerLoading } = useCustomer()
 
   // Compute auth URL client-side to include query params
   useEffect(() => {
@@ -80,62 +83,36 @@ export default function WebsiteLayout({
     })
   }, [user.id, shopDomain, user.shop_name, setShopData])
 
-  // Load customer from localStorage on mount
-  useEffect(() => {
-    // Try Firebase auth first
-    const firebaseAuth = localStorage.getItem('firebaseAuth')
-    if (firebaseAuth) {
-      try {
-        const parsed = JSON.parse(firebaseAuth)
-        if (parsed.shopId === user.id) {
-          setCustomer({
-            id: parsed.userId,
-            name: parsed.phoneNumber,
-            phone: parsed.phoneNumber,
-            shopId: user.id,
-          })
-          return
-        }
-      } catch (e) {
-        console.error('Error parsing Firebase auth session:', e)
-      }
-    }
-    
-    // Fallback to old Twilio session
-    const savedCustomer = localStorage.getItem('websiteCustomer')
-    if (savedCustomer) {
-      try {
-        const parsed = JSON.parse(savedCustomer)
-        if (parsed.shopId === user.id) {
-          setCustomer(parsed)
-        }
-      } catch (e) {
-        console.error('Error parsing customer session:', e)
-      }
-    }
-  }, [user.id])
-
   useEffect(() => {
     document.body.className = theme
   }, [theme])
+
+  // Log customer session state for debugging
+  useEffect(() => {
+    if (firebaseUser && customerData) {
+      console.log('[WebsiteLayout] Customer session active:', {
+        customerId: customerData.id,
+        customerName: customerData.name,
+        firebaseUid: firebaseUser.uid
+      })
+    } else if (firebaseUser && !customerData) {
+      console.log('[WebsiteLayout] Firebase user exists but customer data not loaded yet')
+    } else {
+      console.log('[WebsiteLayout] No customer session')
+    }
+  }, [firebaseUser, customerData])
 
   const handleLoginSuccess = (userId: string, userName: string, authResult: FirebaseAuthResult) => {
     console.log('[WebsiteLayout] Firebase auth successful:', userId)
     console.log('[WebsiteLayout] Is new user:', authResult.isNewUser)
     console.log('[WebsiteLayout] Shop details filled:', authResult.shopDetailsFilled)
-    
-    setCustomer({
-      id: userId,
-      name: userName,
-      phone: authResult.phoneNumber,
-      shopId: user.id,
-    })
+    // CustomerContext will automatically pick up the Firebase auth state change
+    // and fetch customer data, so we don't need to do anything here
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('websiteCustomer')
-    localStorage.removeItem('firebaseAuth')
-    setCustomer(null)
+  const handleLogout = async () => {
+    console.log('[WebsiteLayout] Logging out customer')
+    await customerSignOut()
   }
 
   // Navigation items matching Flutter AppBar
@@ -271,14 +248,14 @@ export default function WebsiteLayout({
               {/* Right: Login/Logout + Wishlist + Cart */}
               <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 {/* Login/Logout Button */}
-                {customer ? (
+                {customerData ? (
                   <div className="flex items-center gap-1 sm:gap-2">
                     <span className={cn(
                       'text-xs sm:text-sm font-medium hidden xl:inline',
                       isDark ? 'text-gray-300' : 'text-gray-600'
                     )}>
                       <User className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1" />
-                      {customer.name || 'Customer'}
+                      {customerData.name || customerData.phone_number || 'Customer'}
                     </span>
                     <button 
                       onClick={handleLogout}
@@ -302,8 +279,7 @@ export default function WebsiteLayout({
                     <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span className="hidden lg:inline">Login</span>
                   </a>
-                )}
-                
+                )}                
                 {/* Wishlist */}
                 <Link
                   href={`/wishlist`}
@@ -346,7 +322,11 @@ export default function WebsiteLayout({
           isOpen={showDrawer}
           onClose={() => setShowDrawer(false)}
           isDark={isDark}
-          customer={customer}
+          customer={customerData ? {
+            id: customerData.id.toString(),
+            name: customerData.name || undefined,
+            phone: customerData.phone_number
+          } : null}
           onLogout={handleLogout}
           onLoginClick={() => setShowLoginDialog(true)}
           categories={categories}
