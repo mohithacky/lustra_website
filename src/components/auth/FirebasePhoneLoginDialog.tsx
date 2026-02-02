@@ -17,7 +17,7 @@ import {
   FirebaseAuthResult 
 } from '@/lib/firebaseAuth'
 import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth'
-import { createSupabaseClientWithFirebaseToken } from '@/lib/supabaseFirebaseClient'
+import { authenticateCustomer } from '@/lib/customerApi'
 
 interface FirebasePhoneLoginDialogProps {
   isOpen: boolean
@@ -154,98 +154,38 @@ export default function FirebasePhoneLoginDialog({
       console.log('[Firebase] Is new user:', authResult.isNewUser)
       console.log('[Firebase] Shop details filled:', authResult.shopDetailsFilled)
       
-      // Create or update customer record directly in Supabase
-      console.log('[Firebase] Creating/updating customer record in Supabase...')
+      // Create or update customer record via backend service role
+      console.log('[Firebase] Creating/updating customer record via backend...')
       
-      console.log('[Firebase] idToken:', authResult.idToken)
-      // Create Supabase client with the Firebase token
-      const supabaseClient = createSupabaseClientWithFirebaseToken(authResult.idToken)
+      // Send encrypted request to backend for customer creation/update
+      const backendResponse = await authenticateCustomer(authResult.idToken, {
+        isSignup: isSignupMode,
+        fullName: name.trim() || undefined,
+        shopOwnerId: shopId,
+        shopDomain: undefined
+      })
       
-      // Check if customer already exists for this shop
-      const { data: existingCustomer, error: fetchError } = await supabaseClient
-        .from('customers')
-        .select('*')
-        .eq('user_id', shopId)
-        .eq('phone_number', authResult.phoneNumber)
-        .maybeSingle()
+      console.log('[Firebase] Backend response:', backendResponse)
       
-      if (fetchError) {
-        console.error('[Firebase] Error fetching customer:', fetchError)
-        throw new Error('Failed to check customer existence')
-      }
+      const customer = backendResponse.customer
+      const isNewCustomer = backendResponse.isNewUser
       
-      let customer
-      let isNewCustomer = false
-      
-      if (existingCustomer) {
-        // Update existing customer's last login and Firebase UID
-        const updateData: Record<string, string> = {
-          firebase_uid: authResult.userId,
-          last_login_at: new Date().toISOString()
-        }
-        
-        if (isSignupMode && name.trim()) {
-          updateData.name = name.trim()
-        }
-        
-        const { data: updatedCustomer, error: updateError } = await supabaseClient
-          .from('customers')
-          .update(updateData)
-          .eq('id', existingCustomer.id)
-          .select()
-          .single()
-      
-        if (updateError) {
-          console.error('[Firebase] Error updating customer:', updateError)
-          throw new Error('Failed to update customer record')
-        }
-        
-        customer = updatedCustomer
-        console.log(`[Firebase] Existing customer updated: ${customer.id}`)
-      } else {
-        // Create new customer
-        if (!isSignupMode) {
-          setError('Phone number not registered. Please sign up first.')
-          setIsSignupMode(true)
-          setIsVerifyingOtp(false)
-          return
-        }
-      
-        const insertData: Record<string, string> = {
-          user_id: shopId,
-          firebase_uid: authResult.userId,
-          phone_number: authResult.phoneNumber || '',
-          last_login_at: new Date().toISOString()
-        }
-        
-        if (name.trim()) {
-          insertData.name = name.trim()
-        }
-        
-        const { data: newCustomer, error: insertError } = await supabaseClient
-          .from('customers')
-          .insert(insertData)
-          .select()
-          .single()
-      
-        if (insertError) {
-          console.error('[Firebase] Error creating customer:', insertError)
-          throw new Error('Failed to create customer record')
-        }
-        
-        customer = newCustomer
-        isNewCustomer = true
-        console.log(`[Firebase] New customer created: ${customer.id}`)
+      // Handle case where user is trying to login but doesn't exist
+      if (!customer && !isSignupMode) {
+        setError('Phone number not registered. Please sign up first.')
+        setIsSignupMode(true)
+        setIsVerifyingOtp(false)
+        return
       }
       
       // Create a customerData object similar to what the API would return
       const customerData = {
         customer: {
-          id: customer.id,
-          firebase_uid: customer.firebase_uid,
-          phone_number: customer.phone_number,
-          name: customer.name,
-          email: customer.email
+          id: customer?.id,
+          firebase_uid: customer?.firebase_uid,
+          phone_number: customer?.phone_number,
+          name: customer?.name,
+          email: null
         },
         isNewCustomer
       }
@@ -267,7 +207,7 @@ export default function FirebasePhoneLoginDialog({
       
       // Call success callback with customer name
       onSuccess(
-        customerData.customer.id, 
+        String(customerData.customer.id), 
         customerData.customer.name || authResult.phoneNumber, 
         authResult
       )

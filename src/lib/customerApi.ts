@@ -1,167 +1,224 @@
 /**
- * Customer API for Firebase-based authentication
- * Creates and manages customers using Firebase UID instead of Twilio UID
+ * Customer API Service
+ * 
+ * Handles all communication with the functions backend for customer operations.
+ * All sensitive data is encrypted using AES-256-GCM before transmission.
  */
 
-import { createSupabaseClientWithFirebaseToken } from './supabaseFirebaseClient'
+const BACKEND_URL = 'https://api-5sqqk2n6ra-uc.a.run.app';
 
-const BACKEND_URL = 'https://api-5sqqk2n6ra-uc.a.run.app'
-
-export interface FirebaseCustomerData {
-  id: string
-  user_id: string  // Firebase UID of the shop owner
-  phone_number: string
-  name?: string
-  email?: string
-  created_at?: string
-  updated_at?: string
-}
+// This must match the CUSTOMER_API_SECRET in Firebase Functions
+// In production, this should come from environment variables
+const CUSTOMER_API_SECRET = process.env.NEXT_PUBLIC_CUSTOMER_API_SECRET || 'lustra-customer-api-secret-2024';
 
 /**
- * Create or get customer using Firebase authentication
- * This replaces the Twilio-based customer creation
+ * Encrypt payload using AES-256-GCM
+ * Uses Web Crypto API for browser compatibility
  */
-export async function createOrGetFirebaseCustomer(
-  shopOwnerId: string,  // Firebase UID of the shop owner
-  phoneNumber: string,
-  firebaseIdToken: string,
-  name?: string,
-  email?: string
-): Promise<FirebaseCustomerData> {
+async function encryptPayload(data: Record<string, any>): Promise<string> {
   try {
-    console.log('[CustomerAPI] Creating/getting customer for shop owner:', shopOwnerId)
-    console.log('[CustomerAPI] Phone number:', phoneNumber)
-    console.log('[CustomerAPI] Name:', name)
-
-    // Create Supabase client with Firebase token
-    const supabase = createSupabaseClientWithFirebaseToken(firebaseIdToken)
-
-    // Check if customer already exists
-    const { data: existingCustomer, error: fetchError } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('user_id', shopOwnerId)
-      .eq('phone_number', phoneNumber)
-      .maybeSingle()
-
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('[CustomerAPI] Error fetching customer:', fetchError)
-      throw new Error('Failed to fetch customer')
-    }
-
-    if (existingCustomer) {
-      console.log('[CustomerAPI] Customer already exists:', existingCustomer.id)
-      
-      // Update last_login_at
-      const { data: updatedCustomer, error: updateError } = await supabase
-        .from('customers')
-        .update({ 
-          last_login_at: new Date().toISOString(),
-          ...(name && { name }),
-          ...(email && { email })
-        })
-        .eq('id', existingCustomer.id)
-        .select()
-        .single()
-
-      if (updateError) {
-        console.error('[CustomerAPI] Error updating customer:', updateError)
-        // Return existing customer even if update fails
-        return existingCustomer as FirebaseCustomerData
-      }
-
-      return updatedCustomer as FirebaseCustomerData
-    }
-
-    // Create new customer
-    console.log('[CustomerAPI] Creating new customer')
-    const newCustomer = {
-      user_id: shopOwnerId,
-      phone_number: phoneNumber,
-      name: name || null,
-      email: email || null,
-      last_login_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-
-    const { data: createdCustomer, error: createError } = await supabase
-      .from('customers')
-      .insert(newCustomer)
-      .select()
-      .single()
-
-    if (createError) {
-      console.error('[CustomerAPI] Error creating customer:', createError)
-      throw new Error('Failed to create customer')
-    }
-
-    console.log('[CustomerAPI] Customer created successfully:', createdCustomer.id)
-    return createdCustomer as FirebaseCustomerData
-
+    // Convert secret to key using SHA-256
+    const encoder = new TextEncoder();
+    const secretBuffer = encoder.encode(CUSTOMER_API_SECRET);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', secretBuffer);
+    
+    // Import as AES-GCM key
+    const key = await crypto.subtle.importKey(
+      'raw',
+      hashBuffer,
+      { name: 'AES-GCM' },
+      false,
+      ['encrypt']
+    );
+    
+    // Generate random IV (16 bytes)
+    const iv = crypto.getRandomValues(new Uint8Array(16));
+    
+    // Encrypt the data
+    const dataBuffer = encoder.encode(JSON.stringify(data));
+    const encryptedBuffer = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      dataBuffer
+    );
+    
+    // Extract auth tag (last 16 bytes of encrypted data in Web Crypto)
+    const encryptedArray = new Uint8Array(encryptedBuffer);
+    const ciphertext = encryptedArray.slice(0, encryptedArray.length - 16);
+    const authTag = encryptedArray.slice(encryptedArray.length - 16);
+    
+    // Convert to base64 and format as iv:authTag:ciphertext
+    const ivBase64 = btoa(String.fromCharCode.apply(null, Array.from(iv)));
+    const authTagBase64 = btoa(String.fromCharCode.apply(null, Array.from(authTag)));
+    const ciphertextBase64 = btoa(String.fromCharCode.apply(null, Array.from(ciphertext)));
+    
+    return `${ivBase64}:${authTagBase64}:${ciphertextBase64}`;
   } catch (error) {
-    console.error('[CustomerAPI] Error in createOrGetFirebaseCustomer:', error)
-    throw error
+    console.error('[CustomerAPI] Encryption error:', error);
+    throw new Error('Failed to encrypt payload');
   }
 }
 
 /**
- * Get customer by ID
+ * Decrypt response payload using AES-256-GCM
  */
-export async function getCustomerById(
-  customerId: string,
-  firebaseIdToken: string
-): Promise<FirebaseCustomerData | null> {
+async function decryptPayload(encryptedData: string): Promise<any> {
   try {
-    const supabase = createSupabaseClientWithFirebaseToken(firebaseIdToken)
-
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('id', customerId)
-      .single()
-
-    if (error) {
-      console.error('[CustomerAPI] Error fetching customer by ID:', error)
-      return null
+    // Parse the encrypted data
+    const parts = encryptedData.split(':');
+    if (parts.length !== 3) {
+      throw new Error('Invalid encrypted data format');
     }
-
-    return data as FirebaseCustomerData
+    
+    const iv = Uint8Array.from(atob(parts[0]), c => c.charCodeAt(0));
+    const authTag = Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0));
+    const ciphertext = Uint8Array.from(atob(parts[2]), c => c.charCodeAt(0));
+    
+    // Convert secret to key using SHA-256
+    const encoder = new TextEncoder();
+    const secretBuffer = encoder.encode(CUSTOMER_API_SECRET);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', secretBuffer);
+    
+    // Import as AES-GCM key
+    const key = await crypto.subtle.importKey(
+      'raw',
+      hashBuffer,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+    
+    // Combine ciphertext and auth tag (Web Crypto expects them together)
+    const combinedBuffer = new Uint8Array(ciphertext.length + authTag.length);
+    combinedBuffer.set(ciphertext);
+    combinedBuffer.set(authTag, ciphertext.length);
+    
+    // Decrypt
+    const decryptedBuffer = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      combinedBuffer
+    );
+    
+    const decoder = new TextDecoder();
+    return JSON.parse(decoder.decode(decryptedBuffer));
   } catch (error) {
-    console.error('[CustomerAPI] Error in getCustomerById:', error)
-    return null
+    console.error('[CustomerAPI] Decryption error:', error);
+    throw new Error('Failed to decrypt response');
   }
 }
 
-/**
- * Update customer information
- */
-export async function updateCustomer(
-  customerId: string,
-  firebaseIdToken: string,
-  updates: Partial<FirebaseCustomerData>
-): Promise<FirebaseCustomerData | null> {
-  try {
-    const supabase = createSupabaseClientWithFirebaseToken(firebaseIdToken)
+export interface CustomerAuthData {
+  isSignup: boolean;
+  fullName?: string;
+  shopOwnerId?: string;
+  shopDomain?: string;
+}
 
-    const { data, error } = await supabase
-      .from('customers')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
+export interface CustomerData {
+  id: number;
+  firebase_uid: string;
+  phone_number: string;
+  name: string | null;
+  user_id: string;
+  shop_domain: string | null;
+}
+
+export interface CustomerAuthResponse {
+  success: boolean;
+  isNewUser: boolean;
+  customer: CustomerData;
+}
+
+/**
+ * Authenticate customer with the backend after Firebase phone auth
+ * This creates or updates the customer in Supabase using service role
+ */
+export async function authenticateCustomer(
+  firebaseIdToken: string,
+  customerData: CustomerAuthData
+): Promise<CustomerAuthResponse> {
+  console.log('[CustomerAPI] ===== AUTHENTICATING CUSTOMER =====');
+  console.log('[CustomerAPI] Encrypting customer data...');
+  
+  try {
+    // Encrypt the customer data
+    const encryptedPayload = await encryptPayload(customerData);
+    console.log('[CustomerAPI] Payload encrypted successfully');
+    
+    // Send to backend
+    console.log('[CustomerAPI] Sending request to backend...');
+    const response = await fetch(`${BACKEND_URL}/customer/auth`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        idToken: firebaseIdToken,
+        encryptedPayload
       })
-      .eq('id', customerId)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('[CustomerAPI] Error updating customer:', error)
-      return null
+    });
+    
+    console.log('[CustomerAPI] Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error('[CustomerAPI] Backend error:', errorData);
+      throw new Error(errorData.error || `Backend error: ${response.status}`);
     }
-
-    return data as FirebaseCustomerData
+    
+    const responseData = await response.json();
+    console.log('[CustomerAPI] Response received, success:', responseData.success);
+    
+    // Decrypt the response if encrypted
+    if (responseData.encryptedPayload) {
+      console.log('[CustomerAPI] Decrypting response...');
+      const decryptedResponse = await decryptPayload(responseData.encryptedPayload);
+      console.log('[CustomerAPI] Response decrypted successfully');
+      console.log('[CustomerAPI] Is new user:', decryptedResponse.isNewUser);
+      console.log('[CustomerAPI] Customer ID:', decryptedResponse.customer?.id);
+      return decryptedResponse;
+    }
+    
+    return responseData;
   } catch (error) {
-    console.error('[CustomerAPI] Error in updateCustomer:', error)
-    return null
+    console.error('[CustomerAPI] Error authenticating customer:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get current customer data from backend
+ */
+export async function getCurrentCustomer(firebaseIdToken: string): Promise<CustomerData | null> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/customer/me`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${firebaseIdToken}`,
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (response.status === 404) {
+      return null;
+    }
+    
+    if (!response.ok) {
+      throw new Error(`Backend error: ${response.status}`);
+    }
+    
+    const responseData = await response.json();
+    
+    // Decrypt if encrypted
+    if (responseData.encryptedPayload) {
+      const decrypted = await decryptPayload(responseData.encryptedPayload);
+      return decrypted.customer;
+    }
+    
+    return responseData.customer;
+  } catch (error) {
+    console.error('[CustomerAPI] Error getting customer:', error);
+    throw error;
   }
 }
