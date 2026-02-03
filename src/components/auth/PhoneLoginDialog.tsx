@@ -98,7 +98,7 @@ export default function PhoneLoginDialog({
       // Store customer in localStorage (matching Flutter's approach)
       localStorage.setItem('websiteCustomer', JSON.stringify({
         id: customer.id,
-        twilio_uid: customer.twilio_uid,
+        firebase_uid: customer.firebase_uid,
         name: customer.name,
         phone: customer.phone_number,
         email: customer.email,
