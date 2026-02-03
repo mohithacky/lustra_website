@@ -23,11 +23,11 @@ async function getUserIdFromSubdomain(subdomain: string): Promise<string | null>
       return null
     }
 
-    // Query users table to find the shop owner by subdomain
+    // Query users table to find the shop owner by shop_domain
     const { data: user, error } = await supabaseServer
       .from('users')
       .select('id')
-      .eq('subdomain', subdomain)
+      .eq('shop_domain', subdomain)
       .single()
 
     if (error || !user) {

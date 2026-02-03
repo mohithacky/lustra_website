@@ -71,7 +71,21 @@ export async function POST(request: NextRequest) {
     
     if (insertError) {
       console.error('[Session API] Database error:', insertError)
-      return NextResponse.json({ error: 'Failed to create session' }, { status: 500 })
+      console.error('[Session API] Insert data was:', {
+        session_id: sessionToken,
+        customer_id: customerId,
+        firebase_uid: firebaseUid,
+        tenant_subdomain: tenantSubdomain,
+        expires_at: expiresAt.toISOString(),
+        user_agent: userAgent,
+        ip_address: ipAddress,
+        is_active: true,
+      })
+      return NextResponse.json({ 
+        error: 'Failed to create session', 
+        details: insertError.message,
+        code: insertError.code 
+      }, { status: 500 })
     }
     
     // Create response with cookie

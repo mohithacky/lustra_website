@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabaseServer, isServiceRoleConfigured } from '@/lib/supabase-server'
 
-// Functions backend URL - all operations go through this
+// Functions backend URL - for token verification only
 const FUNCTIONS_URL = process.env.NEXT_PUBLIC_FUNCTIONS_URL || 'https://api-5sqqk2n6ra-uc.a.run.app'
 
 // Session configuration
 const SESSION_COOKIE_NAME = 'customer_session'
+const SESSION_MAX_AGE = 30 * 24 * 60 * 60 // 30 days in seconds
 
 // Extract subdomain from host
-function extractSubdomain(host: string): string | null {
+function extractSubdomain(host: string): string {
   if (host.includes('localhost')) {
     return 'localhost'
   }
@@ -15,7 +17,14 @@ function extractSubdomain(host: string): string | null {
   if (parts.length >= 3) {
     return parts[0]
   }
-  return null
+  return 'default'
+}
+
+// Generate secure session token
+function generateSessionToken(): string {
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
 /**
@@ -82,31 +91,88 @@ export async function GET(request: NextRequest) {
     
     console.log('[Auth Callback] Token verified for UID:', firebaseUid)
     
+    if (!isServiceRoleConfigured()) {
+      console.error('[Auth Callback] Service role not configured')
+      return NextResponse.redirect(new URL('/?error=server_config', request.url))
+    }
+    
+    // Get user_id from subdomain
+    const { data: user, error: userError } = await supabaseServer
+      .from('users')
+      .select('id')
+      .eq('shop_domain', subdomain)
+      .single()
+    
+    if (userError || !user) {
+      console.error('[Auth Callback] Failed to find user for subdomain:', subdomain, userError)
+      return NextResponse.redirect(new URL('/?error=shop_not_found', request.url))
+    }
+    
+    const userId = user.id
+    console.log('[Auth Callback] Found user_id:', userId)
+    
+    // Find or create customer
+    let customerId: string
+    const { data: existingCustomer, error: customerLookupError } = await supabaseServer
+      .from('customers')
+      .select('id')
+      .eq('firebase_uid', firebaseUid)
+      .eq('user_id', userId)
+      .single()
+    
+    if (existingCustomer) {
+      customerId = existingCustomer.id
+      console.log('[Auth Callback] Found existing customer:', customerId)
+    } else {
+      // Create new customer
+      const { data: newCustomer, error: createError } = await supabaseServer
+        .from('customers')
+        .insert({
+          firebase_uid: firebaseUid,
+          user_id: userId,
+          phone_number: phoneNumber,
+          name: userName || null,
+        })
+        .select('id')
+        .single()
+      
+      if (createError || !newCustomer) {
+        console.error('[Auth Callback] Failed to create customer:', createError)
+        return NextResponse.redirect(new URL('/?error=customer_creation_failed', request.url))
+      }
+      
+      customerId = newCustomer.id
+      console.log('[Auth Callback] Created new customer:', customerId)
+    }
+    
     // Get user agent and IP for session
     const userAgent = request.headers.get('user-agent') || 'unknown'
     const forwardedFor = request.headers.get('x-forwarded-for')
     const ipAddress = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown'
     
-    // Create session via functions backend (which also handles customer lookup/creation)
-    console.log('[Auth Callback] Creating session via functions backend...')
-    const sessionResponse = await fetch(`${FUNCTIONS_URL}/customer/session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        firebaseUid,
-        subdomain,
-        userAgent,
-        ipAddress
-      })
-    })
+    // Create session locally
+    console.log('[Auth Callback] Creating local session...')
+    const sessionToken = generateSessionToken()
+    const expiresAt = new Date(Date.now() + SESSION_MAX_AGE * 1000)
     
-    if (!sessionResponse.ok) {
-      const errorData = await sessionResponse.json().catch(() => ({}))
-      console.error('[Auth Callback] Session creation failed:', errorData)
+    const { error: sessionError } = await supabaseServer
+      .from('customer_sessions')
+      .insert({
+        session_id: sessionToken,
+        customer_id: customerId,
+        firebase_uid: firebaseUid,
+        tenant_subdomain: subdomain,
+        expires_at: expiresAt.toISOString(),
+        user_agent: userAgent,
+        ip_address: ipAddress,
+        is_active: true,
+      })
+    
+    if (sessionError) {
+      console.error('[Auth Callback] Session creation failed:', sessionError)
       return NextResponse.redirect(new URL('/?error=session_failed', request.url))
     }
     
-    const { sessionId, expiresAt } = await sessionResponse.json()
     console.log('[Auth Callback] Session created successfully')
     
     // Build redirect URL
@@ -119,12 +185,12 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(redirectUrl)
     
     // Set HttpOnly cookie for this subdomain only (host-only cookie)
-    response.cookies.set(SESSION_COOKIE_NAME, sessionId, {
+    response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      expires: new Date(expiresAt),
+      expires: expiresAt,
     })
     
     console.log('[Auth Callback] Cookie set, redirecting to:', redirectUrl.toString())
