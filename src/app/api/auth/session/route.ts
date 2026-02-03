@@ -148,15 +148,27 @@ export async function GET(request: NextRequest) {
     const expiresAt = new Date(session.expires_at)
     if (expiresAt < new Date()) {
       console.log('[Session API] Session expired')
-      // Delete expired session
+      // Mark expired session as inactive
       await supabaseServer
         .from('customer_sessions')
-        .delete()
-        .eq('session_token', sessionToken)
+        .update({ is_active: false })
+        .eq('session_id', sessionToken)
       
       const response = NextResponse.json({ authenticated: false, error: 'Session expired' }, { status: 401 })
       response.cookies.delete(SESSION_COOKIE_NAME)
       return response
+    }
+    
+    // Fetch full customer data
+    const { data: customer, error: customerError } = await supabaseServer
+      .from('customers')
+      .select('id, user_id, firebase_uid, phone_number, name, email, created_at')
+      .eq('id', session.customer_id)
+      .single()
+    
+    if (customerError || !customer) {
+      console.error('[Session API] Failed to fetch customer:', customerError)
+      return NextResponse.json({ authenticated: false, error: 'Customer not found' }, { status: 401 })
     }
     
     console.log('[Session API] Session verified for customer:', session.customer_id)
@@ -168,6 +180,15 @@ export async function GET(request: NextRequest) {
       tenantSubdomain: session.tenant_subdomain,
       createdAt: session.created_at,
       expiresAt: session.expires_at,
+      customer: {
+        id: customer.id,
+        shopId: customer.user_id,
+        firebase_uid: customer.firebase_uid,
+        phone_number: customer.phone_number,
+        name: customer.name,
+        email: customer.email,
+        created_at: customer.created_at,
+      },
     })
     
   } catch (error) {

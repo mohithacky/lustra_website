@@ -206,7 +206,16 @@ export async function GET(request: NextRequest) {
       expires: expiresAt,
     })
     
-    console.log('[Auth Callback] Cookie set, redirecting to:', redirectUrl.toString())
+    console.log('[Auth Callback] Cookie set:', {
+      name: SESSION_COOKIE_NAME,
+      value: sessionToken.substring(0, 10) + '...',
+      expires: expiresAt,
+      domain: 'not set (host-only)',
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    })
+    console.log('[Auth Callback] Redirecting to:', redirectUrl.toString())
     
     return response
     
