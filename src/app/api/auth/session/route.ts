@@ -6,7 +6,7 @@ const SESSION_COOKIE_NAME = 'customer_session'
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60 // 30 days in seconds
 
 // Extract subdomain from host
-function extractSubdomain(host: string): string | null {
+function extractSubdomain(host: string): string {
   if (host.includes('localhost')) {
     return 'localhost'
   }
@@ -14,7 +14,7 @@ function extractSubdomain(host: string): string | null {
   if (parts.length >= 3) {
     return parts[0]
   }
-  return null
+  return 'default'
 }
 
 // Generate secure session token
@@ -39,9 +39,13 @@ export async function POST(request: NextRequest) {
     
     console.log('[Session API] Creating session for:', { firebaseUid, customerId, userId })
     
-    if (!firebaseUid || !customerId || !userId) {
-      return NextResponse.json({ error: 'firebaseUid, customerId, and userId are required' }, { status: 400 })
+    if (!firebaseUid || !customerId) {
+      return NextResponse.json({ error: 'firebaseUid and customerId are required' }, { status: 400 })
     }
+    
+    // Extract subdomain from host
+    const host = request.headers.get('host') || 'localhost'
+    const tenantSubdomain = extractSubdomain(host)
     
     const userAgent = request.headers.get('user-agent') || 'unknown'
     const forwardedFor = request.headers.get('x-forwarded-for')
@@ -55,13 +59,14 @@ export async function POST(request: NextRequest) {
     const { error: insertError } = await supabaseServer
       .from('customer_sessions')
       .insert({
-        session_token: sessionToken,
+        session_id: sessionToken,
         customer_id: customerId,
-        user_id: userId,
         firebase_uid: firebaseUid,
+        tenant_subdomain: tenantSubdomain,
         expires_at: expiresAt.toISOString(),
         user_agent: userAgent,
         ip_address: ipAddress,
+        is_active: true,
       })
     
     if (insertError) {
@@ -113,8 +118,9 @@ export async function GET(request: NextRequest) {
     // Query session from database
     const { data: session, error } = await supabaseServer
       .from('customer_sessions')
-      .select('customer_id, user_id, firebase_uid, created_at, expires_at')
-      .eq('session_token', sessionToken)
+      .select('customer_id, firebase_uid, tenant_subdomain, created_at, expires_at, is_active')
+      .eq('session_id', sessionToken)
+      .eq('is_active', true)
       .single()
     
     if (error || !session) {
@@ -144,8 +150,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       authenticated: true,
       customerId: session.customer_id,
-      userId: session.user_id,
       firebaseUid: session.firebase_uid,
+      tenantSubdomain: session.tenant_subdomain,
+      createdAt: session.created_at,
+      expiresAt: session.expires_at,
     })
     
   } catch (error) {
@@ -167,11 +175,11 @@ export async function DELETE(request: NextRequest) {
     const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value
     
     if (sessionToken) {
-      // Delete session from database
-      await supabaseServer
+      // Delete session from database (or mark as inactive)
+      const { error } = await supabaseServer
         .from('customer_sessions')
-        .delete()
-        .eq('session_token', sessionToken)
+        .update({ is_active: false })
+        .eq('session_id', sessionToken)
       
       console.log('[Session API] Session deleted')
     }

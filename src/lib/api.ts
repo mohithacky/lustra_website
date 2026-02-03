@@ -106,8 +106,8 @@ export async function verifyOtp(
 export interface SessionInfo {
   authenticated: boolean
   customerId?: string
-  userId?: string
   firebaseUid?: string
+  tenantSubdomain?: string
 }
 
 /**
