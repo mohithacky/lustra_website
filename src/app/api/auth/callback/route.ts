@@ -109,23 +109,57 @@ export async function GET(request: NextRequest) {
     }
     
     const userId = user.id
-    console.log('[Auth Callback] Found user_id:', userId)
+    console.log('[Auth Callback] Found user_id:', userId, 'type:', typeof userId)
+    
+    // Validate phone number
+    if (!phoneNumber) {
+      console.error('[Auth Callback] Phone number missing from Firebase token')
+      return NextResponse.redirect(new URL('/?error=phone_missing', request.url))
+    }
     
     // Find or create customer
     let customerId: string
-    const { data: existingCustomer, error: customerLookupError } = await supabaseServer
-      .from('customers')
-      .select('id')
-      .eq('firebase_uid', firebaseUid)
-      .eq('user_id', userId.toString())
-      .single()
     
-    if (existingCustomer) {
-      customerId = existingCustomer.id
-      console.log('[Auth Callback] Found existing customer:', customerId)
+    // First, check if customer exists with this firebase_uid (any shop)
+    const { data: existingByFirebase } = await supabaseServer
+      .from('customers')
+      .select('id, user_id, phone_number')
+      .eq('firebase_uid', firebaseUid)
+      .maybeSingle()
+    
+    if (existingByFirebase) {
+      console.log('[Auth Callback] Found existing customer by firebase_uid:', existingByFirebase)
+      
+      // Check if it's for the same shop
+      if (existingByFirebase.user_id === userId.toString()) {
+        customerId = existingByFirebase.id
+        console.log('[Auth Callback] Customer already exists for this shop')
+      } else {
+        console.error('[Auth Callback] Customer exists for different shop:', {
+          existing_user_id: existingByFirebase.user_id,
+          current_user_id: userId.toString()
+        })
+        return NextResponse.redirect(new URL('/?error=customer_exists_different_shop', request.url))
+      }
     } else {
-      // Create new customer
-      console.log('[Auth Callback] Creating customer with:', {
+      // Check if phone number already used for this shop with different firebase_uid
+      const { data: existingByPhone } = await supabaseServer
+        .from('customers')
+        .select('id, firebase_uid')
+        .eq('user_id', userId.toString())
+        .eq('phone_number', phoneNumber)
+        .maybeSingle()
+      
+      if (existingByPhone) {
+        console.error('[Auth Callback] Phone already registered for this shop with different firebase_uid:', {
+          existing_firebase_uid: existingByPhone.firebase_uid,
+          current_firebase_uid: firebaseUid
+        })
+        return NextResponse.redirect(new URL('/?error=phone_already_registered', request.url))
+      }
+      
+      // No existing customer found - create new one
+      console.log('[Auth Callback] Creating new customer with:', {
         firebase_uid: firebaseUid,
         user_id: userId.toString(),
         phone_number: phoneNumber,

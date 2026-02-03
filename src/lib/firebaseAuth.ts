@@ -16,7 +16,6 @@ import {
   User as FirebaseUser
 } from 'firebase/auth'
 import { getFirebaseAuth } from './firebase'
-import { authenticateCustomer, CustomerAuthResponse } from './customerApi'
 
 export interface FirebaseAuthResult {
   firebaseUser: FirebaseUser
@@ -79,14 +78,14 @@ export async function sendFirebaseOtp(
 export interface CustomerData {
   isSignup: boolean;
   fullName?: string;
-  shopId?: string;
+  shopId: string;
   shopDomain?: string;
   metadata?: Record<string, any>;
 }
 
 /**
  * Verify OTP and complete Firebase phone authentication
- * Uses backend service role for all Supabase operations
+ * Returns Firebase auth result - customer creation should be handled by caller
  */
 export async function verifyFirebaseOtp(
   confirmationResult: ConfirmationResult,
@@ -95,78 +94,39 @@ export async function verifyFirebaseOtp(
   try {
     console.log('')
     console.log('╔════════════════════════════════════════════════════════════════╗')
-    console.log('║  FIREBASE PHONE AUTH - BACKEND SERVICE ROLE FLOW              ║')
+    console.log('║  FIREBASE PHONE AUTH - OTP VERIFICATION                        ║')
     console.log('╚════════════════════════════════════════════════════════════════╝')
     console.log('')
 
     // STEP 1: Sign in to Firebase with OTP
-    console.log('📱 [STEP 1/4] Verifying OTP with Firebase...')
+    console.log('📱 [STEP 1/2] Verifying OTP with Firebase...')
     const userCredential = await confirmationResult.confirm(otp)
     const user = userCredential.user
-    console.log('✅ [STEP 1/4] Firebase sign-in completed successfully')
+    console.log('✅ [STEP 1/2] Firebase sign-in completed successfully')
     console.log('   • User ID:', user.uid)
     console.log('   • Phone:', user.phoneNumber)
 
     // STEP 2: Get Firebase ID token
     console.log('')
-    console.log('🔑 [STEP 2/4] Obtaining Firebase ID token...')
+    console.log('🔑 [STEP 2/2] Obtaining Firebase ID token...')
     const idToken = await user.getIdToken()
-    console.log('✅ [STEP 2/4] Firebase ID token obtained:', idToken.substring(0, 20) + '...')
+    console.log('✅ [STEP 2/2] Firebase ID token obtained:', idToken.substring(0, 20) + '...')
 
     // Print token details
     console.log('')
-    console.log('� Token Details:')
+    console.log('📋 Token Details:')
     printTokenDetails(idToken)
-
-    // STEP 3: Send request to backend for customer creation/update
-    console.log('')
-    console.log('� [STEP 3/4] Sending encrypted request to backend...')
-    console.log('   • Backend will create/update customer using service role')
-    
-    let backendResponse: CustomerAuthResponse
-    try {
-      backendResponse = await authenticateCustomer(idToken, {
-        isSignup: false, // Login flow
-        fullName: undefined,
-        shopOwnerId: undefined,
-        shopDomain: undefined
-      })
-      console.log('✅ [STEP 3/4] Backend authentication successful')
-      console.log('   • Is new user:', backendResponse.isNewUser)
-      console.log('   • Customer ID:', backendResponse.customer?.id)
-    } catch (backendError) {
-      console.error('❌ [STEP 3/4] Backend authentication failed:', backendError)
-      throw new Error('Failed to authenticate with backend')
-    }
-
-    // STEP 4: Return authentication result
-    console.log('')
-    console.log('📊 [STEP 4/4] Processing authentication result...')
-    
-    const isNewUser = backendResponse.isNewUser
-    const customer = backendResponse.customer
-
-    console.log('')
-    console.log('📋 Customer Data from Backend:')
-    console.log('   • Customer ID:', customer?.id || 'Not found')
-    console.log('   • Firebase UID:', customer?.firebase_uid || 'Not set')
-    console.log('   • Phone:', customer?.phone_number || 'Not set')
-    console.log('   • Name:', customer?.name || 'Not set')
 
     console.log('')
     console.log('╔════════════════════════════════════════════════════════════════╗')
-    console.log('║  ✅ AUTHENTICATION COMPLETE - FINAL STATUS                    ║')
+    console.log('║  ✅ FIREBASE AUTH COMPLETE - Ready for customer creation       ║')
     console.log('╚════════════════════════════════════════════════════════════════╝')
-    console.log('🔐 Authentication Status:')
-    console.log('   • Firebase Auth: ✅ SUCCESS')
-    console.log('   • Backend Auth: ✅ SUCCESS')
-    console.log('   • User Type:', isNewUser ? 'NEW USER' : 'EXISTING USER')
     console.log('')
 
     return {
       firebaseUser: user,
       idToken: idToken,
-      isNewUser,
+      isNewUser: false, // Will be determined by backend
       shopDetailsFilled: false,
       userId: user.uid,
       phoneNumber: user.phoneNumber || ''
@@ -178,104 +138,16 @@ export async function verifyFirebaseOtp(
 }
 
 /**
- * Verify OTP with custom data (for user signup)
- * Enhanced version that accepts customer data for new user registration
- * Uses backend service role for all Supabase operations
+ * @deprecated Use verifyFirebaseOtp instead and call authenticateCustomer separately
+ * This function is kept for backward compatibility
  */
 export async function verifyFirebaseOtpWithCustomData(
   confirmationResult: ConfirmationResult,
   otp: string,
   customerData: CustomerData
 ): Promise<FirebaseAuthResult> {
-  try {
-    console.log('')
-    console.log('╔════════════════════════════════════════════════════════════════╗')
-    console.log('║  FIREBASE PHONE AUTH - BACKEND SERVICE ROLE FLOW              ║')
-    console.log('╚════════════════════════════════════════════════════════════════╝')
-    console.log('')
-    console.log('[Auth] Flow type:', customerData.isSignup ? 'SIGNUP' : 'LOGIN')
-    if (customerData.isSignup) {
-      console.log('[Auth] Customer name:', customerData.fullName || 'Not provided')
-    }
-
-    // STEP 1: Sign in to Firebase with OTP
-    console.log('📱 [STEP 1/4] Verifying OTP with Firebase...')
-    const userCredential = await confirmationResult.confirm(otp)
-    const user = userCredential.user
-    console.log('✅ [STEP 1/4] Firebase sign-in completed successfully')
-    console.log('   • User ID:', user.uid)
-    console.log('   • Phone:', user.phoneNumber)
-
-    // STEP 2: Get Firebase ID token
-    console.log('')
-    console.log('🔑 [STEP 2/4] Obtaining Firebase ID token...')
-    const idToken = await user.getIdToken()
-    console.log('✅ [STEP 2/4] Firebase ID token obtained:', idToken.substring(0, 20) + '...')
-
-    // Print token details
-    console.log('')
-    console.log('� Token Details:')
-    printTokenDetails(idToken)
-
-    // STEP 3: Send encrypted request to backend for customer creation/update
-    console.log('')
-    console.log('� [STEP 3/4] Sending encrypted request to backend...')
-    console.log('   • Backend will create/update customer using service role')
-    
-    let backendResponse: CustomerAuthResponse
-    try {
-      backendResponse = await authenticateCustomer(idToken, {
-        isSignup: customerData.isSignup,
-        fullName: customerData.fullName,
-        shopOwnerId: customerData.shopId,
-        shopDomain: customerData.shopDomain
-      })
-      console.log('✅ [STEP 3/4] Backend authentication successful')
-      console.log('   • Is new user:', backendResponse.isNewUser)
-      console.log('   • Customer ID:', backendResponse.customer?.id)
-    } catch (backendError) {
-      console.error('❌ [STEP 3/4] Backend authentication failed:', backendError)
-      throw new Error('Failed to authenticate with backend')
-    }
-
-    // STEP 4: Return authentication result
-    console.log('')
-    console.log('📊 [STEP 4/4] Processing authentication result...')
-    
-    const isNewUser = backendResponse.isNewUser
-    const customer = backendResponse.customer
-
-    console.log('')
-    console.log('📋 Customer Data from Backend:')
-    console.log('   • Customer ID:', customer?.id || 'Not found')
-    console.log('   • Firebase UID:', customer?.firebase_uid || 'Not set')
-    console.log('   • User ID:', customer?.user_id || 'Not set')
-    console.log('   • Phone:', customer?.phone_number || 'Not set')
-    console.log('   • Name:', customer?.name || 'Not set')
-    console.log('   • Shop Domain:', customer?.shop_domain || 'Not set')
-
-    console.log('')
-    console.log('╔════════════════════════════════════════════════════════════════╗')
-    console.log('║  ✅ AUTHENTICATION COMPLETE - FINAL STATUS                    ║')
-    console.log('╚════════════════════════════════════════════════════════════════╝')
-    console.log('🔐 Authentication Status:')
-    console.log('   • Firebase Auth: ✅ SUCCESS')
-    console.log('   • Backend Auth: ✅ SUCCESS')
-    console.log('   • User Type:', isNewUser ? 'NEW USER' : 'EXISTING USER')
-    console.log('')
-
-    return {
-      firebaseUser: user,
-      idToken: idToken,
-      isNewUser,
-      shopDetailsFilled: false, // Customers don't have shop details
-      userId: user.uid,
-      phoneNumber: user.phoneNumber || ''
-    }
-  } catch (error) {
-    console.error('[Firebase] Error verifying OTP:', error)
-    throw error
-  }
+  // Just delegate to verifyFirebaseOtp - customer creation should be handled by caller
+  return verifyFirebaseOtp(confirmationResult, otp)
 }
 
 /**

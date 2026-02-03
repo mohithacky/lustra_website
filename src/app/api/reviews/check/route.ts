@@ -14,12 +14,6 @@ export async function GET(request: NextRequest) {
     }
 
     const { userId, customerId } = session
-    
-    if (!userId) {
-      console.error('[Reviews Check API] userId not found in session:', session)
-      return NextResponse.json({ error: 'Shop not found' }, { status: 400 })
-    }
-    
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get('productId')
 
@@ -40,14 +34,6 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('[Reviews Check API] Error:', error)
-      console.error('[Reviews Check API] Error details:', {
-        message: error?.message,
-        code: error?.code,
-        details: error?.details,
-        userId,
-        customerId,
-        productId,
-      })
       return NextResponse.json(
         { error: 'Failed to check review status' },
         { status: 500 }
@@ -57,11 +43,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, hasReviewed: data && data.length > 0 })
   } catch (error) {
     console.error('[Reviews Check API] Error:', error)
-    console.error('[Reviews Check API] Error details:', {
-      message: error?.message,
-      code: error?.code,
-      details: error?.details,
-    })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

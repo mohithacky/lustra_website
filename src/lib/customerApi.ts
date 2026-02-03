@@ -116,7 +116,7 @@ export interface CustomerAuthData {
 }
 
 export interface CustomerData {
-  id: number;
+  id: string;
   firebase_uid: string;
   phone_number: string;
   name: string | null;
