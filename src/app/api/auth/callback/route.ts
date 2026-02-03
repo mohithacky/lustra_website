@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
       .from('customers')
       .select('id')
       .eq('firebase_uid', firebaseUid)
-      .eq('user_id', userId)
+      .eq('user_id', userId.toString())
       .single()
     
     if (existingCustomer) {
@@ -125,11 +125,18 @@ export async function GET(request: NextRequest) {
       console.log('[Auth Callback] Found existing customer:', customerId)
     } else {
       // Create new customer
+      console.log('[Auth Callback] Creating customer with:', {
+        firebase_uid: firebaseUid,
+        user_id: userId.toString(),
+        phone_number: phoneNumber,
+        name: userName || null,
+      })
+      
       const { data: newCustomer, error: createError } = await supabaseServer
         .from('customers')
         .insert({
           firebase_uid: firebaseUid,
-          user_id: userId,
+          user_id: userId.toString(),
           phone_number: phoneNumber,
           name: userName || null,
         })
@@ -138,6 +145,12 @@ export async function GET(request: NextRequest) {
       
       if (createError || !newCustomer) {
         console.error('[Auth Callback] Failed to create customer:', createError)
+        console.error('[Auth Callback] Error details:', {
+          message: createError?.message,
+          code: createError?.code,
+          details: createError?.details,
+          hint: createError?.hint,
+        })
         return NextResponse.redirect(new URL('/?error=customer_creation_failed', request.url))
       }
       
