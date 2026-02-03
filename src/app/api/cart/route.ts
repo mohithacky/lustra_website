@@ -18,6 +18,11 @@ export async function GET(request: NextRequest) {
     }
 
     const { userId, customerId } = session
+    
+    if (!userId) {
+      console.error('[Cart API GET] userId not found in session:', session)
+      return NextResponse.json({ error: 'Shop not found' }, { status: 400 })
+    }
 
     const { data: cartItems, error } = await supabaseServer
       .from('customer_cart')
@@ -83,6 +88,11 @@ export async function POST(request: NextRequest) {
     }
 
     const { userId, customerId } = session
+    
+    if (!userId) {
+      console.error('[Cart API POST] userId not found in session:', session)
+      return NextResponse.json({ error: 'Shop not found' }, { status: 400 })
+    }
 
     const body = await request.json()
     const { productId, quantity = 1, selectedVariant } = body
@@ -155,6 +165,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     const { userId, customerId } = session
+    
+    if (!userId) {
+      console.error('[Cart API DELETE] userId not found in session:', session)
+      return NextResponse.json({ error: 'Shop not found' }, { status: 400 })
+    }
+    
     const { searchParams } = new URL(request.url)
     const itemId = searchParams.get('itemId')
 
@@ -208,6 +224,12 @@ export async function PUT(request: NextRequest) {
     }
 
     const { userId, customerId } = session
+    
+    if (!userId) {
+      console.error('[Cart API PUT] userId not found in session:', session)
+      return NextResponse.json({ error: 'Shop not found' }, { status: 400 })
+    }
+    
     const body = await request.json()
     const { itemId, quantity } = body
 

@@ -17,9 +17,10 @@ export interface SessionData {
  */
 async function getUserIdFromSubdomain(subdomain: string): Promise<string | null> {
   try {
+    console.log('[Auth Helper] Looking up userId for subdomain:', subdomain)
+    
     if (subdomain === 'localhost' || subdomain === 'default') {
-      // For localhost, we might need to handle differently
-      // For now, return null and let the API handle it
+      console.log('[Auth Helper] Localhost/default subdomain - skipping user lookup')
       return null
     }
 
@@ -32,9 +33,15 @@ async function getUserIdFromSubdomain(subdomain: string): Promise<string | null>
 
     if (error || !user) {
       console.error('[Auth Helper] Failed to get userId from subdomain:', subdomain, error)
+      console.error('[Auth Helper] Error details:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+      })
       return null
     }
 
+    console.log('[Auth Helper] Found userId:', user.id, 'for subdomain:', subdomain)
     return user.id
   } catch (error) {
     console.error('[Auth Helper] Error getting userId from subdomain:', error)
