@@ -18,6 +18,12 @@ export async function GET(request: NextRequest) {
     }
 
     const { userId, customerId } = session
+    
+    if (!userId) {
+      console.error('[Wishlist API GET] userId not found in session:', session)
+      return NextResponse.json({ error: 'Shop not found' }, { status: 400 })
+    }
+    
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get('productId') // For checking if product is in wishlist
 
@@ -33,6 +39,14 @@ export async function GET(request: NextRequest) {
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         console.error('[Wishlist API] Error checking wishlist:', error)
+        console.error('[Wishlist API] Error details:', {
+          message: error?.message,
+          code: error?.code,
+          details: error?.details,
+          userId,
+          customerId,
+          productId,
+        })
         return NextResponse.json({ error: 'Failed to check wishlist' }, { status: 500 })
       }
 
