@@ -1,17 +1,17 @@
 /**
  * API service for backend communication
- * Uses the same Firebase Cloud Functions backend as the Flutter app
+ * Uses local Next.js API routes with Supabase service role
  */
 
 const BACKEND_URL = 'https://api-5sqqk2n6ra-uc.a.run.app'
 
 // ============================================================================
-// AUTH API - Twilio-based phone authentication
+// AUTH API - Firebase phone authentication (still uses external backend)
 // ============================================================================
 
 export interface CustomerData {
   id: string
-  twilio_uid: string
+  firebase_uid: string
   phone_number: string
   name?: string
   email?: string
@@ -20,10 +20,10 @@ export interface CustomerData {
 /**
  * Check if phone number exists for a shop
  */
-export async function checkPhoneExists(phoneNumber: string, shopId: string): Promise<boolean> {
+export async function checkPhoneExists(phoneNumber: string, userId: string): Promise<boolean> {
   try {
     const response = await fetch(
-      `${BACKEND_URL}/auth/check-phone/${shopId}/${encodeURIComponent(phoneNumber)}`,
+      `${BACKEND_URL}/auth/check-phone/${userId}/${encodeURIComponent(phoneNumber)}`,
       { headers: { 'Content-Type': 'application/json' } }
     )
 
@@ -41,12 +41,12 @@ export async function checkPhoneExists(phoneNumber: string, shopId: string): Pro
 /**
  * Send OTP to phone number
  */
-export async function sendOtp(phoneNumber: string, shopId: string): Promise<boolean> {
+export async function sendOtp(phoneNumber: string, userId: string): Promise<boolean> {
   try {
     const response = await fetch(`${BACKEND_URL}/auth/send-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneNumber, shopId }),
+      body: JSON.stringify({ phoneNumber, shopId: userId }),
     })
 
     if (response.ok) {
@@ -68,7 +68,7 @@ export async function sendOtp(phoneNumber: string, shopId: string): Promise<bool
 export async function verifyOtp(
   phoneNumber: string,
   code: string,
-  shopId: string,
+  userId: string,
   name?: string
 ): Promise<CustomerData> {
   try {
@@ -78,7 +78,7 @@ export async function verifyOtp(
       body: JSON.stringify({
         phoneNumber,
         code,
-        shopId,
+        shopId: userId,
         ...(name && { name }),
       }),
     })
@@ -100,7 +100,7 @@ export async function verifyOtp(
 }
 
 // ============================================================================
-// CART API
+// CART API - Uses local Next.js API routes with service role
 // ============================================================================
 
 export interface CartItem {
@@ -109,18 +109,22 @@ export interface CartItem {
   quantity: number
   selected_variant?: Record<string, unknown>
   product?: {
+    id: string
     name: string
     price: number
     image_url?: string
+    images?: string[]
   }
 }
 
 /**
  * Get cart items for a customer
+ * @param userId - The shop owner's user ID (from users table)
+ * @param customerId - The customer's ID (from customers table)
  */
-export async function getCart(shopId: string, customerId: string): Promise<CartItem[]> {
+export async function getCart(userId: string, customerId: string): Promise<CartItem[]> {
   try {
-    const response = await fetch(`${BACKEND_URL}/cart/${shopId}/${customerId}`)
+    const response = await fetch(`/api/cart?userId=${userId}&customerId=${customerId}`)
 
     if (response.ok) {
       const data = await response.json()
@@ -130,49 +134,43 @@ export async function getCart(shopId: string, customerId: string): Promise<CartI
     }
     return []
   } catch (e) {
-    console.error('Error fetching cart:', e)
+    console.error('[API getCart] Error:', e)
     return []
   }
 }
 
 /**
  * Add item to cart
+ * @param userId - The shop owner's user ID
+ * @param customerId - The customer's ID
+ * @param productId - The product ID to add
  */
 export async function addToCart(
-  shopId: string,
+  userId: string,
   customerId: string,
   productId: string,
   quantity: number = 1,
   selectedVariant?: Record<string, unknown>
 ): Promise<boolean> {
   try {
-    const url = `${BACKEND_URL}/cart/${shopId}/${customerId}`
-    const body = {
-      productId,
-      quantity,
-      ...(selectedVariant && { selectedVariant }),
-    }
+    console.log('[API addToCart] Request:', { userId, customerId, productId, quantity })
     
-    console.log('[API addToCart] Request:', { url, body })
-    
-    const response = await fetch(url, {
+    const response = await fetch('/api/cart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        userId,
+        customerId,
+        productId,
+        quantity,
+        selectedVariant,
+      }),
     })
 
-    console.log('[API addToCart] Response:', { 
-      status: response.status, 
-      ok: response.ok,
-      statusText: response.statusText 
-    })
+    const data = await response.json()
+    console.log('[API addToCart] Response:', { status: response.status, data })
     
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('[API addToCart] Error response:', errorText)
-    }
-
-    return response.ok
+    return data.success === true
   } catch (e) {
     console.error('[API addToCart] Exception:', e)
     return false
@@ -183,21 +181,22 @@ export async function addToCart(
  * Update cart item quantity
  */
 export async function updateCartQuantity(
-  shopId: string,
+  userId: string,
   customerId: string,
   itemId: string,
   quantity: number
 ): Promise<boolean> {
   try {
-    const response = await fetch(`${BACKEND_URL}/cart/${shopId}/${customerId}/${itemId}`, {
+    const response = await fetch('/api/cart', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quantity }),
+      body: JSON.stringify({ userId, customerId, itemId, quantity }),
     })
 
-    return response.ok
+    const data = await response.json()
+    return data.success === true
   } catch (e) {
-    console.error('Error updating cart:', e)
+    console.error('[API updateCartQuantity] Error:', e)
     return false
   }
 }
@@ -206,18 +205,20 @@ export async function updateCartQuantity(
  * Remove item from cart
  */
 export async function removeFromCart(
-  shopId: string,
+  userId: string,
   customerId: string,
   itemId: string
 ): Promise<boolean> {
   try {
-    const response = await fetch(`${BACKEND_URL}/cart/${shopId}/${customerId}/${itemId}`, {
-      method: 'DELETE',
-    })
+    const response = await fetch(
+      `/api/cart?userId=${userId}&customerId=${customerId}&itemId=${itemId}`,
+      { method: 'DELETE' }
+    )
 
-    return response.ok
+    const data = await response.json()
+    return data.success === true
   } catch (e) {
-    console.error('Error removing from cart:', e)
+    console.error('[API removeFromCart] Error:', e)
     return false
   }
 }
@@ -225,15 +226,17 @@ export async function removeFromCart(
 /**
  * Clear entire cart
  */
-export async function clearCart(shopId: string, customerId: string): Promise<boolean> {
+export async function clearCart(userId: string, customerId: string): Promise<boolean> {
   try {
-    const response = await fetch(`${BACKEND_URL}/cart/${shopId}/${customerId}`, {
-      method: 'DELETE',
-    })
+    const response = await fetch(
+      `/api/cart?userId=${userId}&customerId=${customerId}`,
+      { method: 'DELETE' }
+    )
 
-    return response.ok
+    const data = await response.json()
+    return data.success === true
   } catch (e) {
-    console.error('Error clearing cart:', e)
+    console.error('[API clearCart] Error:', e)
     return false
   }
 }
@@ -242,40 +245,44 @@ export async function clearCart(shopId: string, customerId: string): Promise<boo
  * Check if product is in cart
  */
 export async function isInCart(
-  shopId: string,
+  userId: string,
   customerId: string,
   productId: string
 ): Promise<boolean> {
   try {
-    const items = await getCart(shopId, customerId)
+    const items = await getCart(userId, customerId)
     return items.some((item) => item.product_id === productId)
   } catch (e) {
-    console.error('Error checking if product is in cart:', e)
+    console.error('[API isInCart] Error:', e)
     return false
   }
 }
 
 // ============================================================================
-// WISHLIST API
+// WISHLIST API - Uses local Next.js API routes with service role
 // ============================================================================
 
 export interface WishlistItem {
   id: string
   product_id: string
   product?: {
+    id: string
     name: string
     price: number
     image_url?: string
+    images?: string[]
   }
   created_at: string
 }
 
 /**
  * Get wishlist items for a customer
+ * @param userId - The shop owner's user ID
+ * @param customerId - The customer's ID
  */
-export async function getWishlist(shopId: string, customerId: string): Promise<WishlistItem[]> {
+export async function getWishlist(userId: string, customerId: string): Promise<WishlistItem[]> {
   try {
-    const response = await fetch(`${BACKEND_URL}/wishlist/${shopId}/${customerId}`)
+    const response = await fetch(`/api/wishlist?userId=${userId}&customerId=${customerId}`)
 
     if (response.ok) {
       const data = await response.json()
@@ -285,7 +292,7 @@ export async function getWishlist(shopId: string, customerId: string): Promise<W
     }
     return []
   } catch (e) {
-    console.error('Error fetching wishlist:', e)
+    console.error('[API getWishlist] Error:', e)
     return []
   }
 }
@@ -294,20 +301,21 @@ export async function getWishlist(shopId: string, customerId: string): Promise<W
  * Add item to wishlist
  */
 export async function addToWishlist(
-  shopId: string,
+  userId: string,
   customerId: string,
   productId: string
 ): Promise<boolean> {
   try {
-    const response = await fetch(`${BACKEND_URL}/wishlist/${shopId}/${customerId}`, {
+    const response = await fetch('/api/wishlist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId }),
+      body: JSON.stringify({ userId, customerId, productId }),
     })
 
-    return response.ok
+    const data = await response.json()
+    return data.success === true
   } catch (e) {
-    console.error('Error adding to wishlist:', e)
+    console.error('[API addToWishlist] Error:', e)
     return false
   }
 }
@@ -316,18 +324,20 @@ export async function addToWishlist(
  * Remove item from wishlist
  */
 export async function removeFromWishlist(
-  shopId: string,
+  userId: string,
   customerId: string,
   productId: string
 ): Promise<boolean> {
   try {
-    const response = await fetch(`${BACKEND_URL}/wishlist/${shopId}/${customerId}/${productId}`, {
-      method: 'DELETE',
-    })
+    const response = await fetch(
+      `/api/wishlist?userId=${userId}&customerId=${customerId}&productId=${productId}`,
+      { method: 'DELETE' }
+    )
 
-    return response.ok
+    const data = await response.json()
+    return data.success === true
   } catch (e) {
-    console.error('Error removing from wishlist:', e)
+    console.error('[API removeFromWishlist] Error:', e)
     return false
   }
 }
@@ -336,13 +346,13 @@ export async function removeFromWishlist(
  * Check if product is in wishlist
  */
 export async function isInWishlist(
-  shopId: string,
+  userId: string,
   customerId: string,
   productId: string
 ): Promise<boolean> {
   try {
     const response = await fetch(
-      `${BACKEND_URL}/wishlist/${shopId}/${customerId}/check/${productId}`
+      `/api/wishlist?userId=${userId}&customerId=${customerId}&productId=${productId}`
     )
 
     if (response.ok) {
@@ -351,7 +361,7 @@ export async function isInWishlist(
     }
     return false
   } catch (e) {
-    console.error('Error checking wishlist:', e)
+    console.error('[API isInWishlist] Error:', e)
     return false
   }
 }
@@ -360,15 +370,15 @@ export async function isInWishlist(
  * Toggle wishlist (add if not in wishlist, remove if in wishlist)
  */
 export async function toggleWishlist(
-  shopId: string,
+  userId: string,
   customerId: string,
   productId: string
 ): Promise<boolean> {
-  const inWishlist = await isInWishlist(shopId, customerId, productId)
+  const inWishlist = await isInWishlist(userId, customerId, productId)
   if (inWishlist) {
-    return await removeFromWishlist(shopId, customerId, productId)
+    return await removeFromWishlist(userId, customerId, productId)
   } else {
-    return await addToWishlist(shopId, customerId, productId)
+    return await addToWishlist(userId, customerId, productId)
   }
 }
 

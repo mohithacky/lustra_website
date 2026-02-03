@@ -1,43 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase-new-architecture'
+import { supabaseServer, isServiceRoleConfigured } from '@/lib/supabase-server'
 
 export async function GET(request: NextRequest) {
   try {
+    if (!isServiceRoleConfigured()) {
+      return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
+    }
+
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get('productId')
-    const shopId = searchParams.get('shopId')
+    const userId = searchParams.get('userId')
     const customerId = searchParams.get('customerId')
 
-    if (!productId || !shopId || !customerId) {
+    if (!productId || !userId || !customerId) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
         { status: 400 }
       )
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from('customer_reviews')
       .select('id')
       .eq('product_id', productId)
-      .eq('shop_id', shopId)
+      .eq('user_id', userId)
       .eq('customer_id', customerId)
       .limit(1)
 
     if (error) {
-      console.error('Error checking review status:', error)
+      console.error('[Reviews Check API] Error:', error)
       return NextResponse.json(
         { error: 'Failed to check review status' },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ hasReviewed: data && data.length > 0 })
+    return NextResponse.json({ success: true, hasReviewed: data && data.length > 0 })
   } catch (error) {
-    console.error('Error in GET /api/reviews/check:', error)
+    console.error('[Reviews Check API] Error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     )
   }
 }
- 

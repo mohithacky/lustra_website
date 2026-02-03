@@ -54,7 +54,7 @@ export default function ProductReviews({ productId, shopId, isDark }: ProductRev
 
   const loadReviews = async () => {
     try {
-      const response = await fetch(`/api/reviews?productId=${productId}&shopId=${shopId}`)
+      const response = await fetch(`/api/reviews?productId=${productId}&userId=${shopId}`)
       if (response.ok) {
         const data = await response.json()
         setReviews(data.reviews || [])
@@ -72,7 +72,7 @@ export default function ProductReviews({ productId, shopId, isDark }: ProductRev
 
     try {
       const response = await fetch(
-        `/api/reviews/check?productId=${productId}&shopId=${shopId}&customerId=${customer.id}`
+        `/api/reviews/check?productId=${productId}&userId=${shopId}&customerId=${customer.id}`
       )
       if (response.ok) {
         const data = await response.json()
@@ -100,7 +100,7 @@ export default function ProductReviews({ productId, shopId, isDark }: ProductRev
         },
         body: JSON.stringify({
           productId,
-          shopId,
+          userId: shopId,
           customerName: customerName.trim(),
           rating: selectedRating,
           reviewText: reviewText.trim(),

@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { cn, getImageUrl, formatPrice } from '@/lib/utils'
 import { Heart, Share2, ShoppingCart, ShoppingBag, PhoneCall, ChevronLeft, ChevronRight, MessageSquare, Loader2 } from 'lucide-react'
 import { addToCart, addToWishlist, removeFromWishlist, isInWishlist, isInCart } from '@/lib/api'
-import { getSupabaseClient } from '@/lib/supabase-client'
 import ProductReviews from './ProductReviews'
 
 interface Product {
@@ -101,24 +100,23 @@ export default function ProductDetail({
   // Check if there's an existing callback request for this product
   const checkCallbackStatus = async () => {
     const customer = getCustomer()
-    if (!customer || !shopId) return
+    if (!shopId) return
 
     try {
-      const supabase = getSupabaseClient()
-      if (!supabase) return
+      const params = new URLSearchParams({
+        userId: shopId,
+        productId: product.id,
+      })
+      if (customer?.id) {
+        params.append('customerId', customer.id)
+      }
 
-      const { data, error } = await supabase
-        .from('customer_callback_requests')
-        .select('status')
-        .eq('shop_id', shopId)
-        .eq('product_id', product.id)
-        .eq('customer_id', customer.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (data && !error) {
-        setCallbackStatus(data.status)
+      const response = await fetch(`/api/callback-requests?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.callbackRequest) {
+          setCallbackStatus(data.callbackRequest.status)
+        }
       }
     } catch (e) {
       // No callback request found or error - that's okay
@@ -279,34 +277,26 @@ export default function ProductDetail({
       const customer = getCustomer()
       const productImage = product.image_url || (product.images && product.images[0]) || null
 
-      // Get Supabase client
-      const supabase = getSupabaseClient()
-      if (!supabase) {
-        throw new Error('Supabase client not configured')
-      }
-
-      // Insert callback request to Supabase (matching Flutter)
-      const { error } = await supabase.from('customer_callback_requests').insert({
-        product_id: product.id,
-        product_name: product.name,
-        product_image_url: productImage,
-        shop_id: shopId,
-        customer_id: customer?.id || null,
-        customer_phone: '+91' + callbackPhone,
-        message: callbackMessage.trim() || null,
-        status: 'pending',
+      // Use the new API route for callback requests
+      const response = await fetch('/api/callback-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: shopId,
+          customerId: customer?.id || null,
+          productId: product.id,
+          productName: product.name,
+          productImageUrl: productImage,
+          customerPhone: '+91' + callbackPhone,
+          message: callbackMessage.trim() || null,
+        }),
       })
 
-      if (error) {
-        console.error('Supabase error (stringified):', JSON.stringify(error, null, 2))
-        console.error('Supabase error (raw):', error)
-        console.error('Error properties:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        })
-        throw error
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        console.error('Callback request error:', data)
+        throw new Error(data.error || 'Failed to submit callback request')
       }
 
       setCallbackSubmitted(true)
@@ -318,10 +308,7 @@ export default function ProductDetail({
         setCallbackMessage('')
       }, 2000)
     } catch (e: any) {
-      console.error('Error submitting callback request (stringified):', JSON.stringify(e, null, 2))
-      console.error('Error submitting callback request (raw):', e)
-      console.error('Error type:', typeof e)
-      console.error('Error keys:', Object.keys(e || {}))
+      console.error('Error submitting callback request:', e)
       alert('Failed to submit request. Please try again.')
     } finally {
       setCallbackSubmitting(false)
