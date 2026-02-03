@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { cn, getImageUrl, formatPrice } from '@/lib/utils'
 import { Heart, ShoppingCart } from 'lucide-react'
-import { addToWishlist, removeFromWishlist, isInWishlist, isInCart } from '@/lib/api'
+import { addToWishlist, removeFromWishlist, isInWishlist, isInCart, checkSession } from '@/lib/api'
 
 interface Product {
   id: string
@@ -29,17 +29,6 @@ interface ProductCardProps {
   isDemo?: boolean
 }
 
-function getCustomer() {
-  if (typeof window === 'undefined') return null
-  const saved = localStorage.getItem('websiteCustomer')
-  if (!saved) return null
-  try {
-    return JSON.parse(saved)
-  } catch {
-    return null
-  }
-}
-
 export default function ProductCard({ product, isDark, shopDomain, viewMode = 'grid', shopId, isDemo = false }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isWishlisted, setIsWishlisted] = useState(false)
@@ -48,25 +37,27 @@ export default function ProductCard({ product, isDark, shopDomain, viewMode = 'g
 
   useEffect(() => {
     const checkStatus = async () => {
-      const customer = getCustomer()
-      if (!customer || !shopId) return
+      // Check session from backend
+      const session = await checkSession()
+      if (!session.authenticated) return
 
       const [wishlisted, carted] = await Promise.all([
-        isInWishlist(shopId, customer.id, product.id),
-        isInCart(shopId, customer.id, product.id)
+        isInWishlist(product.id),
+        isInCart(product.id)
       ])
       setIsWishlisted(wishlisted)
       setIsCarted(carted)
     }
     checkStatus()
-  }, [shopId, product.id])
+  }, [product.id])
 
   const handleToggleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
-    const customer = getCustomer()
-    if (!customer || !shopId) {
+    // Check authentication from backend
+    const session = await checkSession()
+    if (!session.authenticated) {
       alert('Please login to manage wishlist')
       return
     }
@@ -74,10 +65,10 @@ export default function ProductCard({ product, isDark, shopDomain, viewMode = 'g
     setIsTogglingWishlist(true)
     try {
       if (isWishlisted) {
-        const success = await removeFromWishlist(shopId, customer.id, product.id)
+        const success = await removeFromWishlist(product.id)
         if (success) setIsWishlisted(false)
       } else {
-        const success = await addToWishlist(shopId, customer.id, product.id)
+        const success = await addToWishlist(product.id)
         if (success) setIsWishlisted(true)
       }
     } catch (e) {

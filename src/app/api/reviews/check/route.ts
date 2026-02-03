@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer, isServiceRoleConfigured } from '@/lib/supabase-server'
+import { getSessionFromRequest } from '@/lib/auth-helpers'
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,14 +8,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
     }
 
+    const session = await getSessionFromRequest(request)
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const { userId, customerId } = session
     const { searchParams } = new URL(request.url)
     const productId = searchParams.get('productId')
-    const userId = searchParams.get('userId')
-    const customerId = searchParams.get('customerId')
 
-    if (!productId || !userId || !customerId) {
+    if (!productId) {
       return NextResponse.json(
-        { error: 'Missing required parameters' },
+        { error: 'Missing productId' },
         { status: 400 }
       )
     }

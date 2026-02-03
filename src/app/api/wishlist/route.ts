@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer, isServiceRoleConfigured } from '@/lib/supabase-server'
+import { getSessionFromRequest } from '@/lib/auth-helpers'
 
 /**
- * GET /api/wishlist?userId=xxx&customerId=xxx
- * Get all wishlist items for a customer
+ * GET /api/wishlist
+ * Get all wishlist items for authenticated customer
  */
 export async function GET(request: NextRequest) {
   try {
@@ -11,14 +12,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-    const customerId = searchParams.get('customerId')
-    const productId = searchParams.get('productId') // For checking if product is in wishlist
-
-    if (!userId || !customerId) {
-      return NextResponse.json({ error: 'Missing userId or customerId' }, { status: 400 })
+    const session = await getSessionFromRequest(request)
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
+
+    const { userId, customerId } = session
+    const { searchParams } = new URL(request.url)
+    const productId = searchParams.get('productId') // For checking if product is in wishlist
 
     // If productId is provided, just check if it's in wishlist
     if (productId) {
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/wishlist
- * Add item to wishlist
+ * Add item to wishlist for authenticated customer
  */
 export async function POST(request: NextRequest) {
   try {
@@ -93,11 +94,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
     }
 
-    const body = await request.json()
-    const { userId, customerId, productId } = body
+    const session = await getSessionFromRequest(request)
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
 
-    if (!userId || !customerId || !productId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const { userId, customerId } = session
+    const body = await request.json()
+    const { productId } = body
+
+    if (!productId) {
+      return NextResponse.json({ error: 'Missing productId' }, { status: 400 })
     }
 
     // Check if item already exists (unique constraint will handle this, but good to check)
@@ -137,7 +144,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * DELETE /api/wishlist
- * Remove item from wishlist
+ * Remove item from wishlist for authenticated customer
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -145,13 +152,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
     }
 
+    const session = await getSessionFromRequest(request)
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const { userId, customerId } = session
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-    const customerId = searchParams.get('customerId')
     const productId = searchParams.get('productId')
 
-    if (!userId || !customerId || !productId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (!productId) {
+      return NextResponse.json({ error: 'Missing productId' }, { status: 400 })
     }
 
     const { error } = await supabaseServer

@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { cn, getImageUrl, formatPrice } from '@/lib/utils'
 import { Heart, Share2, ShoppingCart, ShoppingBag, PhoneCall, ChevronLeft, ChevronRight, MessageSquare, Loader2 } from 'lucide-react'
-import { addToCart, addToWishlist, removeFromWishlist, isInWishlist, isInCart } from '@/lib/api'
+import { addToCart, addToWishlist, removeFromWishlist, isInWishlist, isInCart, checkSession } from '@/lib/api'
 import ProductReviews from './ProductReviews'
 
 interface Product {
@@ -59,29 +59,30 @@ export default function ProductDetail({
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false)
 
-  // Get customer from localStorage
-  const getCustomer = () => {
+  // Get customer profile from localStorage (cache only, NOT for auth)
+  const getCustomerProfile = () => {
     if (typeof window === 'undefined') return null
-    const saved = localStorage.getItem('websiteCustomer')
+    const saved = localStorage.getItem('customerProfile')
     if (saved) {
       try {
         return JSON.parse(saved)
-      } catch {
+      } catch (e) {
         return null
       }
     }
     return null
   }
 
-  // Check wishlist, cart, and callback status on mount
+  // Check authentication and load status on mount
   useEffect(() => {
     const checkStatus = async () => {
-      const customer = getCustomer()
-      if (!customer || !shopId) return
+      // Check session from backend
+      const session = await checkSession()
+      if (!session.authenticated) return
 
       const [wishlisted, carted] = await Promise.all([
-        isInWishlist(shopId, customer.id, product.id),
-        isInCart(shopId, customer.id, product.id)
+        isInWishlist(product.id),
+        isInCart(product.id)
       ])
       setIsWishlisted(wishlisted)
       setIsCarted(carted)
@@ -89,27 +90,21 @@ export default function ProductDetail({
       // Check callback request status
       await checkCallbackStatus()
 
-      // Pre-fill phone from customer data
-      if (customer.phone) {
-        setCallbackPhone(customer.phone.replace('+91', ''))
+      // Pre-fill phone from customer profile cache
+      const profile = getCustomerProfile()
+      if (profile?.phone) {
+        setCallbackPhone(profile.phone.replace('+91', ''))
       }
     }
     checkStatus()
-  }, [shopId, product.id])
+  }, [product.id])
 
   // Check if there's an existing callback request for this product
   const checkCallbackStatus = async () => {
-    const customer = getCustomer()
-    if (!shopId) return
-
     try {
       const params = new URLSearchParams({
-        userId: shopId,
         productId: product.id,
       })
-      if (customer?.id) {
-        params.append('customerId', customer.id)
-      }
 
       const response = await fetch(`/api/callback-requests?${params}`)
       if (response.ok) {
@@ -143,8 +138,9 @@ export default function ProductDetail({
   }
 
   const handleBuyNow = async () => {
-    const customer = getCustomer()
-    if (!customer) {
+    // Check authentication from backend
+    const session = await checkSession()
+    if (!session.authenticated) {
       if (onLoginRequired) {
         onLoginRequired()
       } else {
@@ -152,15 +148,11 @@ export default function ProductDetail({
       }
       return
     }
-    if (!shopId) {
-      console.error('Shop ID not available')
-      return
-    }
 
     // Add to cart and redirect to cart
     setIsAddingToCart(true)
     try {
-      const success = await addToCart(shopId, customer.id, product.id)
+      const success = await addToCart(product.id)
       if (success) {
         window.location.href = `/${shopDomain}/cart`
       } else {
@@ -175,8 +167,9 @@ export default function ProductDetail({
   }
 
   const handleAddToCart = async () => {
-    const customer = getCustomer()
-    if (!customer) {
+    // Check authentication from backend
+    const session = await checkSession()
+    if (!session.authenticated) {
       if (onLoginRequired) {
         onLoginRequired()
       } else {
@@ -184,15 +177,11 @@ export default function ProductDetail({
       }
       return
     }
-    if (!shopId) {
-      console.error('Shop ID not available')
-      return
-    }
 
-    console.log('[AddToCart] Starting:', { shopId, customerId: customer.id, productId: product.id })
+    console.log('[AddToCart] Starting:', { productId: product.id })
     setIsAddingToCart(true)
     try {
-      const success = await addToCart(shopId, customer.id, product.id)
+      const success = await addToCart(product.id)
       console.log('[AddToCart] Result:', success)
       if (success) {
         setIsCarted(true)
@@ -230,8 +219,9 @@ export default function ProductDetail({
   }
 
   const handleToggleWishlist = async () => {
-    const customer = getCustomer()
-    if (!customer) {
+    // Check authentication from backend
+    const session = await checkSession()
+    if (!session.authenticated) {
       if (onLoginRequired) {
         onLoginRequired()
       } else {
@@ -239,20 +229,16 @@ export default function ProductDetail({
       }
       return
     }
-    if (!shopId) {
-      console.error('Shop ID not available')
-      return
-    }
 
     setIsTogglingWishlist(true)
     try {
       if (isWishlisted) {
-        const success = await removeFromWishlist(shopId, customer.id, product.id)
+        const success = await removeFromWishlist(product.id)
         if (success) {
           setIsWishlisted(false)
         }
       } else {
-        const success = await addToWishlist(shopId, customer.id, product.id)
+        const success = await addToWishlist(product.id)
         if (success) {
           setIsWishlisted(true)
         }
@@ -269,12 +255,21 @@ export default function ProductDetail({
       alert('Please enter a valid phone number')
       return
     }
-    if (!shopId) return
+
+    // Check authentication from backend
+    const session = await checkSession()
+    if (!session.authenticated) {
+      if (onLoginRequired) {
+        onLoginRequired()
+      } else {
+        alert('Please login to request callback')
+      }
+      return
+    }
 
     setCallbackSubmitting(true)
 
     try {
-      const customer = getCustomer()
       const productImage = product.image_url || (product.images && product.images[0]) || null
 
       // Use the new API route for callback requests
@@ -282,13 +277,11 @@ export default function ProductDetail({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: shopId,
-          customerId: customer?.id || null,
           productId: product.id,
           productName: product.name,
           productImageUrl: productImage,
-          customerPhone: '+91' + callbackPhone,
-          message: callbackMessage.trim() || null,
+          customerPhone: `+91${callbackPhone}`,
+          message: callbackMessage || null,
         }),
       })
 

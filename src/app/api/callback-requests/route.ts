@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer, isServiceRoleConfigured } from '@/lib/supabase-server'
+import { getSessionFromRequest } from '@/lib/auth-helpers'
 
 /**
- * GET /api/callback-requests?userId=xxx&customerId=xxx&productId=xxx
- * Get callback request status for a product
+ * GET /api/callback-requests?productId=xxx
+ * Get callback request status for a product (requires authentication)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -11,27 +12,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-    const customerId = searchParams.get('customerId')
-    const productId = searchParams.get('productId')
-
-    if (!userId || !productId) {
-      return NextResponse.json({ error: 'Missing userId or productId' }, { status: 400 })
+    const session = await getSessionFromRequest(request)
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    let query = supabaseServer
+    const { userId, customerId } = session
+    const { searchParams } = new URL(request.url)
+    const productId = searchParams.get('productId')
+
+    if (!productId) {
+      return NextResponse.json({ error: 'Missing productId' }, { status: 400 })
+    }
+
+    const query = supabaseServer
       .from('customer_callback_requests')
       .select('id, status, created_at, updated_at')
       .eq('user_id', userId)
+      .eq('customer_id', customerId)
       .eq('product_id', productId)
       .order('created_at', { ascending: false })
       .limit(1)
-
-    // If customerId provided, filter by it
-    if (customerId) {
-      query = query.eq('customer_id', customerId)
-    }
 
     const { data, error } = await query.single()
 
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/callback-requests
- * Create a callback request
+ * Create a callback request (requires authentication)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -69,10 +70,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
     }
 
+    const session = await getSessionFromRequest(request)
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const { userId, customerId } = session
+
     const body = await request.json()
     const { 
-      userId, 
-      customerId, 
       productId, 
       productName, 
       productImageUrl, 
@@ -80,7 +86,7 @@ export async function POST(request: NextRequest) {
       message 
     } = body
 
-    if (!userId || !productId || !productName || !customerPhone) {
+    if (!productId || !productName || !customerPhone) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 

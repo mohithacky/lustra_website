@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { cn, getImageUrl, formatPrice } from '@/lib/utils'
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react'
-import { getCart, updateCartQuantity, removeFromCart, clearCart, CartItem } from '@/lib/api'
+import { getCart, updateCartQuantity, removeFromCart, clearCart, CartItem, checkSession } from '@/lib/api'
 
 interface CartContentProps {
   shopId: string
@@ -19,43 +19,32 @@ export default function CartContent({ shopId, shopDomain, isDark }: CartContentP
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set())
-  const [customer, setCustomer] = useState<{ id: string; shopId: string } | null>(null)
-
-  useEffect(() => {
-    // Load customer from localStorage
-    const savedCustomer = localStorage.getItem('websiteCustomer')
-    if (savedCustomer) {
-      try {
-        const parsed = JSON.parse(savedCustomer)
-        setCustomer(parsed)
-      } catch {
-        setIsLoading(false)
-      }
-    } else {
-      setIsLoading(false)
-    }
-  }, [])
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     const loadCart = async () => {
-      if (!customer) return
+      // Check session from backend
+      const session = await checkSession()
+      if (!session.authenticated) {
+        setIsLoading(false)
+        setIsAuthenticated(false)
+        return
+      }
       
-      setIsLoading(true)
-      const items = await getCart(customer.shopId, customer.id)
+      setIsAuthenticated(true)
+      const items = await getCart()
       setCartItems(items)
       setIsLoading(false)
     }
     
-    if (customer) {
-      loadCart()
-    }
-  }, [customer])
+    loadCart()
+  }, [])
 
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
-    if (!customer || newQuantity < 1) return
+    if (newQuantity < 1) return
     
     setUpdatingItems(prev => new Set(prev).add(itemId))
-    const success = await updateCartQuantity(customer.shopId, customer.id, itemId, newQuantity)
+    const success = await updateCartQuantity(itemId, newQuantity)
     
     if (success) {
       setCartItems(prev => prev.map(item => 
@@ -70,10 +59,8 @@ export default function CartContent({ shopId, shopDomain, isDark }: CartContentP
   }
 
   const handleRemoveItem = async (itemId: string) => {
-    if (!customer) return
-    
     setUpdatingItems(prev => new Set(prev).add(itemId))
-    const success = await removeFromCart(customer.shopId, customer.id, itemId)
+    const success = await removeFromCart(itemId)
     
     if (success) {
       setCartItems(prev => prev.filter(item => item.id !== itemId))
@@ -86,10 +73,10 @@ export default function CartContent({ shopId, shopDomain, isDark }: CartContentP
   }
 
   const handleClearCart = async () => {
-    if (!customer || !confirm('Are you sure you want to clear your cart?')) return
+    if (!confirm('Are you sure you want to clear your cart?')) return
     
     setIsLoading(true)
-    const success = await clearCart(customer.shopId, customer.id)
+    const success = await clearCart()
     if (success) {
       setCartItems([])
     }
@@ -101,7 +88,7 @@ export default function CartContent({ shopId, shopDomain, isDark }: CartContentP
     return sum + (price * item.quantity)
   }, 0)
 
-  if (!customer) {
+  if (!isAuthenticated && !isLoading) {
     return (
       <div className={cn(
         'min-h-screen py-16 px-6',

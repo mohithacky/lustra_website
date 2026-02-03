@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-// Functions backend URL
-const FUNCTIONS_URL = process.env.NEXT_PUBLIC_FUNCTIONS_URL || 'https://api-5sqqk2n6ra-uc.a.run.app'
+import { supabaseServer, isServiceRoleConfigured } from '@/lib/supabase-server'
 
 // Session configuration
 const SESSION_COOKIE_NAME = 'customer_session'
+const SESSION_MAX_AGE = 30 * 24 * 60 * 60 // 30 days in seconds
 
 // Extract subdomain from host
 function extractSubdomain(host: string): string | null {
@@ -18,53 +17,75 @@ function extractSubdomain(host: string): string | null {
   return null
 }
 
+// Generate secure session token
+function generateSessionToken(): string {
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
 /**
  * POST /api/auth/session
- * Create a new session via functions backend
+ * Create a new session using Supabase service role
  */
 export async function POST(request: NextRequest) {
   try {
+    if (!isServiceRoleConfigured()) {
+      return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
+    }
+
     const body = await request.json()
-    const { firebaseUid, customerId, subdomain } = body
+    const { firebaseUid, customerId, userId } = body
     
-    console.log('[Session API] Creating session for:', { firebaseUid, subdomain })
+    console.log('[Session API] Creating session for:', { firebaseUid, customerId, userId })
     
-    if (!firebaseUid || !subdomain) {
-      return NextResponse.json({ error: 'firebaseUid and subdomain are required' }, { status: 400 })
+    if (!firebaseUid || !customerId || !userId) {
+      return NextResponse.json({ error: 'firebaseUid, customerId, and userId are required' }, { status: 400 })
     }
     
     const userAgent = request.headers.get('user-agent') || 'unknown'
     const forwardedFor = request.headers.get('x-forwarded-for')
     const ipAddress = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown'
     
-    // Call functions backend to create session
-    const backendResponse = await fetch(`${FUNCTIONS_URL}/customer/session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firebaseUid, customerId, subdomain, userAgent, ipAddress })
-    })
+    // Generate session token
+    const sessionToken = generateSessionToken()
+    const expiresAt = new Date(Date.now() + SESSION_MAX_AGE * 1000)
     
-    if (!backendResponse.ok) {
-      const error = await backendResponse.json().catch(() => ({}))
-      console.error('[Session API] Backend error:', error)
+    // Store session in database
+    const { error: insertError } = await supabaseServer
+      .from('customer_sessions')
+      .insert({
+        session_token: sessionToken,
+        customer_id: customerId,
+        user_id: userId,
+        firebase_uid: firebaseUid,
+        expires_at: expiresAt.toISOString(),
+        user_agent: userAgent,
+        ip_address: ipAddress,
+      })
+    
+    if (insertError) {
+      console.error('[Session API] Database error:', insertError)
       return NextResponse.json({ error: 'Failed to create session' }, { status: 500 })
     }
     
-    const { sessionId, expiresAt } = await backendResponse.json()
-    
     // Create response with cookie
-    const response = NextResponse.json({ success: true, sessionId, expiresAt })
+    const response = NextResponse.json({ 
+      success: true, 
+      sessionId: sessionToken, 
+      expiresAt: expiresAt.toISOString() 
+    })
     
-    // Set HttpOnly cookie (host-only, no Domain attribute)
-    response.cookies.set(SESSION_COOKIE_NAME, sessionId, {
+    // Set HttpOnly cookie
+    response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      expires: new Date(expiresAt),
+      maxAge: SESSION_MAX_AGE,
     })
     
-    console.log('[Session API] Cookie set for subdomain:', subdomain)
+    console.log('[Session API] Session created successfully')
     return response
     
   } catch (error) {
@@ -75,37 +96,57 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/auth/session
- * Verify current session via functions backend
+ * Verify current session using Supabase
  */
 export async function GET(request: NextRequest) {
   try {
-    const sessionId = request.cookies.get(SESSION_COOKIE_NAME)?.value
+    if (!isServiceRoleConfigured()) {
+      return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
+    }
+
+    const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value
     
-    if (!sessionId) {
+    if (!sessionToken) {
       return NextResponse.json({ authenticated: false, error: 'No session' }, { status: 401 })
     }
     
-    const host = request.headers.get('host') || ''
-    const subdomain = extractSubdomain(host)
+    // Query session from database
+    const { data: session, error } = await supabaseServer
+      .from('customer_sessions')
+      .select('customer_id, user_id, firebase_uid, created_at, expires_at')
+      .eq('session_token', sessionToken)
+      .single()
     
-    // Call functions backend to verify session
-    const backendResponse = await fetch(`${FUNCTIONS_URL}/customer/session/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId, subdomain })
-    })
-    
-    if (!backendResponse.ok) {
-      console.log('[Session API] Session invalid or expired')
+    if (error || !session) {
+      console.log('[Session API] Session not found or invalid')
       const response = NextResponse.json({ authenticated: false, error: 'Invalid session' }, { status: 401 })
       response.cookies.delete(SESSION_COOKIE_NAME)
       return response
     }
     
-    const sessionData = await backendResponse.json()
-    console.log('[Session API] Session verified for:', sessionData.firebaseUid)
+    // Check if session is expired
+    const expiresAt = new Date(session.expires_at)
+    if (expiresAt < new Date()) {
+      console.log('[Session API] Session expired')
+      // Delete expired session
+      await supabaseServer
+        .from('customer_sessions')
+        .delete()
+        .eq('session_token', sessionToken)
+      
+      const response = NextResponse.json({ authenticated: false, error: 'Session expired' }, { status: 401 })
+      response.cookies.delete(SESSION_COOKIE_NAME)
+      return response
+    }
     
-    return NextResponse.json(sessionData)
+    console.log('[Session API] Session verified for customer:', session.customer_id)
+    
+    return NextResponse.json({
+      authenticated: true,
+      customerId: session.customer_id,
+      userId: session.user_id,
+      firebaseUid: session.firebase_uid,
+    })
     
   } catch (error) {
     console.error('[Session API] Unexpected error:', error)
@@ -115,20 +156,24 @@ export async function GET(request: NextRequest) {
 
 /**
  * DELETE /api/auth/session
- * Logout via functions backend
+ * Logout - delete session from database
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const sessionId = request.cookies.get(SESSION_COOKIE_NAME)?.value
+    if (!isServiceRoleConfigured()) {
+      return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
+    }
+
+    const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value
     
-    if (sessionId) {
-      // Call functions backend to invalidate session
-      await fetch(`${FUNCTIONS_URL}/customer/session/invalidate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId })
-      })
-      console.log('[Session API] Session invalidated')
+    if (sessionToken) {
+      // Delete session from database
+      await supabaseServer
+        .from('customer_sessions')
+        .delete()
+        .eq('session_token', sessionToken)
+      
+      console.log('[Session API] Session deleted')
     }
     
     // Clear cookie

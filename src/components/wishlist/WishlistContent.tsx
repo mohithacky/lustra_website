@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { cn, getImageUrl, formatPrice } from '@/lib/utils'
 import { Heart, Trash2, ShoppingCart, ArrowLeft, Loader2 } from 'lucide-react'
-import { getWishlist, removeFromWishlist, addToCart, WishlistItem } from '@/lib/api'
+import { getWishlist, removeFromWishlist, addToCart, WishlistItem, checkSession } from '@/lib/api'
 
 interface WishlistContentProps {
   shopId: string
@@ -19,43 +19,30 @@ export default function WishlistContent({ shopId, shopDomain, isDark }: Wishlist
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [processingItems, setProcessingItems] = useState<Set<string>>(new Set())
-  const [customer, setCustomer] = useState<{ id: string; shopId: string } | null>(null)
-
-  useEffect(() => {
-    // Load customer from localStorage
-    const savedCustomer = localStorage.getItem('websiteCustomer')
-    if (savedCustomer) {
-      try {
-        const parsed = JSON.parse(savedCustomer)
-        setCustomer(parsed)
-      } catch {
-        setIsLoading(false)
-      }
-    } else {
-      setIsLoading(false)
-    }
-  }, [])
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     const loadWishlist = async () => {
-      if (!customer) return
+      // Check session from backend
+      const session = await checkSession()
+      if (!session.authenticated) {
+        setIsLoading(false)
+        setIsAuthenticated(false)
+        return
+      }
       
-      setIsLoading(true)
-      const items = await getWishlist(customer.shopId, customer.id)
+      setIsAuthenticated(true)
+      const items = await getWishlist()
       setWishlistItems(items)
       setIsLoading(false)
     }
     
-    if (customer) {
-      loadWishlist()
-    }
-  }, [customer])
+    loadWishlist()
+  }, [])
 
   const handleRemoveFromWishlist = async (productId: string) => {
-    if (!customer) return
-    
     setProcessingItems(prev => new Set(prev).add(productId))
-    const success = await removeFromWishlist(customer.shopId, customer.id, productId)
+    const success = await removeFromWishlist(productId)
     
     if (success) {
       setWishlistItems(prev => prev.filter(item => item.product_id !== productId))
@@ -68,15 +55,13 @@ export default function WishlistContent({ shopId, shopDomain, isDark }: Wishlist
   }
 
   const handleAddToCart = async (productId: string) => {
-    if (!customer) return
-    
     setProcessingItems(prev => new Set(prev).add(productId))
-    const success = await addToCart(customer.shopId, customer.id, productId)
+    const success = await addToCart(productId)
     
     if (success) {
       alert('Added to cart!')
       // Optionally remove from wishlist after adding to cart
-      await removeFromWishlist(customer.shopId, customer.id, productId)
+      await removeFromWishlist(productId)
       setWishlistItems(prev => prev.filter(item => item.product_id !== productId))
     }
     setProcessingItems(prev => {
@@ -86,7 +71,7 @@ export default function WishlistContent({ shopId, shopDomain, isDark }: Wishlist
     })
   }
 
-  if (!customer) {
+  if (!isAuthenticated && !isLoading) {
     return (
       <div className={cn(
         'min-h-screen py-16 px-6',

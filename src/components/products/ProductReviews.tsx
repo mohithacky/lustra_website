@@ -67,16 +67,16 @@ export default function ProductReviews({ productId, shopId, isDark }: ProductRev
   }
 
   const checkIfAlreadyReviewed = async () => {
-    const customer = getCustomer()
-    if (!customer) return
-
     try {
       const response = await fetch(
-        `/api/reviews/check?productId=${productId}&userId=${shopId}&customerId=${customer.id}`
+        `/api/reviews/check?productId=${productId}`
       )
       if (response.ok) {
         const data = await response.json()
         setHasAlreadyReviewed(data.hasReviewed || false)
+      } else if (response.status === 401) {
+        // Not authenticated, that's okay
+        setHasAlreadyReviewed(false)
       }
     } catch (error) {
       console.error('Error checking review status:', error)
@@ -89,7 +89,6 @@ export default function ProductReviews({ productId, shopId, isDark }: ProductRev
       return
     }
 
-    const customer = getCustomer()
     setIsSubmitting(true)
 
     try {
@@ -100,12 +99,9 @@ export default function ProductReviews({ productId, shopId, isDark }: ProductRev
         },
         body: JSON.stringify({
           productId,
-          userId: shopId,
           customerName: customerName.trim(),
           rating: selectedRating,
           reviewText: reviewText.trim(),
-          customerId: customer?.id || null,
-          customerEmail: customer?.email || null,
         }),
       })
 
@@ -116,6 +112,8 @@ export default function ProductReviews({ productId, shopId, isDark }: ProductRev
         setHasAlreadyReviewed(true)
         await loadReviews()
         alert('Review submitted successfully! It will be visible after admin approval.')
+      } else if (response.status === 401) {
+        alert('Please login to submit a review')
       } else {
         alert('Failed to submit review. Please try again.')
       }

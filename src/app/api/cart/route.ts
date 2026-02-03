@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer, isServiceRoleConfigured } from '@/lib/supabase-server'
+import { getSessionFromRequest } from '@/lib/auth-helpers'
 
 /**
- * GET /api/cart?userId=xxx&customerId=xxx
- * Get all cart items for a customer
+ * GET /api/cart
+ * Get all cart items for authenticated customer
  */
 export async function GET(request: NextRequest) {
   try {
@@ -11,13 +12,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-    const customerId = searchParams.get('customerId')
-
-    if (!userId || !customerId) {
-      return NextResponse.json({ error: 'Missing userId or customerId' }, { status: 400 })
+    const session = await getSessionFromRequest(request)
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
+
+    const { userId, customerId } = session
 
     const { data: cartItems, error } = await supabaseServer
       .from('customer_cart')
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/cart
- * Add item to cart
+ * Add item to cart for authenticated customer
  */
 export async function POST(request: NextRequest) {
   try {
@@ -77,11 +77,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
     }
 
-    const body = await request.json()
-    const { userId, customerId, productId, quantity = 1, selectedVariant } = body
+    const session = await getSessionFromRequest(request)
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
 
-    if (!userId || !customerId || !productId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const { userId, customerId } = session
+
+    const body = await request.json()
+    const { productId, quantity = 1, selectedVariant } = body
+
+    if (!productId) {
+      return NextResponse.json({ error: 'Missing productId' }, { status: 400 })
     }
 
     // Check if item already exists in cart
@@ -142,14 +149,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-    const customerId = searchParams.get('customerId')
-    const itemId = searchParams.get('itemId')
-
-    if (!userId || !customerId) {
-      return NextResponse.json({ error: 'Missing userId or customerId' }, { status: 400 })
+    const session = await getSessionFromRequest(request)
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
+
+    const { userId, customerId } = session
+    const { searchParams } = new URL(request.url)
+    const itemId = searchParams.get('itemId')
 
     if (itemId) {
       // Remove specific item
@@ -195,11 +202,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
     }
 
-    const body = await request.json()
-    const { userId, customerId, itemId, quantity } = body
+    const session = await getSessionFromRequest(request)
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
 
-    if (!userId || !customerId || !itemId || quantity === undefined) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const { userId, customerId } = session
+    const body = await request.json()
+    const { itemId, quantity } = body
+
+    if (!itemId || quantity === undefined) {
+      return NextResponse.json({ error: 'Missing itemId or quantity' }, { status: 400 })
     }
 
     if (quantity <= 0) {

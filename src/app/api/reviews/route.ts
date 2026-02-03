@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer, isServiceRoleConfigured } from '@/lib/supabase-server'
+import { getSessionFromRequest } from '@/lib/auth-helpers'
 
 /**
  * GET /api/reviews?productId=xxx&userId=xxx
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/reviews
- * Submit a new review (pending approval)
+ * Submit a new review (pending approval) - requires authentication
  */
 export async function POST(request: NextRequest) {
   try {
@@ -58,18 +59,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
     }
 
+    const session = await getSessionFromRequest(request)
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const { userId, customerId } = session
+
     const body = await request.json()
     const {
       productId,
-      userId,
       customerName,
       rating,
       reviewText,
-      customerId,
-      customerEmail,
     } = body
 
-    if (!productId || !userId || !customerName || !rating || !reviewText) {
+    if (!productId || !customerName || !rating || !reviewText) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -88,7 +93,7 @@ export async function POST(request: NextRequest) {
       user_id: userId,
       customer_id: customerId || null,
       customer_name: customerName,
-      customer_email: customerEmail || null,
+      customer_email: null,
       rating,
       review_text: reviewText,
       is_verified_purchase: false,

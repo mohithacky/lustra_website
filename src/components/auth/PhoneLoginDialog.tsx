@@ -87,7 +87,7 @@ export default function PhoneLoginDialog({
     setError(null)
 
     try {
-      // Use Twilio backend to verify OTP and get customer data
+      // Step 1: Verify OTP and get customer data from Firebase backend
       const customer: CustomerData = await verifyOtp(
         normalizedPhone,
         otp,
@@ -95,18 +95,33 @@ export default function PhoneLoginDialog({
         isSignupMode ? name.trim() : undefined
       )
 
-      // Store customer in localStorage (matching Flutter's approach)
-      localStorage.setItem('websiteCustomer', JSON.stringify({
-        id: customer.id,
-        firebase_uid: customer.firebase_uid,
+      // Step 2: Create session in backend (HTTP-only cookie)
+      const sessionResponse = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firebaseUid: customer.firebase_uid,
+          customerId: customer.id,
+          userId: shopId,
+        }),
+      })
+
+      if (!sessionResponse.ok) {
+        throw new Error('Failed to create session')
+      }
+
+      // Step 3: Store customer profile in localStorage (cache only, NOT for auth)
+      localStorage.setItem('customerProfile', JSON.stringify({
         name: customer.name,
         phone: customer.phone_number,
         email: customer.email,
-        shopId,
       }))
       
       onSuccess(customer.id, customer.name || '')
       onClose()
+      
+      // Reload to ensure session cookie is recognized
+      window.location.reload()
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Failed to verify OTP. Please try again.'
       setError(errorMessage)
