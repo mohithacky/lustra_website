@@ -128,6 +128,7 @@ function TrendingProductCard({ product, isDark, showPrice = true, shopDomain }: 
                   isHovered ? "opacity-0" : "opacity-100"
                 )}
                 sizes="230px"
+                unoptimized
               />
               <Image
                 src={getImageUrl(product.images[1])}
@@ -138,6 +139,7 @@ function TrendingProductCard({ product, isDark, showPrice = true, shopDomain }: 
                   isHovered ? "opacity-100" : "opacity-0"
                 )}
                 sizes="230px"
+                unoptimized
               />
             </>
           ) : (
@@ -147,6 +149,7 @@ function TrendingProductCard({ product, isDark, showPrice = true, shopDomain }: 
               fill
               className="object-cover"
               sizes="230px"
+              unoptimized
             />
           )}
         </div>

@@ -81,6 +81,7 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
                   width={48}
                   height={48}
                   className="rounded-full object-cover"
+                  unoptimized
                 />
               ) : (
                 <div className="w-12 h-12 rounded-full bg-gold-500 flex items-center justify-center font-display text-xl text-black">

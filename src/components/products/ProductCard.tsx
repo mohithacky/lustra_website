@@ -94,6 +94,7 @@ export default function ProductCard({ product, isDark, shopDomain, viewMode = 'g
             fill
             className="object-cover"
             sizes="96px"
+            unoptimized
           />
           {/* Wishlist Button */}
           <button
@@ -164,6 +165,7 @@ export default function ProductCard({ product, isDark, shopDomain, viewMode = 'g
                   isHovered ? "opacity-0" : "opacity-100"
                 )}
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                unoptimized
               />
               <Image
                 src={getImageUrl(product.images[1])}
@@ -174,6 +176,7 @@ export default function ProductCard({ product, isDark, shopDomain, viewMode = 'g
                   isHovered ? "opacity-100" : "opacity-0"
                 )}
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                unoptimized
               />
             </>
           ) : (
@@ -183,6 +186,7 @@ export default function ProductCard({ product, isDark, shopDomain, viewMode = 'g
               fill
               className="object-cover"
               sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              unoptimized
             />
           )}
           

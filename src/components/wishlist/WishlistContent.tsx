@@ -149,6 +149,7 @@ export default function WishlistContent({ shopId, shopDomain, isDark }: Wishlist
                     alt={item.product?.name || 'Product'}
                     fill
                     className="object-cover"
+                    unoptimized
                   />
                 </div>
 

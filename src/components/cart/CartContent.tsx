@@ -178,6 +178,7 @@ export default function CartContent({ shopId, shopDomain, isDark }: CartContentP
                       alt={item.product?.name || 'Product'}
                       fill
                       className="object-cover"
+                      unoptimized
                     />
                   </div>
 

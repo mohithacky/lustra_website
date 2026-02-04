@@ -181,6 +181,7 @@ function TrendingBox({ collection, heightRatio, isDark, showLabels = true }: {
           fill
           className="object-cover absolute inset-0"
           sizes="(max-width: 768px) 50vw, 40vw"
+          unoptimized
         />
         
         {/* Gradient overlay */}

@@ -360,6 +360,7 @@ export default function ProductDetail({
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 priority
+                unoptimized
               />
               
               {/* Navigation Arrows */}
@@ -417,6 +418,7 @@ export default function ProductDetail({
                       fill
                       className="object-cover"
                       sizes="80px"
+                      unoptimized
                     />
                   </button>
                 ))}
@@ -631,6 +633,7 @@ export default function ProductDetail({
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 50vw, 25vw"
+                        unoptimized
                       />
                     </div>
                     <div className="p-3">

@@ -121,6 +121,7 @@ function CategoryItem({ category, isDark, shopDomain, imageStyle = "circle" }: {
           fill
           className="object-cover"
           sizes="(max-width: 600px) 90px, (max-width: 1024px) 110px, 220px"
+          unoptimized
         />
       </div>
       

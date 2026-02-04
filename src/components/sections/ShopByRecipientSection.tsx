@@ -121,6 +121,7 @@ function RecipientCard({ title, subtitle, imageUrl, link, isDark, shopDomain }: 
             fill
             className="object-cover"
             sizes="(max-width: 1024px) 150px, 300px"
+            unoptimized
           />
         </div>
         
