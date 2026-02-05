@@ -81,6 +81,21 @@ export default function PhoneAuthForm({
           return // Don't send OTP, prompt user to login instead
         }
       }
+      
+      // If login mode, check if customer exists
+      if (!isNewUser) {
+        console.log('[Auth] Checking if customer exists for login...')
+        const shopOwnerId = shopOwnerIdFromStore || propShopOwnerId || ''
+        const { exists, customerName } = await checkCustomerExists(formattedPhone, shopOwnerId)
+        
+        if (!exists) {
+          console.log('[Auth] Customer does not exist')
+          setError('Phone number not registered. Please sign up first.')
+          setLoading(false)
+          return // Don't send OTP, prompt user to signup instead
+        }
+        console.log('[Auth] Customer exists:', customerName)
+      }
 
       const confirmation = await sendFirebaseOtp(formattedPhone, recaptchaVerifier)
       setConfirmationResult(confirmation)

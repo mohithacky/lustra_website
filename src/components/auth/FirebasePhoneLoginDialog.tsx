@@ -112,6 +112,20 @@ export default function FirebasePhoneLoginDialog({
           return // Don't send OTP, prompt user to login instead
         }
       }
+      
+      // If login mode, check if customer exists
+      if (!isSignupMode) {
+        console.log('[Firebase] Checking if customer exists for login...')
+        const { exists, customerName } = await checkCustomerExists(phoneNumber, shopId)
+        
+        if (!exists) {
+          console.log('[Firebase] Customer does not exist')
+          setError('Phone number not registered. Please sign up first.')
+          setIsSendingOtp(false)
+          return // Don't send OTP, prompt user to signup instead
+        }
+        console.log('[Firebase] Customer exists:', customerName)
+      }
 
       console.log('[Firebase] Sending OTP to:', phoneNumber)
       
