@@ -368,19 +368,26 @@ export default function PhoneAuthForm({
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Phone className="h-5 w-5 text-gray-400" />
               </div>
+              <div className="absolute inset-y-0 left-10 pl-3 flex items-center pointer-events-none text-gray-700 font-medium">
+                +91
+              </div>
               <input
                 id="phone"
                 type="tel"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="Enter your phone number"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 10)
+                  setPhoneNumber(value)
+                }}
+                placeholder="98765 43210"
+                className="block w-full pl-20 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 required
                 disabled={loading}
+                maxLength={10}
               />
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              Enter with country code (e.g., +919876543210)
+              Enter 10-digit mobile number
             </p>
           </div>
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import PhoneAuthForm from '@/components/auth/PhoneAuthForm'
 import { initializeFirebase } from '@/lib/firebase'
+import { getSupabaseClient } from '@/lib/supabaseFirebaseClient'
 import { LogIn, UserPlus } from 'lucide-react'
 
 export default function AuthPage() {
@@ -14,36 +15,98 @@ export default function AuthPage() {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login')
   const [shopOwnerId, setShopOwnerId] = useState<string>('')
   const [shopDomain, setShopDomain] = useState<string>('')
+  const [shopName, setShopName] = useState<string>('Lustra AI')
 
   useEffect(() => {
-    initializeFirebase()
-    
-    const url = searchParams.get('returnUrl')
-    if (url) {
-      setReturnUrl(decodeURIComponent(url))
-    } else {
-      setReturnUrl('/')
+    const initAuth = async () => {
+      initializeFirebase()
+      
+      const url = searchParams.get('returnUrl')
+      if (url) {
+        setReturnUrl(decodeURIComponent(url))
+      } else {
+        setReturnUrl('/')
+      }
+      
+      // Extract shopOwnerId and shopDomain from query params
+      const ownerIdParam = searchParams.get('shopOwnerId')
+      const domainParam = searchParams.get('shopDomain')
+      
+      let finalShopOwnerId = ''
+      let finalShopDomain = ''
+      let finalShopName = 'Lustra AI'
+      
+      if (ownerIdParam) {
+        finalShopOwnerId = decodeURIComponent(ownerIdParam)
+        console.log('[Auth Page] shopOwnerId from URL:', finalShopOwnerId)
+      }
+      if (domainParam) {
+        finalShopDomain = decodeURIComponent(domainParam)
+        console.log('[Auth Page] shopDomain from URL:', finalShopDomain)
+      }
+      
+      // If we don't have shop info from params, try to extract from returnUrl
+      if (!finalShopOwnerId || !finalShopDomain) {
+        const returnUrlValue = url ? decodeURIComponent(url) : '/'
+        if (returnUrlValue.startsWith('http')) {
+          try {
+            const urlObj = new URL(returnUrlValue)
+            const hostname = urlObj.hostname
+            const parts = hostname.split('.')
+            
+            // Extract subdomain (e.g., ashmitjewellers from ashmitjewellers.lustrai.in)
+            if (parts.length >= 3 && hostname.includes('lustrai.in')) {
+              finalShopDomain = parts[0]
+              console.log('[Auth Page] Extracted shop domain from returnUrl:', finalShopDomain)
+            }
+          } catch (e) {
+            console.error('[Auth Page] Error parsing returnUrl:', e)
+          }
+        }
+      }
+      
+      // Fetch shop owner data from users table if we have a shop domain
+      if (finalShopDomain) {
+        try {
+          console.log('[Auth Page] Fetching shop owner data for domain:', finalShopDomain)
+          const supabase = getSupabaseClient()
+          const { data: shopOwner, error } = await supabase
+            .from('users')
+            .select('id, shop_domain, shop_name')
+            .eq('shop_domain', finalShopDomain)
+            .single()
+          
+          if (error) {
+            console.error('[Auth Page] Error fetching shop owner:', error)
+          } else if (shopOwner) {
+            finalShopOwnerId = shopOwner.id
+            finalShopName = shopOwner.shop_name || 'Lustra AI'
+            console.log('[Auth Page] Found shop owner:', {
+              id: finalShopOwnerId,
+              domain: shopOwner.shop_domain,
+              name: finalShopName
+            })
+          } else {
+            console.warn('[Auth Page] No shop owner found for domain:', finalShopDomain)
+          }
+        } catch (e) {
+          console.error('[Auth Page] Error fetching shop owner data:', e)
+        }
+      }
+      
+      setShopOwnerId(finalShopOwnerId)
+      setShopDomain(finalShopDomain)
+      setShopName(finalShopName)
+      
+      const mode = searchParams.get('mode')
+      if (mode === 'signup') {
+        setAuthMode('signup')
+      }
+      
+      setIsLoading(false)
     }
     
-    // Extract shopOwnerId and shopDomain from query params
-    const ownerIdParam = searchParams.get('shopOwnerId')
-    const domainParam = searchParams.get('shopDomain')
-    
-    if (ownerIdParam) {
-      setShopOwnerId(decodeURIComponent(ownerIdParam))
-      console.log('[Auth Page] shopOwnerId from URL:', decodeURIComponent(ownerIdParam))
-    }
-    if (domainParam) {
-      setShopDomain(decodeURIComponent(domainParam))
-      console.log('[Auth Page] shopDomain from URL:', decodeURIComponent(domainParam))
-    }
-    
-    const mode = searchParams.get('mode')
-    if (mode === 'signup') {
-      setAuthMode('signup')
-    }
-    
-    setIsLoading(false)
+    initAuth()
   }, [searchParams])
 
   if (isLoading) {
@@ -63,7 +126,7 @@ export default function AuthPage() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome to Lustra AI
+              Welcome to {shopName}
             </h1>
             <p className="text-gray-600">
               {authMode === 'login' ? 'Sign in to continue' : 'Create a new account'}
