@@ -194,7 +194,7 @@ export async function authenticateCustomer(
 export async function checkCustomerExists(
   phoneNumber: string,
   shopOwnerId?: string
-): Promise<{ exists: boolean; customerName: string | null }> {
+): Promise<{ exists: boolean; customerName: string | null; existsOnOtherShop: boolean; otherShopDomain: string | null }> {
   try {
     console.log('[CustomerAPI] Checking if customer exists...');
     console.log('[CustomerAPI] Phone:', phoneNumber);
@@ -213,7 +213,7 @@ export async function checkCustomerExists(
     
     if (!response.ok) {
       console.error('[CustomerAPI] Check customer failed:', response.status);
-      return { exists: false, customerName: null };
+      return { exists: false, customerName: null, existsOnOtherShop: false, otherShopDomain: null };
     }
     
     const data = await response.json();
@@ -221,11 +221,13 @@ export async function checkCustomerExists(
     
     return {
       exists: data.exists || false,
-      customerName: data.customerName || null
+      customerName: data.customerName || null,
+      existsOnOtherShop: data.existsOnOtherShop || false,
+      otherShopDomain: data.otherShopDomain || null
     };
   } catch (error) {
     console.error('[CustomerAPI] Error checking customer:', error);
-    return { exists: false, customerName: null };
+    return { exists: false, customerName: null, existsOnOtherShop: false, otherShopDomain: null };
   }
 }
 

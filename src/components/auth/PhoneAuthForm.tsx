@@ -71,7 +71,7 @@ export default function PhoneAuthForm({
       if (isNewUser) {
         console.log('[Auth] Checking if customer already exists for signup...')
         const shopOwnerId = shopOwnerIdFromStore || propShopOwnerId || ''
-        const { exists, customerName } = await checkCustomerExists(formattedPhone, shopOwnerId)
+        const { exists, customerName, existsOnOtherShop, otherShopDomain } = await checkCustomerExists(formattedPhone, shopOwnerId)
         
         if (exists) {
           console.log('[Auth] Customer already exists:', customerName)
@@ -80,17 +80,31 @@ export default function PhoneAuthForm({
           setLoading(false)
           return // Don't send OTP, prompt user to login instead
         }
+        
+        // Check if phone is registered on another shop
+        if (existsOnOtherShop) {
+          console.log('[Auth] Phone exists on another shop:', otherShopDomain)
+          const shopInfo = otherShopDomain ? ` (${otherShopDomain})` : ''
+          setError(`This phone number is already registered on another store${shopInfo}. Please use a different phone number or contact support.`)
+          setLoading(false)
+          return
+        }
       }
       
       // If login mode, check if customer exists
       if (!isNewUser) {
         console.log('[Auth] Checking if customer exists for login...')
         const shopOwnerId = shopOwnerIdFromStore || propShopOwnerId || ''
-        const { exists, customerName } = await checkCustomerExists(formattedPhone, shopOwnerId)
+        const { exists, customerName, existsOnOtherShop, otherShopDomain } = await checkCustomerExists(formattedPhone, shopOwnerId)
         
         if (!exists) {
-          console.log('[Auth] Customer does not exist')
-          setError('Phone number not registered. Please sign up first.')
+          // Check if it exists on another shop
+          if (existsOnOtherShop) {
+            const shopInfo = otherShopDomain ? ` (${otherShopDomain})` : ''
+            setError(`This phone number is registered on a different store${shopInfo}. Please sign up to create an account on this store.`)
+          } else {
+            setError('Phone number not registered. Please sign up first.')
+          }
           setLoading(false)
           return // Don't send OTP, prompt user to signup instead
         }
@@ -269,7 +283,7 @@ export default function PhoneAuthForm({
         if (isNewUser) {
           callbackUrl.searchParams.append('new_user', 'true')
           if (fullName) {
-            callbackUrl.searchParams.append('name', encodeURIComponent(fullName))
+            callbackUrl.searchParams.append('name', fullName.trim())
           }
         }
         
@@ -284,7 +298,7 @@ export default function PhoneAuthForm({
         if (isNewUser) {
           let redirectUrl = `${redirectTarget}${redirectTarget.includes('?') ? '&' : '?'}new_user=true`
           if (fullName) {
-            redirectUrl += `&name=${encodeURIComponent(fullName)}`
+            redirectUrl += `&name=${encodeURIComponent(fullName.trim())}`
           }
           router.push(redirectUrl)
         } else {
@@ -316,7 +330,19 @@ export default function PhoneAuthForm({
     setLoading(true)
 
     try {
-      if (!recaptchaVerifier) {
+      // Reset reCAPTCHA before resending OTP
+      let verifier = recaptchaVerifier
+      if (verifier) {
+        try {
+          verifier.clear()
+        } catch (e) {
+          console.log('[Auth] Error clearing reCAPTCHA:', e)
+        }
+        verifier = initializeRecaptcha('recaptcha-container')
+        setRecaptchaVerifier(verifier)
+      }
+      
+      if (!verifier) {
         throw new Error('reCAPTCHA not initialized')
       }
 
@@ -325,11 +351,17 @@ export default function PhoneAuthForm({
         formattedPhone = '+91' + formattedPhone
       }
 
-      const confirmation = await sendFirebaseOtp(formattedPhone, recaptchaVerifier)
+      const confirmation = await sendFirebaseOtp(formattedPhone, verifier)
       setConfirmationResult(confirmation)
     } catch (err: any) {
       console.error('Error resending OTP:', err)
       setError(err.message || 'Failed to resend OTP. Please try again.')
+      
+      // Re-initialize reCAPTCHA on error
+      const newVerifier = initializeRecaptcha('recaptcha-container')
+      if (newVerifier) {
+        setRecaptchaVerifier(newVerifier)
+      }
     } finally {
       setLoading(false)
     }
