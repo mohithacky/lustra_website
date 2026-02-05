@@ -189,13 +189,8 @@ export default function FirebasePhoneLoginDialog({
       const customer = backendResponse.customer
       const isNewCustomer = backendResponse.isNewUser
       
-      // Handle case where user is trying to login but doesn't exist
-      if (!customer && !isSignupMode) {
-        setError('Phone number not registered. Please sign up first.')
-        setIsSignupMode(true)
-        setIsVerifyingOtp(false)
-        return
-      }
+      // This case is now handled by backend validation
+      // Backend will return 404 with CUSTOMER_NOT_FOUND if login attempt for non-existent customer
       
       // Create a customerData object similar to what the API would return
       const customerData = {
@@ -241,6 +236,16 @@ export default function FirebasePhoneLoginDialog({
         errorMessage = 'Invalid verification code. Please check and try again.'
       } else if (e.code === 'auth/code-expired') {
         errorMessage = 'Verification code expired. Please request a new one.'
+      } else if (e.message && e.message.includes('not registered')) {
+        // Backend returned CUSTOMER_NOT_FOUND error
+        errorMessage = 'Phone number not registered. Please sign up first.'
+        // Switch to signup mode
+        setIsSignupMode(true)
+        setCodeSent(false)
+        setOtp('')
+        setConfirmationResult(null)
+      } else if (e.message) {
+        errorMessage = e.message
       }
       
       setError(errorMessage)

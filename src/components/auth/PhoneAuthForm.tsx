@@ -281,7 +281,15 @@ export default function PhoneAuthForm({
       }
     } catch (err: any) {
       console.error('[Auth] Error verifying OTP:', err)
-      setError(err.message || 'Invalid OTP. Please try again.')
+      
+      let errorMessage = err.message || 'Invalid OTP. Please try again.'
+      
+      // Check if this is a backend error about customer not found
+      if (err.message && err.message.includes('not registered')) {
+        errorMessage = 'Phone number not registered. Please sign up first.'
+      }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
