@@ -102,7 +102,7 @@ export default function FirebasePhoneLoginDialog({
       // If signup mode, check if customer already exists
       if (isSignupMode) {
         console.log('[Firebase] Checking if customer already exists...')
-        const { exists, customerName, existsOnOtherShop, otherShopDomain } = await checkCustomerExists(phoneNumber, shopId)
+        const { exists, customerName } = await checkCustomerExists(phoneNumber, shopId)
         
         if (exists) {
           console.log('[Firebase] Customer already exists:', customerName)
@@ -111,30 +111,16 @@ export default function FirebasePhoneLoginDialog({
           setIsSendingOtp(false)
           return // Don't send OTP, prompt user to login instead
         }
-        
-        // Check if phone is registered on another shop
-        if (existsOnOtherShop) {
-          console.log('[Firebase] Phone exists on another shop:', otherShopDomain)
-          const shopInfo = otherShopDomain ? ` (${otherShopDomain})` : ''
-          setError(`This phone number is already registered on another store${shopInfo}. Please use a different phone number or contact support.`)
-          setIsSendingOtp(false)
-          return
-        }
       }
       
       // If login mode, check if customer exists
       if (!isSignupMode) {
         console.log('[Firebase] Checking if customer exists for login...')
-        const { exists, customerName, existsOnOtherShop, otherShopDomain } = await checkCustomerExists(phoneNumber, shopId)
+        const { exists, customerName } = await checkCustomerExists(phoneNumber, shopId)
         
         if (!exists) {
-          // Check if it exists on another shop
-          if (existsOnOtherShop) {
-            const shopInfo = otherShopDomain ? ` (${otherShopDomain})` : ''
-            setError(`This phone number is registered on a different store${shopInfo}. Please sign up to create an account on this store.`)
-          } else {
-            setError('Phone number not registered. Please sign up first.')
-          }
+          console.log('[Firebase] Customer does not exist')
+          setError('Phone number not registered. Please sign up first.')
           setIsSendingOtp(false)
           return // Don't send OTP, prompt user to signup instead
         }

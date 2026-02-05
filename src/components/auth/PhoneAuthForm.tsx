@@ -71,7 +71,7 @@ export default function PhoneAuthForm({
       if (isNewUser) {
         console.log('[Auth] Checking if customer already exists for signup...')
         const shopOwnerId = shopOwnerIdFromStore || propShopOwnerId || ''
-        const { exists, customerName, existsOnOtherShop, otherShopDomain } = await checkCustomerExists(formattedPhone, shopOwnerId)
+        const { exists, customerName } = await checkCustomerExists(formattedPhone, shopOwnerId)
         
         if (exists) {
           console.log('[Auth] Customer already exists:', customerName)
@@ -80,31 +80,17 @@ export default function PhoneAuthForm({
           setLoading(false)
           return // Don't send OTP, prompt user to login instead
         }
-        
-        // Check if phone is registered on another shop
-        if (existsOnOtherShop) {
-          console.log('[Auth] Phone exists on another shop:', otherShopDomain)
-          const shopInfo = otherShopDomain ? ` (${otherShopDomain})` : ''
-          setError(`This phone number is already registered on another store${shopInfo}. Please use a different phone number or contact support.`)
-          setLoading(false)
-          return
-        }
       }
       
       // If login mode, check if customer exists
       if (!isNewUser) {
         console.log('[Auth] Checking if customer exists for login...')
         const shopOwnerId = shopOwnerIdFromStore || propShopOwnerId || ''
-        const { exists, customerName, existsOnOtherShop, otherShopDomain } = await checkCustomerExists(formattedPhone, shopOwnerId)
+        const { exists, customerName } = await checkCustomerExists(formattedPhone, shopOwnerId)
         
         if (!exists) {
-          // Check if it exists on another shop
-          if (existsOnOtherShop) {
-            const shopInfo = otherShopDomain ? ` (${otherShopDomain})` : ''
-            setError(`This phone number is registered on a different store${shopInfo}. Please sign up to create an account on this store.`)
-          } else {
-            setError('Phone number not registered. Please sign up first.')
-          }
+          console.log('[Auth] Customer does not exist')
+          setError('Phone number not registered. Please sign up first.')
           setLoading(false)
           return // Don't send OTP, prompt user to signup instead
         }
