@@ -117,30 +117,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/?error=phone_missing', request.url))
     }
     
-    // Find or create customer
+    // Find or create customer for THIS SHOP
+    // Note: Same phone number/Firebase UID can be used across different shops
     let customerId: string
     
-    // First, check if customer exists with this firebase_uid (any shop)
-    const { data: existingByFirebase } = await supabaseServer
+    // Check if customer exists for THIS SPECIFIC SHOP with this firebase_uid
+    const { data: existingCustomer } = await supabaseServer
       .from('customers')
-      .select('id, user_id, phone_number')
+      .select('id, phone_number')
       .eq('firebase_uid', firebaseUid)
+      .eq('user_id', userId.toString())
       .maybeSingle()
     
-    if (existingByFirebase) {
-      console.log('[Auth Callback] Found existing customer by firebase_uid:', existingByFirebase)
-      
-      // Check if it's for the same shop
-      if (existingByFirebase.user_id === userId.toString()) {
-        customerId = existingByFirebase.id
-        console.log('[Auth Callback] Customer already exists for this shop')
-      } else {
-        console.error('[Auth Callback] Customer exists for different shop:', {
-          existing_user_id: existingByFirebase.user_id,
-          current_user_id: userId.toString()
-        })
-        return NextResponse.redirect(new URL('/?error=customer_exists_different_shop', request.url))
-      }
+    if (existingCustomer) {
+      // Customer already exists for this shop
+      customerId = existingCustomer.id
+      console.log('[Auth Callback] Customer already exists for this shop:', customerId)
     } else {
       // Check if phone number already used for this shop with different firebase_uid
       const { data: existingByPhone } = await supabaseServer
@@ -158,8 +150,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL('/?error=phone_already_registered', request.url))
       }
       
-      // No existing customer found - create new one
-      console.log('[Auth Callback] Creating new customer with:', {
+      // No existing customer found for this shop - create new one
+      console.log('[Auth Callback] Creating new customer for this shop with:', {
         firebase_uid: firebaseUid,
         user_id: userId.toString(),
         phone_number: phoneNumber,
