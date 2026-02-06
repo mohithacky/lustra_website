@@ -707,11 +707,25 @@ export function transformBestToLegacy(collections: Collection[]): Array<{
   image: string
   description: string
 }> {
-  return collections.map(c => ({
-    name: c.name,
-    image: c.image_url || '',
-    description: `Discover the ${c.name} collection`,
-  }))
+  // Hardcoded description templates - each index gets a unique description.
+  // If collections are replaced, the same template is reused with just the name swapped.
+  const descriptionTemplates = [
+    (name: string) => `Explore our exquisite ${name} collection, thoughtfully curated to bring elegance and sophistication to every occasion. Each piece is crafted with precision and designed to make a lasting impression.`,
+    (name: string) => `Discover the timeless beauty of our ${name} collection. From classic designs to contemporary masterpieces, find the perfect piece that reflects your unique style and personality.`,
+    (name: string) => `Indulge in the luxurious charm of our ${name} collection. Handpicked for quality and artistry, these stunning pieces are perfect for gifting or adding a touch of glamour to your everyday look.`,
+    (name: string) => `Celebrate life's special moments with our ${name} collection. Featuring intricate craftsmanship and premium materials, each design tells a story of tradition, beauty, and modern elegance.`,
+    (name: string) => `Unveil the allure of our ${name} collection, where heritage meets innovation. These carefully selected pieces blend traditional artistry with contemporary flair for a truly captivating experience.`,
+    (name: string) => `Step into a world of refined taste with our ${name} collection. Designed for those who appreciate fine craftsmanship, every piece is a testament to quality, beauty, and enduring style.`,
+  ]
+
+  return collections.map((c, index) => {
+    const templateIndex = index % descriptionTemplates.length
+    return {
+      name: c.name,
+      image: c.image_url || '',
+      description: descriptionTemplates[templateIndex](c.name),
+    }
+  })
 }
 
 // ============================================================================

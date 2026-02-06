@@ -43,9 +43,9 @@ export default function TrendingProductsSection({
       'py-12',
       isDark ? 'bg-[#080808]' : 'bg-offwhite'
     )}>
-      <div className="max-w-[1100px] mx-auto">
+      <div className="max-w-[1400px] mx-auto">
         {/* Section Header - matches Flutter TrendingProductsShowcase */}
-        <div className="text-center px-6 mb-6">
+        <div className="text-center px-2 mb-6">
           <h2 className={cn(
             'text-xl md:text-2xl font-bold mb-2',
             isDark ? 'text-white' : 'text-black'
@@ -75,7 +75,7 @@ export default function TrendingProductsSection({
 
         {/* Products - horizontal scroll with height 330px like Flutter */}
         <div className="overflow-x-auto pb-4 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <div className="flex gap-4 px-6 min-w-max">
+          <div className="flex gap-4 px-2 min-w-max">
             {displayProducts.map((product) => (
               <TrendingProductCard 
                 key={product.id} 

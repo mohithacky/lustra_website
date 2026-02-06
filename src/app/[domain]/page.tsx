@@ -208,17 +208,30 @@ export default async function StorePage({ params }: PageProps) {
     updated_at: '',
   }))
 
-  // Transform hero collections to collections array format for layout
-  const collectionsArray = heroCollectionsFromSections.map((col: Collection, index: number) => ({
-    id: col.id,
-    user_id: col.user_id,
-    name: col.name,
-    banner_url: (col.image_url || '') as string,
-    description: null as string | null,
-    display_order: col.display_order,
-    created_at: col.created_at || '',
-    updated_at: col.updated_at || '',
-  }))
+  // Combine ALL collections (hero + trending + best) for the navigation mega menu
+  // Deduplicate by name so each collection appears only once
+  const allCollections = [
+    ...heroCollectionsFromSections,
+    ...trendingCollectionsFromSections,
+    ...bestCollectionsFromSections,
+  ]
+  const seenNames = new Set<string>()
+  const collectionsArray = allCollections
+    .filter((col: Collection) => {
+      if (seenNames.has(col.name)) return false
+      seenNames.add(col.name)
+      return true
+    })
+    .map((col: Collection, index: number) => ({
+      id: col.id,
+      user_id: col.user_id,
+      name: col.name,
+      banner_url: (col.image_url || '') as string,
+      description: null as string | null,
+      display_order: index,
+      created_at: col.created_at || '',
+      updated_at: col.updated_at || '',
+    }))
 
   // Use theme from user_websites (new architecture)
   const theme = website.theme || 'light'

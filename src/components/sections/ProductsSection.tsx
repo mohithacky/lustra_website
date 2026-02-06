@@ -48,7 +48,7 @@ export default function ProductsSection({
       'py-12 md:py-16',
       isDark ? 'bg-[#080808]' : 'bg-offwhite'
     )}>
-      <div className="max-w-[1100px] mx-auto px-6">
+      <div className="max-w-[1400px] mx-auto px-2">
         {/* Section Header - matches Flutter ProductShowcase */}
         <div className="flex items-center justify-between mb-8">
           <div className="text-center flex-1">
@@ -79,7 +79,7 @@ export default function ProductsSection({
         </div>
 
         {/* Products - horizontal scroll like Flutter */}
-        <div className="overflow-x-auto pb-4 -mx-6 px-6 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className="overflow-x-auto pb-4 -mx-2 px-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <div className="flex gap-4 min-w-max">
             {displayProducts.map((product) => (
               <ProductCard 
