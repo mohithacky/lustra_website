@@ -433,7 +433,7 @@ export default function FirebasePhoneLoginDialog({
         {/* Submit button */}
         <button
           onClick={codeSent ? handleVerifyOtp : handleSendOtp}
-          disabled={isSendingOtp || isVerifyingOtp || showExistingCustomerWarning}
+          disabled={isSendingOtp || isVerifyingOtp}
           className="w-full bg-gold-500 hover:bg-gold-600 text-white py-3 rounded-full font-semibold transition-colors disabled:opacity-50"
         >
           {codeSent

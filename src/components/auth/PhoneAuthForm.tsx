@@ -444,7 +444,7 @@ export default function PhoneAuthForm({
 
           <button
             type="submit"
-            disabled={loading || !phoneNumber || showExistingCustomerWarning}
+            disabled={loading || !phoneNumber}
             className="w-full flex items-center justify-center gap-2 bg-amber-600 text-white py-3 px-4 rounded-lg hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
