@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -58,6 +58,18 @@ export default function WebsiteLayout({
   const [logoError, setLogoError] = useState(false)
   const [authUrl, setAuthUrl] = useState<string>('https://lustrai.in/auth')
   const pathname = usePathname()
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setActiveDropdown(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const isDark = theme === 'dark'
   const setShopData = useShopStore((state) => state.setShopData)
@@ -203,34 +215,43 @@ export default function WebsiteLayout({
               borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
             }}>
               {/* Left: Navigation Dropdowns - Scrollable on mobile */}
-              <div className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto flex-shrink scrollbar-hide">
+              <div ref={dropdownRef} className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto flex-shrink scrollbar-hide">
                 {navItems.map((item) => (
                   <div
                     key={item.key}
-                    className="relative"
+                    className="relative group"
                     onMouseEnter={() => item.items.length > 0 && setActiveDropdown(item.key)}
                     onMouseLeave={() => setActiveDropdown(null)}
                   >
                     <button
+                      onClick={() => {
+                        if (item.items.length > 0) {
+                          setActiveDropdown(activeDropdown === item.key ? null : item.key)
+                        }
+                      }}
                       className={cn(
-                        'flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap',
+                        'flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 pb-3 sm:pb-4 text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap',
                         isDark ? 'text-white hover:text-gold-400' : 'text-black hover:text-gold-600'
                       )}
                     >
                       {item.label}
-                      <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 opacity-60" />
+                      <ChevronDown className={cn(
+                        'w-3 h-3 sm:w-4 sm:h-4 opacity-60 transition-transform duration-200',
+                        activeDropdown === item.key && 'rotate-180'
+                      )} />
                     </button>
 
                     {/* Dropdown Menu */}
                     {item.items.length > 0 && activeDropdown === item.key && (
                       <div className={cn(
-                        'absolute top-full left-0 mt-0 min-w-[200px] rounded-lg shadow-xl py-2 z-50',
+                        'absolute top-full left-0 mt-0 min-w-[220px] rounded-lg shadow-xl py-2 z-50 max-h-[60vh] overflow-y-auto',
                         isDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-white border border-gray-100'
                       )}>
                         {item.items.map((subItem) => (
                           <Link
                             key={subItem.name}
                             href={subItem.href}
+                            onClick={() => setActiveDropdown(null)}
                             className={cn(
                               'block px-4 py-2.5 text-sm font-medium transition-colors',
                               isDark ? 'text-gray-300 hover:bg-zinc-800 hover:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-black'

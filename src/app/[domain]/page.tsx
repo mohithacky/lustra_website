@@ -29,6 +29,7 @@ import {
   getTestimonialsWithDemoFallback,
   getTrendingProductsWithDemoFallback,
   getWebsiteByDomain as getWebsiteByDomainLegacy,
+  getStoreInfoForUser,
 } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsSection from '@/components/sections/ProductsSection'
@@ -178,12 +179,13 @@ export default async function StorePage({ params }: PageProps) {
   const goldRateSectionEnabled = isGoldRateSectionEnabled(sections)
 
   // Fetch products from products table with demo fallback
-  const [productsResult, testimonialsResult, trendingProductsResult, announcements, goldRate] = await Promise.all([
+  const [productsResult, testimonialsResult, trendingProductsResult, announcements, goldRate, storeInfo] = await Promise.all([
     getProductsWithDemoFallback(user.id, { limit: 12 }),
     getTestimonialsWithDemoFallback(user.id),
     getTrendingProductsWithDemoFallback(user.id, 10),
     announcementBarEnabled ? getActiveAnnouncements(user.id) : Promise.resolve([]),
     goldRateSectionEnabled ? getGoldRate(user.id) : Promise.resolve(null),
+    getStoreInfoForUser(user.id),
   ])
 
   const { products, isDemo: isDemoProducts } = productsResult
@@ -369,7 +371,7 @@ export default async function StorePage({ params }: PageProps) {
 
       {/* Footer */}
       <EditableFooter 
-        user={user}
+        user={{ ...user, facebook_id: storeInfo?.facebook_id || null }}
         template={{ 
           id: website.id,
           user_id: user.id,

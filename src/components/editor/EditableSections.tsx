@@ -160,6 +160,7 @@ interface EditableFooterProps {
     phone_number: string | null
     email: string | null
     instagram_id: string | null
+    facebook_id?: string | null
   }
   template: {
     footer?: Record<string, string[]> | null

@@ -1,10 +1,11 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMap, getCollectionsMap } from '@/lib/supabase'
+import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMap, getCollectionsMap, getStoreInfoForUser } from '@/lib/supabase'
 import { getFooterDataForUser } from '@/lib/supabase-new-architecture'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
-import { MapPin, Phone, Mail, Instagram } from 'lucide-react'
+import ContactForm from '@/components/sections/ContactForm'
+import { MapPin, Phone, Mail, Instagram, Facebook } from 'lucide-react'
 
 interface PageProps {
   params: { domain: string }
@@ -22,11 +23,12 @@ export default async function ContactPage({ params }: PageProps) {
   const user = await getWebsiteByDomain(params.domain)
   if (!user) notFound()
 
-  const [template, categoriesMap, collectionsMap, footerData] = await Promise.all([
+  const [template, categoriesMap, collectionsMap, footerData, storeInfo] = await Promise.all([
     getWebsiteTemplate(user.id),
     getCategoriesMap(user.id),
     getCollectionsMap(user.id),
     getFooterDataForUser(user.id),
+    getStoreInfoForUser(user.id),
   ])
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
@@ -41,6 +43,12 @@ export default async function ContactPage({ params }: PageProps) {
 
   const theme = template?.theme || 'light'
   const isDark = theme === 'dark'
+
+  // Get facebook_id from store_info
+  const facebookId = storeInfo?.facebook_id || null
+
+  // Merge user data with store_info for footer
+  const userWithSocial = { ...user, facebook_id: facebookId }
 
   return (
     <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray} shopDomain={params.domain}>
@@ -107,9 +115,23 @@ export default async function ContactPage({ params }: PageProps) {
                       <Instagram className="w-6 h-6 text-gold-500" />
                     </div>
                     <div>
-                      <p className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>Follow Us</p>
+                      <p className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>Follow Us on Instagram</p>
                       <a href={`https://instagram.com/${user.instagram_id}`} target="_blank" rel="noopener noreferrer" className="text-gold-500 hover:underline">
                         @{user.instagram_id}
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {facebookId && (
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-gold-500/10 rounded-xl">
+                      <Facebook className="w-6 h-6 text-gold-500" />
+                    </div>
+                    <div>
+                      <p className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>Follow Us on Facebook</p>
+                      <a href={`https://facebook.com/${facebookId}`} target="_blank" rel="noopener noreferrer" className="text-gold-500 hover:underline">
+                        {facebookId}
                       </a>
                     </div>
                   </div>
@@ -118,40 +140,11 @@ export default async function ContactPage({ params }: PageProps) {
             </div>
 
             {/* Message Form */}
-            <div className={`rounded-2xl p-8 ${isDark ? 'bg-zinc-900' : 'bg-white shadow-lg'}`}>
-              <h2 className={`font-display text-xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>
-                Send a Message
-              </h2>
-              <form className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Your Name"
-                  className={`w-full px-4 py-3 rounded-xl border outline-none focus:border-gold-500 ${isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-gray-50 border-gray-200 text-black'}`}
-                />
-                <input
-                  type="email"
-                  placeholder="Your Email"
-                  className={`w-full px-4 py-3 rounded-xl border outline-none focus:border-gold-500 ${isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-gray-50 border-gray-200 text-black'}`}
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone Number"
-                  className={`w-full px-4 py-3 rounded-xl border outline-none focus:border-gold-500 ${isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-gray-50 border-gray-200 text-black'}`}
-                />
-                <textarea
-                  placeholder="Your Message"
-                  rows={4}
-                  className={`w-full px-4 py-3 rounded-xl border outline-none focus:border-gold-500 resize-none ${isDark ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-gray-50 border-gray-200 text-black'}`}
-                />
-                <button type="submit" className="w-full bg-gold-500 hover:bg-gold-600 text-white py-3 rounded-xl font-semibold transition-colors">
-                  Send Message
-                </button>
-              </form>
-            </div>
+            <ContactForm isDark={isDark} userId={user.id} />
           </div>
         </div>
       </div>
-      <Footer user={user} template={template ? { ...template, footer: footerData } : null} isDark={isDark} />
+      <Footer user={userWithSocial} template={template ? { ...template, footer: footerData } : null} isDark={isDark} />
     </WebsiteLayout>
   )
 }

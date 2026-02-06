@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Instagram, Facebook, Twitter, MapPin, Phone, Mail, Edit } from 'lucide-react'
+import { Instagram, Facebook, MapPin, Phone, Mail, Edit } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 
 interface FooterProps {
@@ -14,6 +14,7 @@ interface FooterProps {
     phone_number: string | null
     email: string | null
     instagram_id: string | null
+    facebook_id?: string | null
   }
   template: {
     footer?: Record<string, string[]> | null
@@ -110,20 +111,17 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
                   <Instagram className="w-5 h-5" />
                 </a>
               )}
-              <a 
-                href="#"
-                className={cn("p-2 rounded-full hover:bg-gold-500 transition-colors", isDark ? "bg-gray-200" : "bg-white/10")}
-                aria-label="Facebook"
-              >
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a 
-                href="#"
-                className={cn("p-2 rounded-full hover:bg-gold-500 transition-colors", isDark ? "bg-gray-200" : "bg-white/10")}
-                aria-label="Twitter"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
+              {user.facebook_id && (
+                <a 
+                  href={`https://facebook.com/${user.facebook_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn("p-2 rounded-full hover:bg-gold-500 transition-colors", isDark ? "bg-gray-200" : "bg-white/10")}
+                  aria-label="Facebook"
+                >
+                  <Facebook className="w-5 h-5" />
+                </a>
+              )}
             </div>
           </div>
 
