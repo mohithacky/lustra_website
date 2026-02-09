@@ -1,0 +1,4 @@
+## Use Firebase Auth with your Supabase project
+
+Use Firebase Auth with your Supabase project
+Firebase Auth can be used as a third-party authentication provider alongside Supabase Auth, or standalone, with your Supabase project.
