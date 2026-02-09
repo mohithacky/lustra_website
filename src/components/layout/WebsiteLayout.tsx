@@ -201,13 +201,12 @@ export default function WebsiteLayout({
                 )}
                 <div 
                   className={cn(
-                    'font-display font-normal tracking-wide leading-tight text-center',
+                    'font-display font-bold tracking-wide whitespace-nowrap',
                     isDark ? 'text-white' : 'text-black',
                     (user.shop_name || 'YOUR BRAND').length > 25 
-                      ? 'text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl max-w-[140px] sm:max-w-[200px] md:max-w-[280px] lg:max-w-[350px]'
-                      : 'text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl max-w-[140px] sm:max-w-[200px] md:max-w-[280px] lg:max-w-[350px]'
+                      ? 'text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl'
+                      : 'text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl'
                   )}
-                  style={{ wordWrap: 'break-word', overflowWrap: 'break-word', hyphens: 'auto' }}
                 >
                   {user.shop_name || 'YOUR BRAND'}
                 </div>
