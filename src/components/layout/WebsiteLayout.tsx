@@ -177,7 +177,7 @@ export default function WebsiteLayout({
               </button>
 
               {/* Logo + Shop Name */}
-              <Link href={`/`} className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <Link href={`/`} className="flex items-start gap-2 sm:gap-3 flex-shrink-0">
                 {user.logo_url && !logoError ? (
                   <div className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 lg:h-32 lg:w-32 flex items-center justify-center flex-shrink-0">
                     <Image
@@ -199,12 +199,18 @@ export default function WebsiteLayout({
                     {user.shop_name?.charAt(0) || 'S'}
                   </div>
                 )}
-                <span className={cn(
-                  'font-display text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold tracking-wide truncate max-w-[120px] sm:max-w-[200px] md:max-w-[300px] lg:max-w-none',
-                  isDark ? 'text-white' : 'text-black'
-                )}>
+                <div 
+                  className={cn(
+                    'font-display font-bold tracking-wide leading-tight',
+                    isDark ? 'text-white' : 'text-black',
+                    (user.shop_name || 'YOUR BRAND').length > 25 
+                      ? 'text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl max-w-[140px] sm:max-w-[200px] md:max-w-[280px] lg:max-w-[350px]'
+                      : 'text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl max-w-[140px] sm:max-w-[200px] md:max-w-[280px] lg:max-w-[350px]'
+                  )}
+                  style={{ wordWrap: 'break-word', overflowWrap: 'break-word', hyphens: 'auto' }}
+                >
                   {user.shop_name || 'YOUR BRAND'}
-                </span>
+                </div>
               </Link>
 
               {/* Search Bar - Right edge on mobile, flexible width on desktop */}
