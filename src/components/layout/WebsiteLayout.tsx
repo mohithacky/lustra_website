@@ -160,7 +160,7 @@ export default function WebsiteLayout({
         )}>
           <nav className="px-2 sm:px-4 py-2 sm:py-3">
             {/* Top Row: Menu Icon (mobile only) + Logo + Shop Name + Search (right edge on mobile) */}
-            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3">
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3 overflow-hidden">
               {/* Menu Icon - Left side (hidden on desktop) */}
               <button
                 onClick={() => setShowDrawer(true)}
@@ -201,7 +201,7 @@ export default function WebsiteLayout({
                 )}
                 <div 
                   className={cn(
-                    'font-display font-bold tracking-wide leading-tight text-center',
+                    'font-display font-normal tracking-wide leading-tight text-center',
                     isDark ? 'text-white' : 'text-black',
                     (user.shop_name || 'YOUR BRAND').length > 25 
                       ? 'text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl max-w-[140px] sm:max-w-[200px] md:max-w-[280px] lg:max-w-[350px]'
@@ -214,7 +214,7 @@ export default function WebsiteLayout({
               </Link>
 
               {/* Search Bar - Right edge on mobile, flexible width on desktop */}
-              <div className="md:flex-1 md:min-w-0 flex-shrink-0">
+              <div className="md:flex-1 md:min-w-0 flex-shrink-0 min-w-0">
                 <SearchBar isDark={isDark} shopDomain={shopDomain} />
               </div>
             </div>
