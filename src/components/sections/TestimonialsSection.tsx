@@ -1,7 +1,9 @@
 'use client'
 
 import { Star } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getImageUrl } from '@/lib/utils'
+import Link from 'next/link'
+import Image from 'next/image'
 
 interface Testimonial {
   id: string
@@ -9,6 +11,13 @@ interface Testimonial {
   rating: number
   review_text: string
   created_at: string
+  product_id?: string
+  products?: {
+    id: string
+    name: string
+    image_url: string | null
+    images: string[] | null
+  }
 }
 
 interface TestimonialsSectionProps {
@@ -72,6 +81,30 @@ export default function TestimonialsSection({
                   isDark ? 'bg-zinc-800' : 'bg-white shadow-lg'
                 )}
               >
+                {/* Product Image - Clickable */}
+                {testimonial.products && (
+                  <Link 
+                    href={`/products/${testimonial.products.id}`}
+                    className="block mb-4 rounded-xl overflow-hidden group"
+                  >
+                    <div className="relative w-full h-40 bg-gray-100">
+                      <Image
+                        src={getImageUrl(testimonial.products.image_url || (testimonial.products.images?.[0] || ''))}
+                        alt={testimonial.products.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        sizes="320px"
+                      />
+                    </div>
+                    <p className={cn(
+                      'text-xs mt-2 font-medium truncate',
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    )}>
+                      Review for: {testimonial.products.name}
+                    </p>
+                  </Link>
+                )}
+
                 {/* Stars */}
                 {showRating && (
                   <div className="flex gap-1 mb-4">
@@ -91,7 +124,7 @@ export default function TestimonialsSection({
 
                 {/* Review Text */}
                 <p className={cn(
-                  'text-sm leading-relaxed mb-6 line-clamp-4',
+                  'text-sm leading-relaxed mb-6 line-clamp-3',
                   isDark ? 'text-gray-300' : 'text-gray-600'
                 )}>
                   &ldquo;{testimonial.review_text}&rdquo;

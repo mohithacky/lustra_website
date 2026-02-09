@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = 'https://phlccyxgyftspxnuzttf.supabase.co'
-const supabaseAnonKey = 'sb_publishable_tMc-l2KRHyKOXlR0tODIPw_VhBH-w5R'
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+import { supabaseServer } from '@/lib/supabase-server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +13,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from('contact_messages')
       .insert({
         user_id: userId,

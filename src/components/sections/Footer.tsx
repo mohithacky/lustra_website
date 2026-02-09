@@ -111,17 +111,15 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
                   <Instagram className="w-5 h-5" />
                 </a>
               )}
-              {user.facebook_id && (
-                <a 
-                  href={`https://facebook.com/${user.facebook_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn("p-2 rounded-full hover:bg-gold-500 transition-colors", isDark ? "bg-gray-200" : "bg-white/10")}
-                  aria-label="Facebook"
-                >
-                  <Facebook className="w-5 h-5" />
-                </a>
-              )}
+              <a 
+                href={user.facebook_id ? `https://facebook.com/${user.facebook_id}` : "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn("p-2 rounded-full hover:bg-gold-500 transition-colors", isDark ? "bg-gray-200" : "bg-white/10")}
+                aria-label="Facebook"
+              >
+                <Facebook className="w-5 h-5" />
+              </a>
             </div>
           </div>
 

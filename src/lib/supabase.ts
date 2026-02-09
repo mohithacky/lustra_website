@@ -429,10 +429,24 @@ export async function getFooterData(userId: string): Promise<Record<string, stri
 
 // Get testimonials from customer_reviews table
 export async function getTestimonials(userId: string): Promise<{ testimonials: Array<any>, hasData: boolean }> {
-  // Fetch featured testimonials from customer_reviews
+  // Fetch featured testimonials from customer_reviews with product details
   const { data, error } = await supabase
     .from('customer_reviews')
-    .select('id, customer_name, rating, review_text, created_at, product_id, is_verified_purchase')
+    .select(`
+      id, 
+      customer_name, 
+      rating, 
+      review_text, 
+      created_at, 
+      product_id, 
+      is_verified_purchase,
+      products:product_id (
+        id,
+        name,
+        image_url,
+        images
+      )
+    `)
     .eq('shop_id', userId)
     .eq('is_approved', true)
     .eq('is_featured_testimonial', true)

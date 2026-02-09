@@ -128,6 +128,9 @@ export default function WebsiteLayout({
   }
 
   // Navigation items matching Flutter AppBar
+  console.log('[WebsiteLayout] Collections for nav:', collections.length, collections.map(c => c.name))
+  console.log('[WebsiteLayout] Categories for nav:', categories.length, categories.map(c => c.name))
+  
   const navItems = [
     { label: 'Collections', key: 'collections', items: collections.map(c => ({ name: c.name, href: `/products?collection=${encodeURIComponent(c.name)}` })) },
     { label: 'Categories', key: 'categories', items: categories.map(c => ({ name: c.name, href: `/products?category=${encodeURIComponent(c.name)}` })) },
