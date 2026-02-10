@@ -85,7 +85,7 @@ export default function WebsiteLayout({
     console.log('[WebsiteLayout] Auth URL set:', url)
   }, [user.id, shopDomain])
 
-  // Store shop owner data in Zustand global state
+  // Store shop owner data in Zustand global stat
   useEffect(() => {
     console.log('[WebsiteLayout] Storing shop owner data in global state')
     setShopData({
