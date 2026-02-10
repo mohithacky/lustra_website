@@ -85,7 +85,7 @@ export default function WebsiteLayout({
     console.log('[WebsiteLayout] Auth URL set:', url)
   }, [user.id, shopDomain])
 
-  // Store shop owner data in Zustand global stat
+  // Store shop owner data in Zustand global state
   useEffect(() => {
     console.log('[WebsiteLayout] Storing shop owner data in global state')
     setShopData({
@@ -201,12 +201,13 @@ export default function WebsiteLayout({
                 )}
                 <div 
                   className={cn(
-                    'font-display font-bold tracking-wide whitespace-nowrap',
+                    'font-display font-normal tracking-wide leading-tight text-center',
                     isDark ? 'text-white' : 'text-black',
                     (user.shop_name || 'YOUR BRAND').length > 25 
-                      ? 'text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl'
-                      : 'text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl'
+                      ? 'text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl max-w-[140px] sm:max-w-[200px] md:max-w-[280px] lg:max-w-[350px]'
+                      : 'text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl max-w-[140px] sm:max-w-[200px] md:max-w-[280px] lg:max-w-[350px]'
                   )}
+                  style={{ wordWrap: 'break-word', overflowWrap: 'break-word', hyphens: 'auto' }}
                 >
                   {user.shop_name || 'YOUR BRAND'}
                 </div>
