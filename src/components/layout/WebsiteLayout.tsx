@@ -158,7 +158,7 @@ export default function WebsiteLayout({
           'sticky top-0 z-50',
           isDark ? 'bg-[#121212]' : 'bg-white'
         )}>
-          <nav className="px-2 sm:px-4 py-2 sm:py-3">
+          <nav className="px-2 sm:px-4 py-1 sm:py-2">
             {/* Top Row: Menu Icon (mobile only) + Logo + Shop Name + Search (right edge on mobile) */}
             <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mb-2 sm:mb-3 overflow-hidden">
               {/* Menu Icon - Left side (hidden on desktop) */}
@@ -179,7 +179,7 @@ export default function WebsiteLayout({
               {/* Logo + Shop Name */}
               <Link href={`/`} className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                 {user.logo_url && !logoError ? (
-                  <div className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 lg:h-32 lg:w-32 flex items-center justify-center flex-shrink-0">
+                  <div className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 flex items-center justify-center flex-shrink-0">
                     <Image
                       src={getImageUrl(user.logo_url)}
                       alt={user.shop_name || 'Store'}
@@ -193,7 +193,7 @@ export default function WebsiteLayout({
                   </div>
                 ) : (
                   <div className={cn(
-                    "h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 lg:h-32 lg:w-32 flex items-center justify-center flex-shrink-0 rounded-full font-display text-2xl sm:text-3xl md:text-4xl font-bold",
+                    "h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 flex items-center justify-center flex-shrink-0 rounded-full font-display text-2xl sm:text-3xl md:text-4xl font-bold",
                     isDark ? 'bg-gold-500 text-black' : 'bg-gold-500 text-white'
                   )}>
                     {user.shop_name?.charAt(0) || 'S'}
@@ -338,12 +338,6 @@ export default function WebsiteLayout({
 
         {/* Main Content */}
         <main>
-          {/* Back Button - Only show on pages other than home */}
-          {pathname !== '/' && (
-            <div className="max-w-[1200px] mx-auto px-6 pt-4">
-              <BackButton isDark={isDark} />
-            </div>
-          )}
           {children}
         </main>
 
