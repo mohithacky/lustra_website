@@ -182,12 +182,12 @@ export default function ProductsGrid({
 
   return (
     <div className={cn(
-      'min-h-screen py-8',
+      'min-h-screen pb-20',
       isDark ? 'bg-[#080808]' : 'bg-offwhite'
     )}>
-      <div className="max-w-[1200px] mx-auto px-6">
+      <div className="max-w-[1200px] mx-auto px-6 pt-6">
         {/* Page Header - matches Flutter ProductsPage */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className={cn(
             'font-display text-2xl md:text-3xl font-bold',
             isDark ? 'text-white' : 'text-black'
@@ -201,197 +201,6 @@ export default function ProductsGrid({
             {filteredProducts.length} products
           </p>
         </div>
-
-        {/* Filters Bar */}
-        <div className={cn(
-          'flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pb-4 gap-3 sm:gap-0 border-b',
-          isDark ? 'border-zinc-800' : 'border-gray-200'
-        )}>
-          {/* Filter Toggle */}
-          <button
-            onClick={() => setShowFilterDrawer(true)}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-              hasActiveFilters && 'ring-2 ring-gold-500',
-              isDark 
-                ? 'bg-zinc-800 text-white hover:bg-zinc-700' 
-                : 'bg-white text-black hover:bg-gray-50 border border-gray-200'
-            )}
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-            Filters
-            {hasActiveFilters && (
-              <span className="ml-1 px-2 py-0.5 bg-gold-500 text-white text-xs rounded-full">
-                {selectedFilters.categories.length + 
-                 selectedFilters.collections.length + 
-                 selectedFilters.trendingCollections.length + 
-                 selectedFilters.productTypes.length + 
-                 selectedFilters.genders.length}
-              </span>
-            )}
-          </button>
-
-          <div className="flex items-center gap-2 sm:gap-4">
-            {/* Sort Dropdown */}
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className={cn(
-                  'appearance-none px-4 py-2 pr-8 rounded-lg text-sm font-medium cursor-pointer',
-                  isDark 
-                    ? 'bg-zinc-800 text-white' 
-                    : 'bg-white text-black border border-gray-200'
-                )}
-              >
-                <option value="newest">Newest</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-              </select>
-              <ChevronDown className={cn(
-                'absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none',
-                isDark ? 'text-gray-400' : 'text-gray-500'
-              )} />
-            </div>
-
-            {/* View Mode Toggle */}
-            <div className={cn(
-              'flex rounded-lg overflow-hidden',
-              isDark ? 'bg-zinc-800' : 'bg-white border border-gray-200'
-            )}>
-              <button
-                onClick={() => setViewMode('grid')}
-                className={cn(
-                  'p-2 transition-colors',
-                  viewMode === 'grid'
-                    ? 'bg-gold-500 text-white'
-                    : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-black'
-                )}
-              >
-                <Grid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={cn(
-                  'p-2 transition-colors',
-                  viewMode === 'list'
-                    ? 'bg-gold-500 text-white'
-                    : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-black'
-                )}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Active Filters Display */}
-        {hasActiveFilters && (
-          <div className={cn(
-            'mb-6 p-4 rounded-xl',
-            isDark ? 'bg-zinc-800' : 'bg-white border border-gray-200'
-          )}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className={cn(
-                'text-sm font-semibold',
-                isDark ? 'text-white' : 'text-black'
-              )}>
-                Active Filters
-              </h3>
-              <button
-                onClick={handleClearAllFilters}
-                className={cn(
-                  'text-xs font-medium transition-colors',
-                  isDark ? 'text-gold-400 hover:text-gold-300' : 'text-gold-600 hover:text-gold-700'
-                )}
-              >
-                Clear All
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {selectedFilters.categories.map((cat) => (
-                <span
-                  key={cat}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-sm font-medium bg-gold-500 text-white flex items-center gap-2'
-                  )}
-                >
-                  {cat}
-                  <button
-                    onClick={() => handleFilterChange('categories', cat)}
-                    className="hover:bg-gold-600 rounded-full p-0.5"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-              {selectedFilters.collections.map((col) => (
-                <span
-                  key={col}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-sm font-medium bg-blue-500 text-white flex items-center gap-2'
-                  )}
-                >
-                  {col}
-                  <button
-                    onClick={() => handleFilterChange('collections', col)}
-                    className="hover:bg-blue-600 rounded-full p-0.5"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-              {selectedFilters.trendingCollections.map((col) => (
-                <span
-                  key={col}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-sm font-medium bg-purple-500 text-white flex items-center gap-2'
-                  )}
-                >
-                  {col}
-                  <button
-                    onClick={() => handleFilterChange('trendingCollections', col)}
-                    className="hover:bg-purple-600 rounded-full p-0.5"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-              {selectedFilters.productTypes.map((type) => (
-                <span
-                  key={type}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-sm font-medium bg-green-500 text-white flex items-center gap-2'
-                  )}
-                >
-                  {type}
-                  <button
-                    onClick={() => handleFilterChange('productTypes', type)}
-                    className="hover:bg-green-600 rounded-full p-0.5"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-              {selectedFilters.genders.map((gender) => (
-                <span
-                  key={gender}
-                  className={cn(
-                    'px-3 py-1.5 rounded-full text-sm font-medium bg-pink-500 text-white flex items-center gap-2'
-                  )}
-                >
-                  {gender}
-                  <button
-                    onClick={() => handleFilterChange('genders', gender)}
-                    className="hover:bg-pink-600 rounded-full p-0.5"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Products Grid - matches Flutter MasonryGridView */}
         {filteredProducts.length > 0 ? (
@@ -422,6 +231,57 @@ export default function ProductsGrid({
             </p>
           </div>
         )}
+      </div>
+
+      {/* Bottom Sticky Bar - matches reference image */}
+      <div className={cn(
+        'fixed bottom-0 left-0 right-0 z-50 border-t',
+        isDark ? 'bg-[#121212] border-zinc-800' : 'bg-white border-gray-200'
+      )}>
+        <div className="max-w-[1200px] mx-auto px-6 py-3">
+          <div className="flex items-center justify-center gap-4">
+            {/* Sort By Button */}
+            <button
+              onClick={() => {
+                const nextSort = sortBy === 'newest' ? 'price-low' : sortBy === 'price-low' ? 'price-high' : 'newest'
+                setSortBy(nextSort)
+              }}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold transition-colors border',
+                isDark 
+                  ? 'bg-zinc-800 text-white border-zinc-700 hover:bg-zinc-700' 
+                  : 'bg-white text-black border-gray-300 hover:bg-gray-50'
+              )}
+            >
+              <ChevronDown className="w-4 h-4" />
+              Sort By
+            </button>
+
+            {/* Filter Button */}
+            <button
+              onClick={() => setShowFilterDrawer(true)}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold transition-colors border',
+                hasActiveFilters && 'ring-2 ring-gold-500',
+                isDark 
+                  ? 'bg-zinc-800 text-white border-zinc-700 hover:bg-zinc-700' 
+                  : 'bg-white text-black border-gray-300 hover:bg-gray-50'
+              )}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Filter
+              {hasActiveFilters && (
+                <span className="ml-1 px-2 py-0.5 bg-gold-500 text-white text-xs rounded-full">
+                  {selectedFilters.categories.length + 
+                   selectedFilters.collections.length + 
+                   selectedFilters.trendingCollections.length + 
+                   selectedFilters.productTypes.length + 
+                   selectedFilters.genders.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Filter Drawer */}
