@@ -103,19 +103,36 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: true, section: data })
     } else {
       // Create new section - need to get template_section_id for our_shop
+      // First get the user's website template_id
+      const { data: websiteData } = await supabase
+        .from('user_websites')
+        .select('template_id')
+        .eq('id', website.id)
+        .single()
+
+      if (!websiteData?.template_id) {
+        return NextResponse.json({ error: 'Website template not found' }, { status: 404 })
+      }
+
+      // Get the template section for our_shop
       const { data: templateSection } = await supabase
-        .from('template_sections')
-        .select('id')
+        .from('website_template_sections')
+        .select('id, section_label')
+        .eq('template_id', websiteData.template_id)
         .eq('section_type', 'our_shop')
         .single()
+
+      if (!templateSection) {
+        return NextResponse.json({ error: 'Template section for our_shop not found' }, { status: 404 })
+      }
 
       const { data, error } = await supabase
         .from('user_website_sections')
         .insert({
           user_website_id: website.id,
-          template_section_id: templateSection?.id || null,
+          template_section_id: templateSection.id,
           section_type: 'our_shop',
-          section_label: 'Our Shop',
+          section_label: templateSection.section_label,
           is_enabled: true,
           display_order: 999,
           config: newConfig,
