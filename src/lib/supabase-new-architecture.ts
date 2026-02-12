@@ -864,20 +864,26 @@ export async function getFooterDataFromPages(
   }
   
   // Filter out inactive pages
+  console.log('\n[getFooterDataFromPages] === Starting page filtering ===')
+  console.log('[getFooterDataFromPages] user_website_id:', userWebsiteId)
+  
   const { data: pages, error } = await supabase
     .from('user_website_pages')
     .select('slug, is_active')
     .eq('user_website_id', userWebsiteId)
   
   if (error) {
-    console.error('[getFooterDataFromPages] Error fetching page statuses:', error)
+    console.error('[getFooterDataFromPages] ❌ Error fetching page statuses:', error)
     return footerData
   }
   
+  console.log('[getFooterDataFromPages] Pages fetched from DB:', pages?.length || 0)
+  
   // Create a map of page slugs to their active status
   const pageStatusMap: Record<string, boolean> = {}
-  pages?.forEach(page => {
+  pages?.forEach((page: any) => {
     pageStatusMap[page.slug] = page.is_active ?? true
+    console.log(`[getFooterDataFromPages]   ${page.slug}: ${page.is_active ? '✓ ACTIVE' : '✗ INACTIVE'}`)
   })
   
   // Map of link text to slug
@@ -892,20 +898,43 @@ export async function getFooterDataFromPages(
     'Warranty': 'warranty',
   }
   
+  console.log('\n[getFooterDataFromPages] Filtering footer links...')
+  console.log('[getFooterDataFromPages] Original footer sections:', Object.keys(footerData))
+  
   // Filter out inactive pages from footer data
   const filteredFooterData: Record<string, string[]> = {}
   for (const [section, links] of Object.entries(footerData)) {
+    console.log(`\n[getFooterDataFromPages] Section: "${section}"`)
+    console.log(`[getFooterDataFromPages]   Original links (${links.length}):`, links)
+    
     const activeLinks = links.filter(link => {
       const slug = linkToSlugMap[link]
-      if (!slug) return true // Keep links that don't map to pages
-      return pageStatusMap[slug] !== false // Keep if active or not found (default to active)
+      if (!slug) {
+        console.log(`[getFooterDataFromPages]     "${link}" → no slug mapping, keeping`)
+        return true // Keep links that don't map to pages
+      }
+      
+      const isActive = pageStatusMap[slug] !== false
+      const status = pageStatusMap[slug] === undefined ? 'not in DB (default active)' : (pageStatusMap[slug] ? 'ACTIVE' : 'INACTIVE')
+      console.log(`[getFooterDataFromPages]     "${link}" → ${slug} → ${status} → ${isActive ? 'KEEP' : 'REMOVE'}`)
+      
+      return isActive // Keep if active or not found (default to active)
     })
+    
+    console.log(`[getFooterDataFromPages]   Filtered links (${activeLinks.length}):`, activeLinks)
+    
     if (activeLinks.length > 0) {
       filteredFooterData[section] = activeLinks
+    } else {
+      console.log(`[getFooterDataFromPages]   ⚠ Section "${section}" removed (no active links)`)
     }
   }
   
-  console.log('[getFooterDataFromPages] Filtered footer data:', Object.keys(filteredFooterData))
+  console.log('\n[getFooterDataFromPages] === Filtering complete ===')
+  console.log('[getFooterDataFromPages] Final footer sections:', Object.keys(filteredFooterData))
+  console.log('[getFooterDataFromPages] Total links before:', Object.values(footerData).flat().length)
+  console.log('[getFooterDataFromPages] Total links after:', Object.values(filteredFooterData).flat().length)
+  
   return filteredFooterData
 }
 
