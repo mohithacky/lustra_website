@@ -132,6 +132,12 @@ export default function EditableOurShopPage({
   const handleSave = async () => {
     setIsSaving(true)
     try {
+      console.log('Saving Our Shop page...')
+      console.log('UserId:', userId)
+      console.log('Title:', editTitle)
+      console.log('Content length:', editContent.length)
+      console.log('Photos count:', editPhotos.length)
+
       // Save page content
       const pageResponse = await fetch('/api/editor/pages', {
         method: 'PUT',
@@ -144,6 +150,10 @@ export default function EditableOurShopPage({
         }),
       })
 
+      console.log('Page save response status:', pageResponse.status)
+      const pageData = await pageResponse.json()
+      console.log('Page save response:', pageData)
+
       // Save photos
       const photosResponse = await fetch('/api/editor/shop-photos', {
         method: 'PUT',
@@ -154,6 +164,10 @@ export default function EditableOurShopPage({
         }),
       })
 
+      console.log('Photos save response status:', photosResponse.status)
+      const photosData = await photosResponse.json()
+      console.log('Photos save response:', photosData)
+
       if (pageResponse.ok && photosResponse.ok) {
         setTitle(editTitle)
         setContent(editContent)
@@ -161,11 +175,13 @@ export default function EditableOurShopPage({
         setIsEditing(false)
         alert('Shop page saved successfully! Refresh to see changes.')
       } else {
-        alert('Error saving shop page')
+        const errorMsg = `Error saving shop page. Page: ${pageResponse.status} ${JSON.stringify(pageData)}, Photos: ${photosResponse.status} ${JSON.stringify(photosData)}`
+        console.error(errorMsg)
+        alert(errorMsg)
       }
     } catch (error) {
       console.error('Error saving:', error)
-      alert('Error saving shop page')
+      alert(`Error saving shop page: ${error}`)
     } finally {
       setIsSaving(false)
     }

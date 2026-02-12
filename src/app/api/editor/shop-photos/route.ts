@@ -102,12 +102,20 @@ export async function PUT(request: NextRequest) {
 
       return NextResponse.json({ success: true, section: data })
     } else {
-      // Create new section
+      // Create new section - need to get template_section_id for our_shop
+      const { data: templateSection } = await supabase
+        .from('template_sections')
+        .select('id')
+        .eq('section_type', 'our_shop')
+        .single()
+
       const { data, error } = await supabase
         .from('user_website_sections')
         .insert({
           user_website_id: website.id,
+          template_section_id: templateSection?.id || null,
           section_type: 'our_shop',
+          section_label: 'Our Shop',
           is_enabled: true,
           display_order: 999,
           config: newConfig,
