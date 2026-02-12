@@ -28,19 +28,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ photos: [] })
     }
 
-    // Get shop photos from user_website_sections config
-    const { data: section, error: sectionError } = await supabase
-      .from('user_website_sections')
-      .select('config')
+    // Get shop photos from user_website_pages (our-shop page)
+    const { data: page, error: pageError } = await supabase
+      .from('user_website_pages')
+      .select('photos')
       .eq('user_website_id', website.id)
-      .eq('section_type', 'our_shop')
+      .eq('slug', 'our-shop')
       .single()
 
-    if (sectionError || !section) {
+    if (pageError || !page) {
       return NextResponse.json({ photos: [] })
     }
 
-    return NextResponse.json({ photos: section?.config?.photos || [] })
+    return NextResponse.json({ photos: page?.photos || [] })
   } catch (e: any) {
     console.error('Error:', e)
     return NextResponse.json({ error: e.message }, { status: 500 })
@@ -72,81 +72,21 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Website not found' }, { status: 404 })
     }
 
-    // Check if section exists
-    const { data: existingSection } = await supabase
-      .from('user_website_sections')
-      .select('id, config')
+    // Update photos in user_website_pages (our-shop page)
+    const { data, error } = await supabase
+      .from('user_website_pages')
+      .update({ photos: photos || [] })
       .eq('user_website_id', website.id)
-      .eq('section_type', 'our_shop')
+      .eq('slug', 'our-shop')
+      .select()
       .single()
 
-    const newConfig = {
-      ...(existingSection?.config || {}),
-      photos: photos || [],
+    if (error) {
+      console.error('Error updating shop photos:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    if (existingSection) {
-      // Update existing section
-      const { data, error } = await supabase
-        .from('user_website_sections')
-        .update({ config: newConfig })
-        .eq('user_website_id', website.id)
-        .eq('section_type', 'our_shop')
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error updating shop photos:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
-      }
-
-      return NextResponse.json({ success: true, section: data })
-    } else {
-      // Create new section - need to get template_section_id for our_shop
-      // First get the user's website template_id
-      const { data: websiteData } = await supabase
-        .from('user_websites')
-        .select('template_id')
-        .eq('id', website.id)
-        .single()
-
-      if (!websiteData?.template_id) {
-        return NextResponse.json({ error: 'Website template not found' }, { status: 404 })
-      }
-
-      // Get the template section for our_shop
-      const { data: templateSection } = await supabase
-        .from('website_template_sections')
-        .select('id, section_label')
-        .eq('template_id', websiteData.template_id)
-        .eq('section_type', 'our_shop')
-        .single()
-
-      if (!templateSection) {
-        return NextResponse.json({ error: 'Template section for our_shop not found' }, { status: 404 })
-      }
-
-      const { data, error } = await supabase
-        .from('user_website_sections')
-        .insert({
-          user_website_id: website.id,
-          template_section_id: templateSection.id,
-          section_type: 'our_shop',
-          section_label: templateSection.section_label,
-          is_enabled: true,
-          display_order: 999,
-          config: newConfig,
-        })
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error creating shop photos section:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
-      }
-
-      return NextResponse.json({ success: true, section: data })
-    }
+    return NextResponse.json({ success: true, page: data })
   } catch (e: any) {
     console.error('Error:', e)
     return NextResponse.json({ error: e.message }, { status: 500 })
