@@ -863,7 +863,50 @@ export async function getFooterDataFromPages(
     return getLegacyFooterData(userWebsiteId)
   }
   
-  return footerData
+  // Filter out inactive pages
+  const { data: pages, error } = await supabase
+    .from('user_website_pages')
+    .select('slug, is_active')
+    .eq('user_website_id', userWebsiteId)
+  
+  if (error) {
+    console.error('[getFooterDataFromPages] Error fetching page statuses:', error)
+    return footerData
+  }
+  
+  // Create a map of page slugs to their active status
+  const pageStatusMap: Record<string, boolean> = {}
+  pages?.forEach(page => {
+    pageStatusMap[page.slug] = page.is_active ?? true
+  })
+  
+  // Map of link text to slug
+  const linkToSlugMap: Record<string, string> = {
+    'Our Story': 'our-story',
+    'Careers': 'careers',
+    'Press': 'press',
+    'Our Shop': 'our-shop',
+    'Contact Us': 'contact',
+    'FAQs': 'faqs',
+    'Shipping & Returns': 'shipping-returns',
+    'Warranty': 'warranty',
+  }
+  
+  // Filter out inactive pages from footer data
+  const filteredFooterData: Record<string, string[]> = {}
+  for (const [section, links] of Object.entries(footerData)) {
+    const activeLinks = links.filter(link => {
+      const slug = linkToSlugMap[link]
+      if (!slug) return true // Keep links that don't map to pages
+      return pageStatusMap[slug] !== false // Keep if active or not found (default to active)
+    })
+    if (activeLinks.length > 0) {
+      filteredFooterData[section] = activeLinks
+    }
+  }
+  
+  console.log('[getFooterDataFromPages] Filtered footer data:', Object.keys(filteredFooterData))
+  return filteredFooterData
 }
 
 // ============================================================================
