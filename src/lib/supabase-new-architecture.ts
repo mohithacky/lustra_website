@@ -896,6 +896,8 @@ export async function getFooterDataFromPages(
     'FAQs': 'faqs',
     'Shipping & Returns': 'shipping-returns',
     'Warranty': 'warranty',
+    'Privacy Policy': 'privacy',
+    'Terms of Service': 'terms',
   }
   
   console.log('\n[getFooterDataFromPages] Filtering footer links...')
