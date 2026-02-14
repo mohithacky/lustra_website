@@ -31,6 +31,8 @@ export default async function OurShopPage({ params }: PageProps) {
     getStoreInfoForUser(user.id),
   ])
 
+  if (!pageContent) notFound()
+
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
     id: String(index), user_id: user.id, name, image_url: imageUrl as string | null,
     description: null, display_order: index, created_at: '', updated_at: '',
@@ -44,7 +46,7 @@ export default async function OurShopPage({ params }: PageProps) {
   const theme = template?.theme || 'light'
   const isDark = theme === 'dark'
 
-  const pageTitle = pageContent?.title || 'Our Shop'
+  const pageTitle = pageContent.title || 'Our Shop'
   const defaultContent = `Welcome to ${user.shop_name || 'our store'}!
 
 We are a premier jewelry destination offering exquisite pieces crafted with passion and precision. Each piece in our collection tells a unique story and is designed to make you shine.
