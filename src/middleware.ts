@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl
   const hostname = request.headers.get('host') || ''
   
-  // Extract subdomain from hostnameb
+  // Extract subdomain from hostname
   // Production: mohitjewellers.lustrai.in -> mohitjewellers
   // Local dev: localhost:3000 -> use path-based routing
   const shopDomain = extractSubdomain(hostname)

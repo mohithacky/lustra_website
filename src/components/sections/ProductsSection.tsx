@@ -15,6 +15,7 @@ interface Product {
   weight?: string | null
   is_bestseller?: boolean | null
   is_trending?: boolean | null
+  is_demo?: boolean
 }
 
 interface ProductsSectionProps {
@@ -26,6 +27,7 @@ interface ProductsSectionProps {
   columns?: number
   showPrice?: boolean
   shopDomain: string
+  isDemo?: boolean
 }
 
 export default function ProductsSection({ 
@@ -36,7 +38,8 @@ export default function ProductsSection({
   limit = 12,
   columns = 4,
   showPrice = true,
-  shopDomain 
+  shopDomain,
+  isDemo = false
 }: ProductsSectionProps) {
   if (!products.length) return null
 
@@ -88,6 +91,7 @@ export default function ProductsSection({
                 isDark={isDark}
                 showPrice={showPrice}
                 shopDomain={shopDomain}
+                isDemo={isDemo || product.is_demo}
               />
             ))}
           </div>
@@ -97,11 +101,12 @@ export default function ProductsSection({
   )
 }
 
-function ProductCard({ product, isDark, showPrice = true, shopDomain }: { 
+function ProductCard({ product, isDark, showPrice = true, shopDomain, isDemo = false }: { 
   product: Product
   isDark: boolean
   showPrice?: boolean
   shopDomain: string
+  isDemo?: boolean
 }) {
   const [isHovered, setIsHovered] = useState(false)
 
@@ -121,6 +126,14 @@ function ProductCard({ product, isDark, showPrice = true, shopDomain }: {
       >
         {/* Image - 60% height like Flutter */}
         <div className="relative h-[200px] overflow-hidden">
+          {/* Demo Badge */}
+          {isDemo && (
+            <div className="absolute top-2 left-2 z-10">
+              <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                Demo
+              </span>
+            </div>
+          )}
           {product.images && product.images.length > 1 ? (
             <>
               <Image

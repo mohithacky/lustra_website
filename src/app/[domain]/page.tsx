@@ -301,6 +301,7 @@ export default async function StorePage({ params }: PageProps) {
           columns={productsConfig.columns}
           showPrice={productsConfig.showPrice}
           shopDomain={params.domain}
+          isDemo={isDemoProducts}
         />
       )}
 
@@ -338,6 +339,7 @@ export default async function StorePage({ params }: PageProps) {
           showPrice={trendingProductsConfig.showPrice}
           layout={trendingProductsConfig.layout}
           shopDomain={params.domain}
+          isDemo={isDemoTrending}
         />
       )}
 

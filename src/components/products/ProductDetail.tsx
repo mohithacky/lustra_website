@@ -382,14 +382,19 @@ export default function ProductDetail({
               )}
 
               {/* Badges */}
-              {(product.is_bestseller || product.is_trending) && (
+              {(isDemo || product.is_bestseller || product.is_trending) && (
                 <div className="absolute top-4 left-4 flex gap-2">
-                  {product.is_bestseller && (
+                  {isDemo && (
+                    <span className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full font-medium">
+                      Demo
+                    </span>
+                  )}
+                  {product.is_bestseller && !isDemo && (
                     <span className="bg-gold-500 text-white text-xs px-3 py-1 rounded-full font-medium">
                       Bestseller
                     </span>
                   )}
-                  {product.is_trending && (
+                  {product.is_trending && !isDemo && (
                     <span className="bg-black text-white text-xs px-3 py-1 rounded-full font-medium">
                       Trending
                     </span>
