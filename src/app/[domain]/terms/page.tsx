@@ -40,11 +40,6 @@ export default async function TermsPage({ params }: PageProps) {
     getPageContentForUser(user.id, 'terms'),
   ])
 
-  // If page is not active (pageContent is null), return 404
-  if (!pageContent) {
-    notFound()
-  }
-
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
     id: String(index),
     user_id: user.id,
@@ -70,8 +65,8 @@ export default async function TermsPage({ params }: PageProps) {
   const theme = template?.theme || 'light'
   const isDark = theme === 'dark'
 
-  const pageTitle = pageContent.title || 'Terms of Service'
-  const content = pageContent.content || getDefaultTerms(user.shop_name || 'Our Store')
+  const pageTitle = pageContent?.title || 'Terms of Service'
+  const content = pageContent?.content || getDefaultTerms(user.shop_name || 'Our Store')
 
   return (
     <WebsiteLayout 

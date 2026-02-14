@@ -33,8 +33,6 @@ export default async function OurStoryPage({ params }: PageProps) {
     getPageContentForUser(user.id, 'our-story'),
   ])
 
-  if (!pageContent) notFound()
-
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
     id: String(index),
     user_id: user.id,

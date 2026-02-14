@@ -40,8 +40,6 @@ export default async function RefundPage({ params }: PageProps) {
     getPageContentForUser(user.id, 'refund'),
   ])
 
-  if (!pageContent) notFound()
-
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
     id: String(index),
     user_id: user.id,
@@ -67,8 +65,8 @@ export default async function RefundPage({ params }: PageProps) {
   const theme = template?.theme || 'light'
   const isDark = theme === 'dark'
 
-  const pageTitle = pageContent.title || 'Return & Refund Policy'
-  const content = pageContent.content || getDefaultRefundPolicy(user.shop_name || 'Our Store')
+  const pageTitle = pageContent?.title || 'Return & Refund Policy'
+  const content = pageContent?.content || getDefaultRefundPolicy(user.shop_name || 'Our Store')
 
   return (
     <WebsiteLayout 

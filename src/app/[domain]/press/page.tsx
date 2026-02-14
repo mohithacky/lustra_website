@@ -32,8 +32,6 @@ export default async function PressPage({ params }: PageProps) {
     getPageContentForUser(user.id, 'press'),
   ])
 
-  if (!pageContent) notFound()
-
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
     id: String(index), user_id: user.id, name, image_url: imageUrl,
     description: null, display_order: index, created_at: '', updated_at: '',
@@ -47,8 +45,8 @@ export default async function PressPage({ params }: PageProps) {
   const theme = template?.theme || 'light'
   const isDark = theme === 'dark'
 
-  const pageTitle = pageContent.title || 'Press'
-  const content = pageContent.content || getDefaultContent(user.shop_name)
+  const pageTitle = pageContent?.title || 'Press'
+  const content = pageContent?.content || getDefaultContent(user.shop_name)
 
   return (
     <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray} shopDomain={params.domain}>

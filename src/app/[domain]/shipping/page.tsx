@@ -32,8 +32,6 @@ export default async function ShippingPage({ params }: PageProps) {
     getPageContentForUser(user.id, 'shipping'),
   ])
 
-  if (!pageContent) notFound()
-
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
     id: String(index), user_id: user.id, name, image_url: imageUrl,
     description: null, display_order: index, created_at: '', updated_at: '',
@@ -47,8 +45,8 @@ export default async function ShippingPage({ params }: PageProps) {
   const theme = template?.theme || 'light'
   const isDark = theme === 'dark'
 
-  const pageTitle = pageContent.title || 'Shipping & Returns'
-  const content = pageContent.content || getDefaultContent()
+  const pageTitle = pageContent?.title || 'Shipping & Returns'
+  const content = pageContent?.content || getDefaultContent()
 
   return (
     <WebsiteLayout user={user} theme={theme} categories={categoriesArray} collections={collectionsArray} shopDomain={params.domain}>
