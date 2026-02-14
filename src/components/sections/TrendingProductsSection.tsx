@@ -77,8 +77,8 @@ export default function TrendingProductsSection({
         </div>
 
         {/* Products - horizontal scroll with height 330px like Flutter */}
-        <div className="overflow-x-auto pb-4 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <div className="flex gap-4 px-2 min-w-max">
+        <div className="overflow-x-auto pb-4 lg:px-8 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <div className="flex gap-4 lg:gap-6 px-2 min-w-max">
             {displayProducts.map((product) => (
               <TrendingProductCard 
                 key={product.id} 

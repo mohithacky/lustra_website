@@ -223,12 +223,12 @@ export default function WebsiteLayout({
             <div className="flex items-center justify-between border-t pt-1.5 sm:pt-2" style={{
               borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
             }}>
-              {/* Left: Navigation Dropdowns - Scrollable on mobile */}
-              <div ref={dropdownRef} className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto flex-shrink scrollbar-hide">
+              {/* Left: Navigation Dropdowns */}
+              <div ref={dropdownRef} className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                 {navItems.map((item) => (
                   <div
                     key={item.key}
-                    className="relative group"
+                    className="relative"
                     onMouseEnter={() => item.items.length > 0 && setActiveDropdown(item.key)}
                     onMouseLeave={() => setActiveDropdown(null)}
                   >
@@ -253,9 +253,10 @@ export default function WebsiteLayout({
                     {/* Dropdown Menu */}
                     {item.items.length > 0 && activeDropdown === item.key && (
                       <div className={cn(
-                        'absolute top-full left-0 mt-0 min-w-[220px] rounded-lg shadow-xl py-2 z-50 max-h-[60vh] overflow-y-auto',
+                        'absolute top-full left-0 mt-1 min-w-[220px] rounded-lg shadow-2xl py-2 z-[100] max-h-[60vh] overflow-y-auto',
                         isDark ? 'bg-zinc-900 border border-zinc-800' : 'bg-white border border-gray-100'
-                      )}>
+                      )}
+                      style={{ position: 'absolute' }}>
                         {item.items.map((subItem) => (
                           <Link
                             key={subItem.name}

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Edit } from 'lucide-react'
+import { Edit, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn, getImageUrl } from '@/lib/utils'
 
 interface Category {
@@ -37,8 +37,29 @@ export default function CategoriesSection({
   imageStyle = "circle"
 }: CategoriesSectionProps) {
   const router = useRouter()
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [showLeftButton, setShowLeftButton] = useState(false)
+  const [showRightButton, setShowRightButton] = useState(true)
   
   if (!categories.length) return null
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current
+      setShowLeftButton(scrollLeft > 0)
+      setShowRightButton(scrollLeft < scrollWidth - clientWidth - 10)
+    }
+  }
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 300
+      scrollContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      })
+    }
+  }
 
   return (
     <section className={cn(
@@ -73,17 +94,52 @@ export default function CategoriesSection({
 
         {/* Categories - horizontal scroll matching Flutter CategoryCarousel */}
         {/* Flutter heights: mobile 130px, tablet 230px, desktop 260px */}
-        <div className="h-[130px] md:h-[230px] lg:h-[260px] overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <div className="flex gap-2.5 h-full px-6 min-w-max">
-            {categories.map((category) => (
-              <CategoryItem
-                key={category.id}
-                category={category}
-                isDark={isDark}
-                shopDomain={shopDomain}
-                imageStyle={imageStyle}
-              />
-            ))}
+        <div className="relative">
+          {/* Left Scroll Button - Hidden on mobile, visible on larger screens */}
+          {showLeftButton && (
+            <button
+              onClick={() => scroll('left')}
+              className={cn(
+                'hidden lg:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 items-center justify-center rounded-full shadow-lg transition-all hover:scale-110',
+                isDark ? 'bg-zinc-800 text-white hover:bg-zinc-700' : 'bg-white text-black hover:bg-gray-100'
+              )}
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+          )}
+
+          {/* Right Scroll Button - Hidden on mobile, visible on larger screens */}
+          {showRightButton && (
+            <button
+              onClick={() => scroll('right')}
+              className={cn(
+                'hidden lg:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 items-center justify-center rounded-full shadow-lg transition-all hover:scale-110',
+                isDark ? 'bg-zinc-800 text-white hover:bg-zinc-700' : 'bg-white text-black hover:bg-gray-100'
+              )}
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          )}
+
+          <div 
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="h-[130px] md:h-[230px] lg:h-[260px] overflow-x-auto scrollbar-hide" 
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <div className="flex gap-2.5 h-full px-6 min-w-max">
+              {categories.map((category) => (
+                <CategoryItem
+                  key={category.id}
+                  category={category}
+                  isDark={isDark}
+                  shopDomain={shopDomain}
+                  imageStyle={imageStyle}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>

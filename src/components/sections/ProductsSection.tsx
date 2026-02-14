@@ -82,8 +82,8 @@ export default function ProductsSection({
         </div>
 
         {/* Products - horizontal scroll like Flutter */}
-        <div className="overflow-x-auto pb-4 -mx-2 px-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <div className="flex gap-4 min-w-max">
+        <div className="overflow-x-auto pb-4 -mx-2 px-2 lg:px-8 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <div className="flex gap-4 lg:gap-6 min-w-max">
             {displayProducts.map((product) => (
               <ProductCard 
                 key={product.id} 

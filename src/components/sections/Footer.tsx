@@ -53,6 +53,11 @@ function getFooterLinkHref(linkText: string): string {
 export default function Footer({ user, template, isDark, canEdit = false, shopDomain }: FooterProps) {
   const router = useRouter()
   const footerData = template?.footer as Record<string, string[]> | undefined
+  
+  // Check if Privacy Policy and Terms of Service are in the footer data (already filtered by is_active)
+  const allFooterLinks = footerData ? Object.values(footerData).flat() : []
+  const showPrivacyPolicy = allFooterLinks.includes('Privacy Policy')
+  const showTermsOfService = allFooterLinks.includes('Terms of Service')
 
   return (
     <footer className={cn(
@@ -190,14 +195,20 @@ export default function Footer({ user, template, isDark, canEdit = false, shopDo
             <p className="text-gray-500 text-sm">
               © {new Date().getFullYear()} {user.shop_name || 'Jewelry Store'}. All rights reserved.
             </p>
-            <div className="flex items-center gap-6 text-sm">
-              <Link href="/privacy" className="text-gray-500 hover:text-gold-400 transition-colors">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="text-gray-500 hover:text-gold-400 transition-colors">
-                Terms of Service
-              </Link>
-            </div>
+            {(showPrivacyPolicy || showTermsOfService) && (
+              <div className="flex items-center gap-6 text-sm">
+                {showPrivacyPolicy && (
+                  <Link href="/privacy" className="text-gray-500 hover:text-gold-400 transition-colors">
+                    Privacy Policy
+                  </Link>
+                )}
+                {showTermsOfService && (
+                  <Link href="/terms" className="text-gray-500 hover:text-gold-400 transition-colors">
+                    Terms of Service
+                  </Link>
+                )}
+              </div>
+            )}
             <p className="text-gray-600 text-xs">
               Powered by{' '}
               <a 
