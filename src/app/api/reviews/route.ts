@@ -39,7 +39,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true, reviews: reviews || [] })
+    return NextResponse.json(
+      { success: true, reviews: reviews || [] },
+      {
+        headers: {
+          // Cache at edge for 30 minutes, serve stale for 1 hour while revalidating
+          'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+        },
+      }
+    )
   } catch (error) {
     console.error('[Reviews API] Error in GET:', error)
     return NextResponse.json(

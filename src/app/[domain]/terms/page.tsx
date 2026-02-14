@@ -6,7 +6,7 @@ import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 import EditableStaticPage from '@/components/pages/EditableStaticPage'
 
-export const revalidate = 0
+export const revalidate = 86400 // 24 hours - static content cached at edge
 
 interface PageProps {
   params: { domain: string }

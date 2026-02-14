@@ -5,6 +5,9 @@ import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsGrid from '@/components/products/ProductsGrid'
 import Footer from '@/components/sections/Footer'
 
+// Enable ISR - revalidate every hour
+export const revalidate = 3600 // 1 hour - category pages cached at edge
+
 interface PageProps {
   params: { domain: string; categoryName: string }
 }

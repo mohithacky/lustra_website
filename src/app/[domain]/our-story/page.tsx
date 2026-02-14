@@ -7,7 +7,7 @@ import Footer from '@/components/sections/Footer'
 import EditableStaticPage from '@/components/pages/EditableStaticPage'
 
 // Disable Next.js caching for this page so edits show immediately
-export const revalidate = 0
+export const revalidate = 86400 // 24 hours - static content cached at edge
 
 interface PageProps {
   params: { domain: string }

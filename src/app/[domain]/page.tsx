@@ -97,9 +97,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-// Force dynamic rendering - disable caching
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// Enable ISR - revalidate every hour
+export const revalidate = 3600 // 1 hour - home page cached at edge
 
 export default async function StorePage({ params }: PageProps) {
   // ============================================================================

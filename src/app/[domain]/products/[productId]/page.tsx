@@ -12,9 +12,35 @@ import {
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductDetail from '@/components/products/ProductDetail'
 import { EditableFooter } from '@/components/editor/EditableSections'
+import { supabase } from '@/lib/supabase'
+
+// Enable ISR - revalidate every hour
+export const revalidate = 3600 // 1 hour - product data cached at edge
 
 interface PageProps {
   params: { domain: string; productId: string }
+}
+
+// Pre-generate top 100 most recent products at build time
+export async function generateStaticParams() {
+  try {
+    const { data: products } = await supabase
+      .from('products')
+      .select('id, user_id, users!inner(shop_domain)')
+      .eq('show_on_website', true)
+      .order('created_at', { ascending: false })
+      .limit(100)
+    
+    if (!products) return []
+    
+    return products.map((p: any) => ({
+      domain: p.users.shop_domain,
+      productId: p.id,
+    }))
+  } catch (error) {
+    console.error('[generateStaticParams] Error:', error)
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
