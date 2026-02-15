@@ -60,18 +60,41 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
+  const startTime = Date.now()
+  
+  // ============================================================================
+  // ISR CACHE LOGGING
+  // ============================================================================
+  console.log('\n' + '='.repeat(80))
+  console.log(`[ISR] 🛍️ PRODUCT DETAIL PAGE REQUEST`)
+  console.log(`[ISR] Domain: ${params.domain}`)
+  console.log(`[ISR] Product ID: ${params.productId}`)
+  console.log(`[ISR] Timestamp: ${new Date().toISOString()}`)
+  console.log(`[ISR] Cache Config: revalidate = 3600s (1 hour)`)
+  console.log('='.repeat(80))
+  
+  console.log(`[ISR] 🔍 Fetching website render data...`)
+  const renderDataStart = Date.now()
   const renderData = await getWebsiteRenderData(params.domain)
+  const renderDataTime = Date.now() - renderDataStart
+  console.log(`[ISR] ✅ Render data fetched in ${renderDataTime}ms`)
   
   if (!renderData) {
+    console.log(`[ISR] ❌ No render data found for domain: ${params.domain}`)
     notFound()
   }
 
   const { user, website, template, sections } = renderData
 
   if (!user || !website || !template || !sections) {
-    console.error('[PRODUCT DETAIL PAGE] Missing required render data')
+    console.error('[ISR] ❌ Missing required render data components')
     notFound()
   }
+  
+  console.log(`[ISR] 📊 Website Data:`)
+  console.log(`[ISR]   - User ID: ${user.id}`)
+  console.log(`[ISR]   - Shop Name: ${user.shop_name}`)
+  console.log(`[ISR]   - Website ID: ${website.id}`)
 
   // Get collections from merged sections
   const heroCollectionsFromSections = getHeroCollections(sections)
@@ -91,8 +114,24 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const { products: relatedProducts } = relatedProductsResult
 
   if (!product) {
+    console.log(`[ISR] ❌ Product not found: ${params.productId}`)
     notFound()
   }
+  
+  console.log(`[ISR] 📦 Product Data:`)
+  console.log(`[ISR]   - Product Name: ${product.name}`)
+  console.log(`[ISR]   - Product ID: ${product.id}`)
+  console.log(`[ISR]   - Is Demo: ${isDemo}`)
+  console.log(`[ISR]   - Related Products: ${relatedProducts.length}`)
+  
+  const totalTime = Date.now() - startTime
+  console.log('\n' + '='.repeat(80))
+  console.log(`[ISR] ✅ PRODUCT PAGE GENERATION COMPLETE`)
+  console.log(`[ISR] Total Time: ${totalTime}ms`)
+  console.log(`[ISR] Cache Key: /${params.domain}/products/${params.productId}`)
+  console.log(`[ISR] Next Revalidation: ${new Date(Date.now() + 3600000).toISOString()}`)
+  console.log(`[ISR] 💡 This page will be cached at Vercel Edge for 1 hour`)
+  console.log('='.repeat(80) + '\n')
 
   // Transform categories and collections to arrays for layout
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({

@@ -26,11 +26,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function PrivacyPage({ params }: PageProps) {
+  const startTime = Date.now()
+  
+  console.log('\n' + '='.repeat(80))
+  console.log(`[ISR] 📄 STATIC PAGE REQUEST: Privacy Policy`)
+  console.log(`[ISR] Domain: ${params.domain}`)
+  console.log(`[ISR] Cache Config: revalidate = 86400s (24 hours)`)
+  console.log('='.repeat(80))
+  
   const user = await getWebsiteByDomain(params.domain)
   
   if (!user) {
+    console.log(`[ISR] ❌ User not found for domain: ${params.domain}`)
     notFound()
   }
+  
+  console.log(`[ISR] ✅ User found: ${user.shop_name} (${user.id})`)
 
   const [template, categoriesMap, collectionsMap, footerData, pageContent] = await Promise.all([
     getWebsiteTemplate(user.id),
@@ -39,6 +50,12 @@ export default async function PrivacyPage({ params }: PageProps) {
     getFooterDataForUser(user.id),
     getPageContentForUser(user.id, 'privacy'),
   ])
+
+  const totalTime = Date.now() - startTime
+  console.log(`[ISR] ✅ Privacy page generated in ${totalTime}ms`)
+  console.log(`[ISR] Cache Key: /${params.domain}/privacy`)
+  console.log(`[ISR] 💡 Cached for 24 hours at edge`)
+  console.log('='.repeat(80) + '\n')
 
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
     id: String(index),

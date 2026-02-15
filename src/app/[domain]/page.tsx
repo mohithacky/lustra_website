@@ -101,34 +101,56 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export const revalidate = 3600 // 1 hour - home page cached at edge
 
 export default async function StorePage({ params }: PageProps) {
+  const startTime = Date.now()
+  
+  // ============================================================================
+  // ISR CACHE LOGGING
+  // ============================================================================
+  console.log('\n' + '='.repeat(80))
+  console.log(`[ISR] 🏠 HOME PAGE REQUEST`)
+  console.log(`[ISR] Domain: ${params.domain}`)
+  console.log(`[ISR] Timestamp: ${new Date().toISOString()}`)
+  console.log(`[ISR] Cache Config: revalidate = 3600s (1 hour)`)
+  console.log('='.repeat(80))
+  
   // ============================================================================
   // Validate domain parameter - exclude static file requests
   // ============================================================================
   if (!isValidDomain(params.domain)) {
-    console.log(`Skipping invalid domain: ${params.domain}`)
+    console.log(`[ISR] ❌ Invalid domain: ${params.domain}`)
     notFound()
   }
 
   // ============================================================================
   // NEW ARCHITECTURE: Use the new rendering flow
   // ============================================================================
+  console.log(`[ISR] 🔍 Fetching website render data for: ${params.domain}`)
+  const renderDataStart = Date.now()
   const renderData = await getWebsiteRenderData(params.domain)
+  const renderDataTime = Date.now() - renderDataStart
+  console.log(`[ISR] ✅ Render data fetched in ${renderDataTime}ms`)
   
   if (!renderData) {
+    console.log(`[ISR] ❌ No render data found for domain: ${params.domain}`)
     notFound()
   }
 
   const { user, website, template, sections } = renderData
 
   if (!user || !website || !template || !sections) {
-    console.error('[PAGE] Missing required render data')
+    console.error('[ISR] ❌ Missing required render data components')
     notFound()
   }
+  
+  console.log(`[ISR] 📊 Render Data Summary:`)
+  console.log(`[ISR]   - User ID: ${user.id}`)
+  console.log(`[ISR]   - Shop Name: ${user.shop_name}`)
+  console.log(`[ISR]   - Website ID: ${website.id}`)
+  console.log(`[ISR]   - Template: ${template.name || 'N/A'}`)
+  console.log(`[ISR]   - Sections: ${sections.length}`)
 
-  // Log render data summary
-  console.log(`\n[PAGE] Rendering StorePage for domain: ${params.domain}`)
-  console.log(`[PAGE] User: ${user.id} (${user.shop_name})`)
-  console.log(`[PAGE] Sections received: ${sections.length}`)
+  // Log collections and data processing
+  console.log(`[ISR] 🎨 Processing sections and collections...`)
 
   // Get collections from merged sections
   const heroCollectionsFromSections = getHeroFromSections(sections)
@@ -191,11 +213,23 @@ export default async function StorePage({ params }: PageProps) {
   const { testimonials } = testimonialsResult
   const { products: trendingProducts, isDemo: isDemoTrending } = trendingProductsResult
 
-  console.log(`  - Products: ${products.length} (demo: ${isDemoProducts})`)
-  console.log(`  - Testimonials: ${testimonials.length}`)
-  console.log(`  - Trending products: ${trendingProducts.length} (demo: ${isDemoTrending})`)
-  console.log(`  - Announcements: ${announcements.length} (enabled: ${announcementBarEnabled})`)
-  console.log(`  - Gold rate: ${goldRate ? 'found' : 'not found'} (enabled: ${goldRateSectionEnabled})`)
+  console.log(`[ISR] 📦 Data Fetched:`)
+  console.log(`[ISR]   - Products: ${products.length} (demo: ${isDemoProducts})`)
+  console.log(`[ISR]   - Testimonials: ${testimonials.length}`)
+  console.log(`[ISR]   - Trending products: ${trendingProducts.length} (demo: ${isDemoTrending})`)
+  console.log(`[ISR]   - Announcements: ${announcements.length} (enabled: ${announcementBarEnabled})`)
+  console.log(`[ISR]   - Gold rate: ${goldRate ? 'found' : 'not found'} (enabled: ${goldRateSectionEnabled})`)
+  
+  const totalTime = Date.now() - startTime
+  console.log('\n' + '='.repeat(80))
+  console.log(`[ISR] ✅ HOME PAGE GENERATION COMPLETE`)
+  console.log(`[ISR] Total Time: ${totalTime}ms`)
+  console.log(`[ISR] Domain: ${params.domain}`)
+  console.log(`[ISR] Cache Key: /${params.domain}`)
+  console.log(`[ISR] Next Revalidation: ${new Date(Date.now() + 3600000).toISOString()}`)
+  console.log(`[ISR] 💡 This page will be cached at Vercel Edge for 1 hour`)
+  console.log(`[ISR] 💡 Subsequent requests will be served in ~50ms from cache`)
+  console.log('='.repeat(80) + '\n')
 
   // Transform categories map to array format for components
   const categoriesArray = Object.entries(categoriesMap).map(([name, imageUrl], index) => ({
