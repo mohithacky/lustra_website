@@ -47,6 +47,7 @@ import {
   EditableFooter,
 } from '@/components/editor/EditableSections'
 import { logISRPageGeneration, logISRPageComplete } from '@/lib/isr-logger'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 
 interface PageProps {
   params: { domain: string }
@@ -228,58 +229,68 @@ export default async function StorePage({ params }: PageProps) {
     >
       {/* 1. Hero Carousel - matches Flutter order, with editor controls */}
       {heroCollections.length > 0 && (
-        <EditableHeroCarousel 
-          collections={heroCollections} 
-          isDark={isDark}
-          shopDomain={params.domain}
-          config={heroConfig}
-        />
+        <ErrorBoundary sectionName="HeroCarousel">
+          <EditableHeroCarousel 
+            collections={heroCollections} 
+            isDark={isDark}
+            shopDomain={params.domain}
+            config={heroConfig}
+          />
+        </ErrorBoundary>
       )}
 
       {/* Gold Rate Banner - matches Flutter gold rate section */}
       {goldRateSectionEnabled && goldRate && (
-        <GoldRateBanner 
-          goldRate={goldRate}
-          isDark={isDark}
-        />
+        <ErrorBoundary sectionName="GoldRateBanner">
+          <GoldRateBanner 
+            goldRate={goldRate}
+            isDark={isDark}
+          />
+        </ErrorBoundary>
       )}
 
       {/* 2. Categories - matches Flutter CategoryCarousel */}
       {categoriesArray.length > 0 && (
-        <EditableCategories 
-          categories={categoriesArray} 
-          isDark={isDark}
-          shopDomain={params.domain}
-          config={categoriesConfig}
-        />
+        <ErrorBoundary sectionName="Categories">
+          <EditableCategories 
+            categories={categoriesArray} 
+            isDark={isDark}
+            shopDomain={params.domain}
+            config={categoriesConfig}
+          />
+        </ErrorBoundary>
       )}
 
       <div className="h-5" /> {/* Spacing */}
 
       {/* 3. Shop By Product Type - matches Flutter ShopByProductTypeSection */}
       {productTypes.length > 1 && (
-        <ShopByProductTypeSection
-          productTypes={productTypes}
-          isDark={isDark}
-          shopDomain={params.domain}
-          title={shopByProductTypeConfig.title || "SHOP BY PRODUCT TYPE"}
-          subtitle={shopByProductTypeConfig.subtitle || "Explore pieces by what you sell most"}
-        />
+        <ErrorBoundary sectionName="ShopByProductType">
+          <ShopByProductTypeSection
+            productTypes={productTypes}
+            isDark={isDark}
+            shopDomain={params.domain}
+            title={shopByProductTypeConfig.title || "SHOP BY PRODUCT TYPE"}
+            subtitle={shopByProductTypeConfig.subtitle || "Explore pieces by what you sell most"}
+          />
+        </ErrorBoundary>
       )}
 
       <div className="h-5" /> {/* Spacing */}
       {products.length > 0 && (
-        <ProductsSection 
-          products={products} 
-          isDark={isDark}
-          title={productsConfig.title || "New Arrivals"}
-          subtitle={productsConfig.subtitle}
-          limit={productsConfig.limit}
-          columns={productsConfig.columns}
-          showPrice={productsConfig.showPrice}
-          shopDomain={params.domain}
-          isDemo={isDemoProducts}
-        />
+        <ErrorBoundary sectionName="Products">
+          <ProductsSection 
+            products={products} 
+            isDark={isDark}
+            title={productsConfig.title || "New Arrivals"}
+            subtitle={productsConfig.subtitle}
+            limit={productsConfig.limit}
+            columns={productsConfig.columns}
+            showPrice={productsConfig.showPrice}
+            shopDomain={params.domain}
+            isDemo={isDemoProducts}
+          />
+        </ErrorBoundary>
       )}
 
       <div className="h-8" /> {/* Spacing */}
@@ -295,60 +306,69 @@ export default async function StorePage({ params }: PageProps) {
 
       {/* 5. Trending Collections - matches Flutter FourBoxStaggeredSection, with edit icons */}
       {trendingCollections.length > 0 && (
-        <EditableTrendingSection 
-          collections={trendingCollections} 
-          isDark={isDark}
-          shopDomain={params.domain}
-          config={trendingConfig}
-        />
+        <ErrorBoundary sectionName="TrendingCollections">
+          <EditableTrendingSection 
+            collections={trendingCollections} 
+            isDark={isDark}
+            shopDomain={params.domain}
+            config={trendingConfig}
+          />
+        </ErrorBoundary>
       )}
 
       <div className="h-8" /> {/* Spacing */}
 
       {/* 6. Trending Products - matches Flutter TrendingProductsShowcase */}
       {trendingProducts.length > 0 && (
-        <TrendingProductsSection 
-          products={trendingProducts} 
-          isDark={isDark}
-          title={trendingProductsConfig.title}
-          subtitle={trendingProductsConfig.subtitle}
-          limit={trendingProductsConfig.limit}
-          showPrice={trendingProductsConfig.showPrice}
-          layout={trendingProductsConfig.layout}
-          shopDomain={params.domain}
-          isDemo={isDemoTrending}
-        />
+        <ErrorBoundary sectionName="TrendingProducts">
+          <TrendingProductsSection 
+            products={trendingProducts} 
+            isDark={isDark}
+            title={trendingProductsConfig.title}
+            subtitle={trendingProductsConfig.subtitle}
+            limit={trendingProductsConfig.limit}
+            showPrice={trendingProductsConfig.showPrice}
+            layout={trendingProductsConfig.layout}
+            shopDomain={params.domain}
+            isDemo={isDemoTrending}
+          />
+        </ErrorBoundary>
       )}
 
       <div className="h-5" /> {/* Spacing */}
 
       {/* 7. Best Collections - matches Flutter FeaturedCollectionsShowcase */}
       {bestCollections.length > 0 && (
-        <EditableBestCollections 
-          collections={bestCollections} 
-          isDark={isDark}
-          shopDomain={params.domain}
-          config={bestCollectionsConfig}
-        />
+        <ErrorBoundary sectionName="BestCollections">
+          <EditableBestCollections 
+            collections={bestCollections} 
+            isDark={isDark}
+            shopDomain={params.domain}
+            config={bestCollectionsConfig}
+          />
+        </ErrorBoundary>
       )}
 
       {/* 8. Testimonials - matches Flutter JewelleryTestimonialSection */}
       {testimonials.length > 0 && (
-        <div className="mt-5">
-          <TestimonialsSection 
-            testimonials={testimonials} 
-            isDark={isDark}
-            title={testimonialsConfig.title}
-            subtitle={testimonialsConfig.subtitle}
-            layout={testimonialsConfig.layout}
-            showRating={testimonialsConfig.showRating}
-            showAvatar={testimonialsConfig.showAvatar}
-            maxItems={testimonialsConfig.maxItems}
-          />
-        </div>
+        <ErrorBoundary sectionName="Testimonials">
+          <div className="mt-5">
+            <TestimonialsSection 
+              testimonials={testimonials} 
+              isDark={isDark}
+              title={testimonialsConfig.title}
+              subtitle={testimonialsConfig.subtitle}
+              layout={testimonialsConfig.layout}
+              showRating={testimonialsConfig.showRating}
+              showAvatar={testimonialsConfig.showAvatar}
+              maxItems={testimonialsConfig.maxItems}
+            />
+          </div>
+        </ErrorBoundary>
       )}
 
       {/* Footer */}
+      <ErrorBoundary sectionName="Footer">
       <EditableFooter 
         user={{ ...user, facebook_id: storeInfo?.facebook_id || null }}
         template={{ 
@@ -364,6 +384,7 @@ export default async function StorePage({ params }: PageProps) {
         isDark={isDark}
         shopDomain={params.domain}
       />
+      </ErrorBoundary>
     </WebsiteLayout>
   )
 }

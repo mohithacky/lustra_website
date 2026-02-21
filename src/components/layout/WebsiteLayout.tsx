@@ -18,6 +18,7 @@ import SearchBar from '@/components/sections/SearchBar'
 import NavigationDrawer from '@/components/layout/NavigationDrawer'
 import { useShopStore } from '@/store/shopStore'
 import { useCustomer } from '@/contexts/CustomerContext'
+import PWAProvider from '@/components/pwa/PWAProvider'
 
 interface WebsiteLayoutProps {
   children: React.ReactNode
@@ -183,9 +184,10 @@ export default function WebsiteLayout({
                     <Image
                       src={getImageUrl(user.logo_url)}
                       alt={user.shop_name || 'Store'}
-                      width={1024}
-                      height={1024}
-                      quality={100}
+                      width={128}
+                      height={128}
+                      quality={80}
+                      sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, (max-width: 1024px) 96px, 112px"
                       className="object-contain w-full h-full"
                       priority
                       onError={() => setLogoError(true)}
@@ -368,6 +370,13 @@ export default function WebsiteLayout({
           onSuccess={handleLoginSuccess}
           shopName={user.shop_name}
           shopId={user.id}
+          isDark={isDark}
+        />
+
+        {/* PWA: Add to Home Screen support (per-subdomain) */}
+        <PWAProvider
+          shopDomain={shopDomain}
+          shopName={user.shop_name || 'Store'}
           isDark={isDark}
         />
       </div>

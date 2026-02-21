@@ -15,6 +15,7 @@
  * - HOW goes in CONFIG (JSON): layout, variant, limits, visibility, behavior
  */
 
+import { cache } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://phlccyxgyftspxnuzttf.supabase.co'
@@ -353,10 +354,40 @@ export async function getMergedSections(
     'shop_by_product_type': 'product_type',
   }
 
+  // Batch: fetch ALL needed collection labels in a single DB query instead of N sequential queries
+  const neededLabels = new Set<string>()
+  for (const section of mergedSections) {
+    const label = labelMap[section.section_type]
+    if (label) neededLabels.add(label)
+  }
+
+  let collectionsByLabel: Record<string, Collection[]> = {}
+  if (neededLabels.size > 0) {
+    const { data, error } = await supabase
+      .from('collections')
+      .select('*')
+      .eq('user_id', userId)
+      .in('collection_label', Array.from(neededLabels))
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+
+    if (error) {
+      console.error(`[DB ERROR] Failed to batch-fetch collections:`, JSON.stringify(error))
+    } else {
+      // Group by collection_label
+      for (const col of (data || [])) {
+        const label = (col as any).collection_label as string
+        if (!collectionsByLabel[label]) collectionsByLabel[label] = []
+        collectionsByLabel[label].push(col as Collection)
+      }
+      console.log(`[DB SUCCESS] Batch-fetched ${data?.length || 0} collections for labels: ${Array.from(neededLabels).join(', ')}`)
+    }
+  }
+
   for (const section of mergedSections) {
     const label = labelMap[section.section_type]
     if (label) {
-      section.collections = await getCollectionsByLabel(userId, label)
+      section.collections = collectionsByLabel[label] || []
     }
   }
 
@@ -429,7 +460,7 @@ export async function getAllUserCollections(userId: string): Promise<Collection[
 // ============================================================================
 // Main function: Get complete website render data
 // ============================================================================
-export async function getWebsiteRenderData(domain: string): Promise<WebsiteRenderData | null> {
+export const getWebsiteRenderData = cache(async function getWebsiteRenderData(domain: string): Promise<WebsiteRenderData | null> {
   const renderStart = Date.now()
   
   console.log(`\n` + '='.repeat(70))
@@ -535,7 +566,7 @@ export async function getWebsiteRenderData(domain: string): Promise<WebsiteRende
     template,
     sections,
   }
-}
+})
 
 // ============================================================================
 // Helper functions to extract specific section data

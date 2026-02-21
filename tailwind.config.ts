@@ -25,8 +25,8 @@ const config: Config = {
         offwhite: '#F8F7F4',
       },
       fontFamily: {
-        display: ['Playfair Display', 'serif'],
-        body: ['Lato', 'sans-serif'],
+        display: ['var(--font-playfair)', 'Playfair Display', 'serif'],
+        body: ['var(--font-lato)', 'Lato', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
