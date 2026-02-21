@@ -33,7 +33,7 @@ export function CacheLogger({ pageName, domain, additionalData = {} }: CacheLogg
         tcp: Math.round(navigation.connectEnd - navigation.connectStart),
         request: Math.round(navigation.responseStart - navigation.requestStart),
         response: Math.round(navigation.responseEnd - navigation.responseStart),
-        domProcessing: Math.round(navigation.domComplete - navigation.domLoading),
+        domProcessing: Math.round(navigation.domComplete - navigation.domInteractive),
         
         // Total time
         totalTime: Math.round(navigation.loadEventEnd - navigation.fetchStart),
