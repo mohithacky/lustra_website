@@ -430,87 +430,104 @@ export async function getAllUserCollections(userId: string): Promise<Collection[
 // Main function: Get complete website render data
 // ============================================================================
 export async function getWebsiteRenderData(domain: string): Promise<WebsiteRenderData | null> {
-  console.log(`\n`)
-  console.log(`================================================================`)
-  console.log(`[RENDER] Starting getWebsiteRenderData for domain: "${domain}"`)
-  console.log(`================================================================`)
+  const renderStart = Date.now()
   
-  // Step 1: Get user by domain
-  console.log(`\n[STEP 1] Fetching user by shop_domain...`)
+  console.log(`\n` + '='.repeat(70))
+  console.log(`[RENDER] 🚀 getWebsiteRenderData("${domain}")`)
+  console.log(`[RENDER] Timestamp: ${new Date().toISOString()}`)
+  console.log('='.repeat(70))
+  
+  // Step 1: Get user by domain (required first - everything depends on this)
+  const step1Start = Date.now()
   const user = await getWebsiteByDomain(domain)
+  const step1Time = Date.now() - step1Start
+  console.log(`[RENDER] Step 1 - User lookup: ${step1Time}ms ${user ? '✅' : '❌'}`)
+  
   if (!user) {
-    console.error(`[RENDER ERROR] User not found for domain: "${domain}"`)
-    console.log(`[RENDER] FAILED - No user with shop_domain="${domain}" in users table`)
+    console.error(`[RENDER] ❌ FAILED - No user with shop_domain="${domain}"`)
     return null
   }
 
-  // Step 2: Get user's primary website
-  console.log(`\n[STEP 2] Fetching user_websites for user_id="${user.id}"...`)
+  // Step 2: Get user's primary website (depends on user.id)
+  const step2Start = Date.now()
   const website = await getUserWebsite(user.id)
+  const step2Time = Date.now() - step2Start
+  console.log(`[RENDER] Step 2 - Website lookup: ${step2Time}ms ${website ? '✅' : '❌'}`)
+  
   if (!website) {
-    console.error(`[RENDER ERROR] No user_websites found for user: ${user.id}`)
-    console.log(`[RENDER] FAILED - User exists but has no entry in user_websites table`)
+    console.error(`[RENDER] ❌ FAILED - No user_websites for user: ${user.id}`)
     return null
   }
 
-  // Step 3: Get template
-  console.log(`\n[STEP 3] Fetching template for template_id="${website.template_id}"...`)
+  // Step 3: Get template (depends on website.template_id)
+  const step3Start = Date.now()
   const template = await getWebsiteTemplate(website.template_id)
+  const step3Time = Date.now() - step3Start
+  console.log(`[RENDER] Step 3 - Template lookup: ${step3Time}ms ${template ? '✅' : '❌'}`)
+  
   if (!template) {
-    console.error(`[RENDER ERROR] Template not found: ${website.template_id}`)
-    console.log(`[RENDER] FAILED - Template does not exist`)
+    console.error(`[RENDER] ❌ FAILED - Template not found: ${website.template_id}`)
     return null
   }
 
-  // Step 3b: Get template sections
-  console.log(`\n[STEP 4] Fetching website_template_sections for template="${template.slug}"...`)
-  const templateSections = await getTemplateSections(template.id)
+  // Steps 4 & 5: PARALLEL - template sections + user sections (independent of each other)
+  const step45Start = Date.now()
+  const [templateSections, userSections] = await Promise.all([
+    getTemplateSections(template.id),
+    getUserWebsiteSections(website.id),
+  ])
+  const step45Time = Date.now() - step45Start
+  console.log(`[RENDER] Steps 4+5 - Template sections + User sections (PARALLEL): ${step45Time}ms ✅`)
+  console.log(`[RENDER]   Template sections: ${templateSections.length}, User sections: ${userSections.length}`)
 
-  // Step 4: Get user's section customizations
-  console.log(`\n[STEP 5] Fetching user_website_sections for website_id="${website.id}"...`)
-  const userSections = await getUserWebsiteSections(website.id)
-
-  // Step 5 & 6: Merge configs and fetch collections
-  console.log(`\n[STEP 6] Merging sections and fetching collections for user_id="${user.id}"...`)
+  // Step 6: Merge configs and fetch collections
+  const step6Start = Date.now()
   const sections = await getMergedSections(templateSections, userSections, user.id)
+  const step6Time = Date.now() - step6Start
+  console.log(`[RENDER] Step 6 - Merge + collections: ${step6Time}ms ✅`)
+  
+  const totalTime = Date.now() - renderStart
   
   // ========== SUMMARY ==========
-  console.log(`\n================================================================`)
-  console.log(`[RENDER SUMMARY] Domain: ${domain}`)
-  console.log(`================================================================`)
-  console.log(`  User ID:              ${user.id}`)
-  console.log(`  Shop Name:            ${user.shop_name}`)
-  console.log(`  Website ID:           ${website.id}`)
-  console.log(`  Template:             ${template.name} (${template.slug})`)
-  console.log(`  Template Sections:    ${templateSections.length}`)
-  console.log(`  User Sections:        ${userSections.length}`)
-  console.log(`  Merged Sections:      ${sections.length}`)
-  console.log(``)
-  console.log(`  Collections by type:`)
-  
   let totalCollections = 0
   for (const section of sections) {
     const count = section.collections?.length || 0
     totalCollections += count
-    if (count > 0) {
-      console.log(`    - ${section.section_type}: ${count} collections`)
-    }
   }
   
-  console.log(`  Total Collections:    ${totalCollections}`)
-  console.log(`================================================================`)
+  console.log(`\n` + '-'.repeat(70))
+  console.log(`[RENDER] 📊 SUMMARY for "${domain}"`)
+  console.log('-'.repeat(70))
+  console.log(`[RENDER]   User: ${user.shop_name} (${user.id})`)
+  console.log(`[RENDER]   Website: ${website.id}`)
+  console.log(`[RENDER]   Template: ${template.name} (${template.slug})`)
+  console.log(`[RENDER]   Sections: ${sections.length} merged, ${totalCollections} total collections`)
+  console.log('-'.repeat(70))
+  console.log(`[RENDER] ⏱️  TIMING BREAKDOWN:`)
+  console.log(`[RENDER]   Step 1 (user):              ${step1Time}ms`)
+  console.log(`[RENDER]   Step 2 (website):           ${step2Time}ms`)
+  console.log(`[RENDER]   Step 3 (template):          ${step3Time}ms`)
+  console.log(`[RENDER]   Steps 4+5 (sections):       ${step45Time}ms (parallel)`)
+  console.log(`[RENDER]   Step 6 (merge+collections): ${step6Time}ms`)
+  console.log(`[RENDER]   ─────────────────────────────`)
+  console.log(`[RENDER]   TOTAL:                      ${totalTime}ms`)
+  console.log('-'.repeat(70))
+  
+  if (totalTime > 500) {
+    console.warn(`[RENDER] ⚠️ Slow render data fetch (${totalTime}ms > 500ms threshold)`)
+  } else {
+    console.log(`[RENDER] ✅ Fast render data fetch (${totalTime}ms)`)
+  }
   
   // Warnings for missing data
   if (templateSections.length === 0) {
-    console.warn(`[WARNING] No template sections found! Run migration 033_create_default_template_sections.sql`)
+    console.warn(`[RENDER] ⚠️ No template sections found! Run migration 033_create_default_template_sections.sql`)
   }
   if (totalCollections === 0) {
-    console.warn(`[WARNING] No collections found! The website sections that need collections won't render.`)
-    console.warn(`[WARNING] Either run onboarding again or manually insert collections into the collections table.`)
+    console.warn(`[RENDER] ⚠️ No collections found! Sections that need collections won't render.`)
   }
   
-  console.log(`[RENDER] SUCCESS - Data fetched, returning to page.tsx`)
-  console.log(`================================================================\n`)
+  console.log('='.repeat(70) + '\n')
 
   return {
     user,

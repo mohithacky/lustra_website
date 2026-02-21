@@ -5,6 +5,9 @@ import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsGrid from '@/components/products/ProductsGrid'
 import Footer from '@/components/sections/Footer'
 
+// Enable ISR - revalidate every hour
+export const revalidate = 3600 // 1 hour - product type pages cached at edge
+
 interface PageProps {
   params: { domain: string; productType: string }
 }
@@ -25,11 +28,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProductTypePage({ params }: PageProps) {
+  const startTime = Date.now()
+  console.log(`[ISR] 🏷️ PRODUCT TYPE PAGE | Domain: ${params.domain} | Type: ${params.productType} | Cache: 3600s (1h) | ${new Date().toISOString()}`)
+
   const user = await getWebsiteByDomain(params.domain)
   
   if (!user) {
+    console.log(`[ISR] ❌ User not found: ${params.domain}`)
     notFound()
   }
+  console.log(`[ISR] ✅ User: ${user.shop_name} (${user.id})`)
 
   const productType = decodeURIComponent(params.productType).replace(/-/g, ' ')
   const capitalizedType = productType.charAt(0).toUpperCase() + productType.slice(1)

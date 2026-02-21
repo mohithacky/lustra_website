@@ -6,6 +6,9 @@ import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsGrid from '@/components/products/ProductsGrid'
 import Footer from '@/components/sections/Footer'
 
+// Enable ISR - revalidate every hour
+export const revalidate = 3600 // 1 hour - gender pages cached at edge
+
 interface PageProps {
   params: { domain: string; gender: string }
 }
@@ -25,11 +28,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function GenderPage({ params }: PageProps) {
+  const startTime = Date.now()
+  console.log(`[ISR] 👤 GENDER PAGE | Domain: ${params.domain} | Gender: ${params.gender} | Cache: 3600s (1h) | ${new Date().toISOString()}`)
+
   const user = await getWebsiteByDomain(params.domain)
   
   if (!user) {
+    console.log(`[ISR] ❌ User not found: ${params.domain}`)
     notFound()
   }
+  console.log(`[ISR] ✅ User: ${user.shop_name} (${user.id})`)
 
   const gender = params.gender === 'him' ? 'Him' : 'Her'
 

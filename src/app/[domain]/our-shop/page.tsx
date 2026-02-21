@@ -6,6 +6,9 @@ import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 import EditableOurShopPage from '@/components/pages/EditableOurShopPage'
 
+// Enable ISR - revalidate every 24 hours (static content)
+export const revalidate = 86400 // 24 hours - our shop page cached at edge
+
 interface PageProps {
   params: { domain: string }
 }
@@ -19,8 +22,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function OurShopPage({ params }: PageProps) {
+  const startTime = Date.now()
+  console.log(`[ISR] 🏪 OUR SHOP PAGE | Domain: ${params.domain} | Cache: 86400s (24h) | ${new Date().toISOString()}`)
+
   const user = await getWebsiteByDomain(params.domain)
-  if (!user) notFound()
+  if (!user) { console.log(`[ISR] ❌ User not found: ${params.domain}`); notFound() }
+  console.log(`[ISR] ✅ User: ${user.shop_name} (${user.id})`)
 
   const [template, categoriesMap, collectionsMap, footerData, pageContent, storeInfo] = await Promise.all([
     getWebsiteTemplate(user.id),
