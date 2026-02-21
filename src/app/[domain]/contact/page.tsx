@@ -6,6 +6,7 @@ import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 import ContactForm from '@/components/sections/ContactForm'
 import { MapPin, Phone, Mail, Instagram, Facebook } from 'lucide-react'
+import { logISRPageGeneration, logISRPageComplete } from '@/lib/isr-logger'
 
 // Enable ISR - revalidate every 24 hours (static content)
 export const revalidate = 86400 // 24 hours - contact page cached at edge
@@ -24,11 +25,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ContactPage({ params }: PageProps) {
   const startTime = Date.now()
-  console.log(`[ISR] 📄 CONTACT PAGE | Domain: ${params.domain} | Cache: 86400s (24h) | ${new Date().toISOString()}`)
+  logISRPageGeneration('CONTACT PAGE', params.domain, 86400)
 
   const user = await getWebsiteByDomain(params.domain)
-  if (!user) { console.log(`[ISR] ❌ User not found: ${params.domain}`); notFound() }
-  console.log(`[ISR] ✅ User: ${user.shop_name} (${user.id})`)
+  if (!user) { notFound() }
 
   const [template, categoriesMap, collectionsMap, footerData, storeInfo] = await Promise.all([
     getWebsiteTemplate(user.id),

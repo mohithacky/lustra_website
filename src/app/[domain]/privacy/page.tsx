@@ -5,6 +5,7 @@ import { getFooterDataForUser, getPageContentForUser } from '@/lib/supabase-new-
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 import EditableStaticPage from '@/components/pages/EditableStaticPage'
+import { logISRPageGeneration, logISRPageComplete } from '@/lib/isr-logger'
 
 export const revalidate = 86400 // 24 hours - static content cached at edge
 
@@ -27,21 +28,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PrivacyPage({ params }: PageProps) {
   const startTime = Date.now()
-  
-  console.log('\n' + '='.repeat(80))
-  console.log(`[ISR] 📄 STATIC PAGE REQUEST: Privacy Policy`)
-  console.log(`[ISR] Domain: ${params.domain}`)
-  console.log(`[ISR] Cache Config: revalidate = 86400s (24 hours)`)
-  console.log('='.repeat(80))
-  
+  logISRPageGeneration('PRIVACY POLICY', params.domain, 86400)
+
   const user = await getWebsiteByDomain(params.domain)
   
   if (!user) {
-    console.log(`[ISR] ❌ User not found for domain: ${params.domain}`)
     notFound()
   }
-  
-  console.log(`[ISR] ✅ User found: ${user.shop_name} (${user.id})`)
 
   const [template, categoriesMap, collectionsMap, footerData, pageContent] = await Promise.all([
     getWebsiteTemplate(user.id),

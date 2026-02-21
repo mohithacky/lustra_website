@@ -4,6 +4,7 @@ import { getWebsiteByDomain, getWebsiteTemplate, getProducts, getCategoriesMap, 
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsGrid from '@/components/products/ProductsGrid'
 import Footer from '@/components/sections/Footer'
+import { logISRPageGeneration } from '@/lib/isr-logger'
 
 // Enable ISR - revalidate every hour
 export const revalidate = 3600 // 1 hour - collection pages cached at edge
@@ -27,6 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function CollectionPage({ params }: PageProps) {
+  logISRPageGeneration('COLLECTION PAGE', params.domain, 3600, { collection: params.collectionName })
   const user = await getWebsiteByDomain(params.domain)
   
   if (!user) {

@@ -5,6 +5,7 @@ import { getFooterDataForUser, getPageContentForUser } from '@/lib/supabase-new-
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 import EditableStaticPage from '@/components/pages/EditableStaticPage'
+import { logISRPageGeneration } from '@/lib/isr-logger'
 
 // Disable Next.js caching for this page so edits show immediately
 export const revalidate = 86400 // 24 hours - static content cached at edge

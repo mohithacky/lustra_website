@@ -5,6 +5,7 @@ import { getFooterDataForUser, getPageContentForUser } from '@/lib/supabase-new-
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 import EditableStaticPage from '@/components/pages/EditableStaticPage'
+import { logISRPageGeneration } from '@/lib/isr-logger'
 
 export const revalidate = 86400 // 24 hours - static content cached at edge
 
@@ -26,6 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function TermsPage({ params }: PageProps) {
+  logISRPageGeneration('TERMS OF SERVICE', params.domain, 86400)
   const user = await getWebsiteByDomain(params.domain)
   
   if (!user) {

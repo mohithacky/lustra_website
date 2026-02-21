@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getWebsiteByDomain, getWebsiteTemplate, getCategoriesMap, getCollectionsMap, getFooterData } from '@/lib/supabase'
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
+import { logISRPageGeneration, logISRPageComplete } from '@/lib/isr-logger'
 
 // Enable ISR - revalidate every 24 hours (static content)
 export const revalidate = 86400 // 24 hours - about page cached at edge
@@ -26,15 +27,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function AboutPage({ params }: PageProps) {
   const startTime = Date.now()
-  console.log(`[ISR] 📄 ABOUT PAGE | Domain: ${params.domain} | Cache: 86400s (24h) | ${new Date().toISOString()}`)
+  logISRPageGeneration('ABOUT PAGE', params.domain, 86400)
 
   const user = await getWebsiteByDomain(params.domain)
   
   if (!user) {
-    console.log(`[ISR] ❌ User not found: ${params.domain}`)
     notFound()
   }
-  console.log(`[ISR] ✅ User: ${user.shop_name} (${user.id})`)
 
   const [template, categoriesMap, collectionsMap, footerData] = await Promise.all([
     getWebsiteTemplate(user.id),

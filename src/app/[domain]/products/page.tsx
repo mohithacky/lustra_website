@@ -17,6 +17,7 @@ import {
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import ProductsGrid from '@/components/products/ProductsGrid'
 import { EditableFooter } from '@/components/editor/EditableSections'
+import { logISRPageGeneration, logISRPageComplete } from '@/lib/isr-logger'
 
 // Enable ISR - revalidate every hour
 export const revalidate = 3600 // 1 hour - products listing cached at edge
@@ -51,25 +52,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProductsPage({ params, searchParams }: PageProps) {
   const startTime = Date.now()
-  console.log('\n' + '='.repeat(70))
-  console.log(`[ISR] 📋 PRODUCTS LISTING PAGE`)
-  console.log(`[ISR] Domain: ${params.domain}`)
-  console.log(`[ISR] Search/Filters: ${JSON.stringify(searchParams)}`)
-  console.log(`[ISR] Timestamp: ${new Date().toISOString()}`)
-  console.log(`[ISR] Cache: revalidate=3600s (1 hour)`)
-  console.log('='.repeat(70))
+  logISRPageGeneration('PRODUCTS LISTING', params.domain, 3600, { filters: JSON.stringify(searchParams) })
 
   const renderData = await getWebsiteRenderData(params.domain)
   
   if (!renderData) {
-    console.log(`[ISR] ❌ No render data for domain: ${params.domain}`)
     notFound()
   }
 
   const { user, website, template, sections } = renderData
 
   if (!user || !website || !template || !sections) {
-    console.error('[ISR] ❌ Missing required render data')
     notFound()
   }
 

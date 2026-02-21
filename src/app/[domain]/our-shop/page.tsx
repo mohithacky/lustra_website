@@ -5,6 +5,7 @@ import { getFooterDataForUser, getPageContentForUser } from '@/lib/supabase-new-
 import WebsiteLayout from '@/components/layout/WebsiteLayout'
 import Footer from '@/components/sections/Footer'
 import EditableOurShopPage from '@/components/pages/EditableOurShopPage'
+import { logISRPageGeneration, logISRPageComplete } from '@/lib/isr-logger'
 
 // Enable ISR - revalidate every 24 hours (static content)
 export const revalidate = 86400 // 24 hours - our shop page cached at edge
@@ -23,11 +24,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function OurShopPage({ params }: PageProps) {
   const startTime = Date.now()
-  console.log(`[ISR] 🏪 OUR SHOP PAGE | Domain: ${params.domain} | Cache: 86400s (24h) | ${new Date().toISOString()}`)
+  logISRPageGeneration('OUR SHOP', params.domain, 86400)
 
   const user = await getWebsiteByDomain(params.domain)
-  if (!user) { console.log(`[ISR] ❌ User not found: ${params.domain}`); notFound() }
-  console.log(`[ISR] ✅ User: ${user.shop_name} (${user.id})`)
+  if (!user) { notFound() }
 
   const [template, categoriesMap, collectionsMap, footerData, pageContent, storeInfo] = await Promise.all([
     getWebsiteTemplate(user.id),
